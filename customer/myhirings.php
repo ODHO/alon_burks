@@ -402,6 +402,9 @@ include 'Black_logo_header.php'
                 $customerAddress = $customerInfo['address'];
                 $profile_picture = $customerInfo['profile_picture'];
             ?>
+
+
+                        
         <section id="hiring" style="padding: 60px 0px;">
           <div class="container">
             <div class="hiring-inner">
@@ -430,7 +433,8 @@ include 'Black_logo_header.php'
                 <div class="col-lg-3 mb-3 mb-lg-0 align-self-center">
                   <div class="textwith-icon2 last-textinner">
                     <ul class="button-sec">
-                      <li><a href="#">Verify</a></li>
+                      <li class="onetimepayment"><a type="button" data-toggle="modal" data-target="#confirmationModal<?php echo $proposalId;?>"
+                                                data-proposal-id="<?php echo $proposalId; ?>">Verify</a></li>
                       <li class="arrive1d"><a href="#"><button>Arrived</button></a></li>
                     </ul>
                   </div>
@@ -533,8 +537,9 @@ include 'Black_logo_header.php'
               include 'connection.php';
 
               $userId = $_SESSION['user_id'];
+              $customerFullName = $_SESSION['customerFullName'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'order_in_progress' ORDER BY current_time DESC";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'working' OR status = 'order_in_progress') ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -570,6 +575,107 @@ include 'Black_logo_header.php'
                 $customerAddress = $customerInfo['address'];
                 $profile_picture = $customerInfo['profile_picture'];
             ?>
+                        <div class="modal your-offer-selected popup-selected" id="confirmationModal<?php echo $proposalId?>" role="dialog">
+                            <div class="popup-selected-modal">
+                                <div class="popupsucessfully main-panel">
+                                    <img src="./images/verification.png" />
+                                    <h4 class="pb-4">Kindly Verify that service provider has arrived?</h4>
+                                    <div class="modal-footer" style="width: -webkit-fill-available;">
+                                        <button type="button" data-dismiss="modal" class="bg-danger">No</button>
+                                        <button type="button" data-dismiss="modal"
+                                            onclick="acceptOffer(<?php echo $proposalId; ?>)">Yes, they are</button>
+                                            <input type="hidden" id="customerFullName" name="customerFullName" value="<?php echo $customerName?>" />
+                                            <input type="hidden" id="providerId" name="providerId" value="<?php echo $providerId?>" />
+                                            <input type="hidden" id="customerId" name="customerId" value="<?php echo $customerId?>" />
+                                    </div>
+                                </div>
+                                <script>
+                                        function acceptOffer(proposalId) {
+                                            const providerId = document.getElementById('providerId').value;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const customerFullName = document.getElementById('customerFullName').value;
+                                            const messageContent = `${customerFullName} has started working.`;
+
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            console.log(proposalId, providerId, customerId, customerFullName);
+                                            // return;
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                status: 'working',
+                                                statusFrom: 'none',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                customerFullName: customerFullName,
+                                                messageContent: messageContent,
+                                            }));
+
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
+
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                    </script>
+                            </div>
+                        </div>
+                        <div class="modal your-offer-selected popup-selected" id="completed<?php echo $proposalId?>" role="dialog">
+                            <div class="popup-selected-modal">
+                                <div class="popupsucessfully main-panel">
+                                    <img src="./images/verification.png" />
+                                    <h4 class="pb-4">Service provider has completed their tasks?</h4>
+                                    <div class="modal-footer" style="width: -webkit-fill-available;">
+                                        <button type="button" data-dismiss="modal" class="bg-danger">No</button>
+                                        <button type="button" data-dismiss="modal"
+                                            onclick="completed(<?php echo $proposalId; ?>)">yes he completed</button>
+                                            <input type="hidden" id="customerFullName" name="customerFullName" value="<?php echo $customerName?>" />
+                                            <input type="hidden" id="providerId" name="providerId" value="<?php echo $providerId?>" />
+                                            <input type="hidden" id="customerId" name="customerId" value="<?php echo $customerId?>" />
+                                    </div>
+                                </div>
+                                <script>
+                                        function completed(proposalId) {
+                                            const providerId = document.getElementById('providerId').value;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const customerFullName = document.getElementById('customerFullName').value;
+                                            const messageContent = `${customerFullName} has  completed their tasks.`;
+
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            console.log(proposalId, providerId, customerId, customerFullName);
+                                            // return;
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                status: 'completed-pending',
+                                                statusFrom: 'none',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                customerFullName: customerFullName,
+                                                messageContent: messageContent,
+                                            }));
+
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
+
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                    </script>
+                            </div>
+                        </div>
+
         <section id="hiring" style="padding: 60px 0px;">
           <div class="container">
             <div class="hiring-inner">
@@ -580,8 +686,18 @@ include 'Black_logo_header.php'
                     <div class="text-inner">
                       <h5><?php echo $customerName?></h5>
                       <h6>Garden Maintenance</h6>
+                      <?php
+        if ($row['status'] === 'order_in_progress') {
+          ?>
+            
                       <a href="message.php"><button class="messagebutton"
                           style="background-color: #70BE44; color: #fff;">Message Provider</button></a>
+                          
+<?php } elseif ($row['status'] === 'working') {
+                echo '';
+}
+        
+                ?>
                     </div>
                   </div>
                 </div>
@@ -598,8 +714,16 @@ include 'Black_logo_header.php'
                 <div class="col-lg-3 mb-3 mb-lg-0 align-self-center">
                   <div class="textwith-icon2 last-textinner">
                     <ul class="button-sec">
-                      <li><a href="#">Verify</a></li>
-                      <li class="arrive1d"><a href="#"><button>Arrived</button></a></li>
+                    <?php
+        if ($row['status'] === 'working') {
+            // Show the yellow button for "working" status
+            echo '<li><a style="background:#FFC400;border-radius:7px; color:white; padding:10px;" type="button" data-toggle="modal" data-target="#completed' . $proposalId . '" data-proposal-id="' . $proposalId . '">working</a></li>';
+        } elseif ($row['status'] === 'order_in_progress') {
+            // Show two buttons for "order_in_progress" status
+            echo '<li class="onetimepayment"><a type="button" data-toggle="modal" data-target="#confirmationModal' . $proposalId . '" data-proposal-id="' . $proposalId . '">Verify</a></li>';
+            echo '<li class="arrive1d"><a href="#"><button>Arrived</button></a></li>';
+        }
+        ?>
                     </ul>
                   </div>
                 </div>

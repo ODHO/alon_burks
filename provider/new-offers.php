@@ -259,9 +259,7 @@ function getServiceImages($service) {
                         <div class="modal" id="reject<?php echo $proposalId?>" role="dialog">
                             <div class="modal-dialog">
                                 <div class="modal-content">
-                                    <div class="modal-header">
-                                        
-                                    </div>
+                                   
                                     <div class="modal-body h-auto">
                                         <h2 class="pb-4">Are you sure you want to reject this offer?</h2>
                                     </div>

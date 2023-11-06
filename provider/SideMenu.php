@@ -33,6 +33,13 @@
             </a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="chats.php">
+              <i class="menu-icon mdi mdi-label-outline"></i>
+              <span class="menu-title">Chats</span>
+
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="replied-offers.php">
               <i class="menu-icon mdi mdi-account-check"></i>
               <span class="menu-title">Replied Offers</span>

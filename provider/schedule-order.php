@@ -392,7 +392,7 @@ function getServiceImages($service) {
                                             const providerId = document.getElementById('providerId').value;
                                             const customerId = document.getElementById('customerId').value;
                                             const providerName = document.getElementById('providerName').value;
-                                            const messageContent = `${providerName} has accepted your offer.`;
+                                            const messageContent = `${providerName} has arrived `;
 
                                             // Send an AJAX request to update the status to "scheduled_offer" and send a message
                                             const xhr = new XMLHttpRequest();
@@ -461,11 +461,10 @@ function getServiceImages($service) {
                           // Output the date with the appropriate CSS class
                         ?>
                         <h5 class="<?php echo $dateClass; ?>">
-                              <img src="<?php echo $imageSrc; ?>"/> <?php echo $selectedDate?> <br><?php echo $selectedTime?>
+                              <img src="<?php echo $imageSrc; ?>"/>  <?php echo $selectedDate , str_repeat('&nbsp;', 5), $selectedTime?>
                         </h5>
 
 
-                        <!-- <h5><img src="./images/schedule.png"/> <?php echo $selectedDate?> <br><?php echo $selectedTime?></h5> -->
                       </li>
                     </ul>
                   </div>
