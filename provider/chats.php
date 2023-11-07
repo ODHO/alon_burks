@@ -162,6 +162,7 @@ function getServiceImages($service) {
         <p style="color: #70BE44; padding-bottom: 20px;">Here are your Customers Chats </p>
       <div class="row">
         <div class="col-12">
+       
           <div class="chat-area">
             <!-- chatlist -->
             <div class="chatlist">
@@ -175,261 +176,194 @@ function getServiceImages($service) {
   
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                       <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="Open-tab" data-bs-toggle="tab" data-bs-target="#Open" type="button" role="tab"" aria-selected="true">Open</button>
+                        <button class="nav-link active" id="Open-tab" data-bs-toggle="tab" data-bs-target="#Open" type="button" role="tab" aria-selected="true">Open</button>
                       </li>
                       <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="Closed-tab" data-bs-toggle="tab" data-bs-target="#Closed" type="button" role="tab"" aria-selected="false">Closed</button>
+                        <button class="nav-link" id="Closed-tab" data-bs-toggle="tab" data-bs-target="#Closed" type="button" role="tab" aria-selected="false">Closed</button>
                       </li>
                     </ul>
                   </div>
   
                   <div class="modal-body">
                     <!-- chat-list -->
-                    <?php
-            include 'connection.php';
+                   
+                      <div class="chat-lists">
+                          <div class="tab-content<?php echo $customerId?> active" id="myTabContent<?php echo $customerId?>">
+                              <div class="tab-pane<?php echo $customerId?> fade show active" id="Open" role="tabpanel" aria-labelledby="Open-tab">
+                                  <?php
+                                  include 'connection.php';
 
-            $userId = $_SESSION['user_id'];
-            $providerName = $_SESSION['providerName'];
+                                  $userId = $_SESSION['user_id'];
+                                  $providerName = $_SESSION['providerName'];
+                      
+                                  $sql = "SELECT * FROM customer_proposal WHERE provider_id = ?";
+                                  $stmt = $conn->prepare($sql);
+                                  $stmt->bind_param('s', $userId);
+                      
+                                  if ($stmt->execute()) {
+                                      $result = $stmt->get_result();
+                                      if ($result->num_rows == 0) {
+                                        // No orders found for the provider
+                                        echo '<h2 class="text-center texter">No new orders available.</h2>';
+                                    } else {
+                                while ($row = $result->fetch_assoc()) {
+                                    $proposalId = $row['id'];
+                                    $customerId = $row['customer_id'];
+                                    $providerId = $row['provider_id'];
+                                    $selectedDate = $row['selected_date'];
+                                    $selectedTime = $row['selected_time'];
+                                    $userContent = $row['user_content'];
+                                    $selectedServices = explode(', ', $row['selected_services']);
+                                    $totalAmount = $row['total_amount'];
+                                    $current_time = $row['current_time'];
+                                    $counterTotall = $row['counter_totall'];
+                      
+                                    // Retrieve customer name and address based on customerId
+                                    $customerInfo = getCustomerInfo($customerId);
+                      
+                                    $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+                                    $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+                                    $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+                                    
+                                    
+                                    // Now you have an array containing the selected services and their prices for the customer
+                                    
+                                    // Output the retrieved customer name and address
+                                    $customerName = $customerInfo['fullname'];
+                                    $customerAddress = $customerInfo['address'];
+                                    $profile_picture = $customerInfo['profile_picture'];
 
-            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'working' OR status = 'order_in_progress') ORDER BY status = 'completed-pending' DESC, status = 'working' DESC, status = 'order_in_progress' DESC";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param('s', $userId);
+                                         ?>
+                                          <div class="chat-list">
+                                          
+                                          <a class="chat-tab-link" data-customer-id="<?php echo $customerId?>" data-customer-name="<?php echo $customerName?>" id="home-tab" data-toggle="tab" href="#home-tab<?php echo $customerId?>">
+                                          <div class="d-flex align-items-center">
+                                          <div class="flex-shrink-0">
+                                          <img class="img-fluid" style="border-radius: 136px;object-fit: fill;width: 60px;height: 60px;" src="../customer/<?php echo $profile_picture?>" alt="user img">
+                                          </div>
+                                          <div class="flex-grow-1 ms-3">
+                                          <h3><?php echo $customerName?></h3>
+                                          <p>front end developer</p>
+                                          </div>
+                                          </div>
+                                          </a>
+                                          </div>
+                                          <?php
+                                        }
+                                      }
+                                    } else {
+                                      echo 'Error executing the query.';
+                                    }
+                                  ?>
+                              </div>
+                          </div>
+                      </div>
 
-            if ($stmt->execute()) {
-                $result = $stmt->get_result();
-                if ($result->num_rows == 0) {
-                  // No orders found for the provider
-                  echo '<h2 class="text-center texter">No new orders available.</h2>';
-              } else {
-          while ($row = $result->fetch_assoc()) {
-              $proposalId = $row['id'];
-              $customerId = $row['customer_id'];
-              $providerId = $row['provider_id'];
-              $selectedDate = $row['year'] . '-' . $row['month'] . '-' . $row['day'];
-              $selectedTime = $row['selected_time'];
-              $userContent = $row['user_content'];
-              $selectedServices = explode(', ', $row['selected_services']);
-              $totalAmount = $row['total_amount'];
-              $current_time = $row['current_time'];
-              $counterTotall = $row['counter_totall'];
-
-              // Retrieve customer name and address based on customerId
-              $customerInfo = getCustomerInfo($customerId);
-
-              $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
-              $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
-              $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
-              
-              
-              // Now you have an array containing the selected services and their prices for the customer
-              
-              // Output the retrieved customer name and address
-              $customerName = $customerInfo['fullname'];
-              $customerAddress = $customerInfo['address'];
-              $profile_picture = $customerInfo['profile_picture'];
-            ?>
-            <!-- FIRST PROGRESS PROFILE -->
-           
-                    <!-- Assuming this part of the code is inside an HTML document -->
-<div class="chat-lists">
-    <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="Open" role="tabpanel" aria-labelledby="Open-tab">
-            <?php
-             include 'connection.php';
-
-             $userId = $_SESSION['user_id'];
-             $providerName = $_SESSION['providerName'];
- 
-             $sql = "SELECT * FROM customer_proposal WHERE provider_id = ?";
-             $stmt = $conn->prepare($sql);
-             $stmt->bind_param('s', $userId);
- 
-             if ($stmt->execute()) {
-                 $result = $stmt->get_result();
-                 if ($result->num_rows == 0) {
-                   // No orders found for the provider
-                   echo '<h2 class="text-center texter">No new orders available.</h2>';
-               } else {
-           while ($row = $result->fetch_assoc()) {
-               $proposalId = $row['id'];
-               $customerId = $row['customer_id'];
-               $providerId = $row['provider_id'];
-               $selectedDate = $row['year'] . '-' . $row['month'] . '-' . $row['day'];
-               $selectedTime = $row['selected_time'];
-               $userContent = $row['user_content'];
-               $selectedServices = explode(', ', $row['selected_services']);
-               $totalAmount = $row['total_amount'];
-               $current_time = $row['current_time'];
-               $counterTotall = $row['counter_totall'];
- 
-               // Retrieve customer name and address based on customerId
-               $customerInfo = getCustomerInfo($customerId);
- 
-               $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
-               $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
-               $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
-               
-               
-               // Now you have an array containing the selected services and their prices for the customer
-               
-               // Output the retrieved customer name and address
-               $customerName = $customerInfo['fullname'];
-               $customerAddress = $customerInfo['address'];
-               $profile_picture = $customerInfo['profile_picture'];
-
-                    echo $proposalId;
-                    echo $customerId;
-                    // Output a list item for each customer with a link to their chat
-                    echo '<div class="chat-list">';
-                    echo '<a href="chat.php?customer=' . $customerId . '">'; // You should have a chat page (chat.php) to handle the chat
-                    echo '<div class="d-flex align-items-center">';
-                    echo '<div class="flex-shrink-0">';
-                    echo '<img class="img-fluid" style="border-radius: 136px;object-fit: fill;width: 60px;height: 60px;" src="../customer/'. $profile_picture .'" alt="user img">';
-                    echo '</div>';
-                    echo '<div class="flex-grow-1 ms-3">';
-                    echo '<h3>' . $customerName . '</h3>';
-                    echo '<p>front end developer</p>'; // Modify this to display relevant customer info
-                    echo '</div>';
-                    echo '</div>';
-                    echo '</a>';
-                    echo '</div>';
-                  }
-                }
-              } else {
-                echo 'Error executing the query.';
-              }
-            ?>
-        </div>
-    </div>
-</div>
-
-                    <?php
-            }
-  }
-} else {
-  echo 'Error executing the query.';
-}
-?>
+                  
                     <!-- chat-list -->
                   </div>
                 </div>
               </div>
             </div>
             <!-- chatlist -->
-  
+            
             <!-- chatbox -->
             <div class="chatbox showbox">
+
               <div class="modal-dialog-scrollable">
-                <div class="modal-content">
-                  <div class="msg-head">
-                    <div class="row">
-                      <div class="col-8">
-                        <div class="d-flex align-items-center">
-                          <span class="chat-icon"><img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/arroleftt.svg" alt="image title"></span>
-                          <div class="flex-shrink-0">
-                            <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
+                <div class="tab-content<?php echo $customerId?>" id="myTabContent<?php echo $customerId?> active">
+                  <div class="tab-pane<?php echo $customerId?> fade show active in" id="home-tab<?php echo $customerId?>" role="tabpanel">
+                    <div class="modal-content">
+                      <div class="msg-head">
+                        <div class="row">
+                          <div class="col-8">
+                            <div class="d-flex align-items-center">
+                              <span class="chat-icon"><img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/arroleftt.svg" alt="image title"></span>
+                              <div class="flex-shrink-0">
+                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
+                              </div>
+                              <div class="flex-grow-1 ms-3">
+                                <h3 id="customerNameDisplay"><?php echo $customerName?></h3>
+                                <p>front end developer</p>
+                              </div>
+                            </div>
                           </div>
-                          <div class="flex-grow-1 ms-3">
-                            <h3>Mehedi Hasan</h3>
-                            <p>front end developer</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-4">
-                        <ul class="moreoption">
-                          <li class="navbar nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v" aria-hidden="true"></i></a>
-                            <ul class="dropdown-menu">
-                              <li><a class="dropdown-item" href="#">Action</a></li>
-                              <li><a class="dropdown-item" href="#">Another action</a></li>
-                              <li>
-                                <hr class="dropdown-divider">
+                          <div class="col-4">
+                            <ul class="moreoption">
+                              <li class="navbar nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v" aria-hidden="true"></i></a>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item" href="#">Action</a></li>
+                                  <li><a class="dropdown-item" href="#">Another action</a></li>
+                                  <li>
+                                    <hr class="dropdown-divider">
+                                  </li>
+                                  <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                </ul>
                               </li>
-                              <li><a class="dropdown-item" href="#">Something else here</a></li>
                             </ul>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-  
-                  <div class="modal-body">
-                    <div class="msg-body">
-                      <ul>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:06 am</span>
-                        </li>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:16 am</span>
-                        </li>
-                        <li class="repaly">
-                          <p>yes!</p>
-                          <span class="time">10:20 am</span>
-                        </li>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:26 am</span>
-                        </li>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:32 am</span>
-                        </li>
-                        <li class="repaly">
-                          <p>How are you?</p>
-                          <span class="time">10:35 am</span>
-                        </li>
-                        <li>
-                          <div class="divider">
-                            <h6>Today</h6>
                           </div>
-                        </li>
-  
-                        <li class="repaly">
-                          <p> yes, tell me</p>
-                          <span class="time">10:36 am</span>
-                        </li>
-                        <li class="repaly">
-                          <p>yes... on it</p>
-                          <span class="time">junt now</span>
-                        </li>
-  
-                      </ul>
-                    </div>
-                  </div>
-  
-                  <div class="send-box">
-                    <form action="">
-                      <input type="text" class="form-control" aria-label="message…" placeholder="Write message…">
-  
-                      <button type="button"><i class="fa fa-paper-plane" aria-hidden="true"></i> Send</button>
-                    </form>
-  
-                    <div class="send-btns">
-                      <div class="attach">
-                        <div class="button-wrapper">
-                          <span class="label">
-                            <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/upload.svg" alt="image title"> attached file
-                          </span><input type="file" name="upload" id="upload" class="upload-box" placeholder="Upload File" aria-label="Upload File">
-                        </div>
-  
-                        <select class="form-control" id="exampleFormControlSelect1">
-                          <option>Select template</option>
-                          <option>Template 1</option>
-                          <option>Template 2</option>
-                        </select>
-  
-                        <div class="add-apoint">
-                          <a href="#" data-toggle="modal" data-target="#exampleModal4"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewbox="0 0 16 16" fill="none">
-                              <path d="M8 16C3.58862 16 0 12.4114 0 8C0 3.58862 3.58862 0 8 0C12.4114 0 16 3.58862 16 8C16 12.4114 12.4114 16 8 16ZM8 1C4.14001 1 1 4.14001 1 8C1 11.86 4.14001 15 8 15C11.86 15 15 11.86 15 8C15 4.14001 11.86 1 8 1Z" fill="#7D7D7D" />
-                              <path d="M11.5 8.5H4.5C4.224 8.5 4 8.276 4 8C4 7.724 4.224 7.5 4.5 7.5H11.5C11.776 7.5 12 7.724 12 8C12 8.276 11.776 8.5 11.5 8.5Z" fill="#7D7D7D" />
-                              <path d="M8 12C7.724 12 7.5 11.776 7.5 11.5V4.5C7.5 4.224 7.724 4 8 4C8.276 4 8.5 4.224 8.5 4.5V11.5C8.5 11.776 8.276 12 8 12Z" fill="#7D7D7D" />
-                            </svg> Appoinment</a>
                         </div>
                       </div>
+      
+                      <div class="modal-body">
+                        <div class="msg-body">
+                          <ul>
+                            <li class="sender">
+                            <h3 id="customerNameDisplay"><?php echo $customerName?></h3>
+                              <p> Hey, Are you there?</p>
+                              <span class="time">10:06 am</span>
+                            </li>
+                            <li class="sender">
+                              <p> Hey, Are you there? </p>
+                              <span class="time">10:16 am</span>
+                            </li>
+                            <li class="repaly">
+                              <p>yes!</p>
+                              <span class="time">10:20 am</span>
+                            </li>
+                            <li class="sender">
+                              <p> Hey, Are you there? </p>
+                              <span class="time">10:26 am</span>
+                            </li>
+                            <li class="sender">
+                              <p> Hey, Are you there? </p>
+                              <span class="time">10:32 am</span>
+                            </li>
+                            <li class="repaly">
+                              <p>How are you?</p>
+                              <span class="time">10:35 am</span>
+                            </li>
+                            <li>
+                              <div class="divider">
+                                <h6>Today</h6>
+                              </div>
+                            </li>
+      
+                            <li class="repaly">
+                              <p> yes, tell me</p>
+                              <span class="time">10:36 am</span>
+                            </li>
+                            <li class="repaly">
+                              <p>yes... on it</p>
+                              <span class="time">junt now</span>
+                            </li>
+      
+                          </ul>
+                        </div>
+                      </div>
+      
+                      <div class="send-box">
+                        <form action="">
+                          <input type="text" class="form-control" aria-label="message…" placeholder="Write message…">
+      
+                          <button type="button"><i class="fa fa-paper-plane" aria-hidden="true"></i> Send</button>
+                        </form>
+      
+                       
+      
+                      </div>
                     </div>
-  
                   </div>
                 </div>
               </div>
@@ -450,7 +384,26 @@ function getServiceImages($service) {
     <!-- page-body-wrapper ends -->
   </div>
   <!-- container-scroller -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get all chat tab links
+        const chatTabLinks = document.querySelectorAll(".chat-tab-link");
 
+        // Get the chat box element
+        const customerNameDisplay = document.getElementById("customerNameDisplay");
+
+        // Iterate through each chat tab link and add a click event listener
+        chatTabLinks.forEach((chatTabLink) => {
+            chatTabLink.addEventListener("click", function() {
+                // Get the customer's name from the data-customer-name attribute
+                const customerName = this.dataset.customerName;
+
+                // Update the chat box content with the selected customer's name
+                customerNameDisplay.textContent = customerName;
+            });
+        });
+    });
+</script>
   <!-- plugins:js -->
   <script src="vendors/js/vendor.bundle.base.js"></script>
   <!-- endinject -->
@@ -478,7 +431,7 @@ function getServiceImages($service) {
 </body>
 
 </html>
-    <script>
+    <!-- <script>
     jQuery(document).ready(function() {
     
         $(".chat-list a").click(function() {
@@ -492,4 +445,4 @@ function getServiceImages($service) {
         });
     
     
-    });</script>
+    });</script> -->

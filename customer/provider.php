@@ -451,92 +451,90 @@ foreach ($servicesArray as $individualService) {
                     <div class="col-lg-9 mb-9 mb-lg-0">
                       <h2>Want Advance Booking for this Services</h2>
                     </div>
+                    
                     <div class="col-lg-3 mb-3 mb-lg-0">
-                      <div class="toggle-button-cover">
-                        <div class="button-cover">
-                          <div class="button r" id="button-1">
-                            <input type="checkbox" class="checkbox" id="toggle-switch" />
-                            <div class="knobs"></div>
-                            <div class="layer"></div>
-                          </div>
-                        </div>
+                      <div class="custom-toggle-container">
+                          <div id="custom-slider" class="custom-slider"></div>
                       </div>
                     </div>
                   </div>
 
 
 
-                  <div id='main'>
+                  
+                  <div id="custom-on-content" class="custom-content hidden" style="width:100%">
+                    <div class="row advnce" style="padding: 60px 0px;">
+                      <div class="advancebooking-calender">
+                        <h2>Set Your Advance Booking</h2>
+                        <div class="proposal-container">
+                          <div class="proposal">
+                            <div class="innerrow">
+                              <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
+                                <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="combine-date" type="date"></div>
+                              </div>
+                              <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
+                                <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
+                                  <div style="text-align: left;">
+                                    <p style="text-align:left; font-size:20px">From</p>
+                                    <li><input type="time"></li>
+                                  </div>
+                                  <div style="text-align: left;">
+                                    <p style="text-align:left; font-size:20px">To</p>
+                                    <li><input type="time"></li>
+                                  </div>
+                                </ul>
+                                <ul class="time-advance">
+                                  <p style="text-align:left; font-size:20px">Already Booked Timing</p>
+                                  <li><input type="time"></li>
+                                  <li><input type="time"></li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-lg-12 text-center py-3">
+                          <button id="addProposal" style="padding:10px;padding-left:50px;padding-right:50px;background-color:#70BE44;border-radius:30px; border:none;color:white;font-size:20px">
+                          Add more
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+           
+                  </div>
+                  <div id="custom-off-content" class="custom-content" style="width:100%">
+                  <!-- <div id='main'>
                     <h3>Choose Your Time & Date</h3>
                     <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
                     <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
                     <div id='app'></div>
-                  </div>
-                  <div id="content-on" style="display: none;width:100%">
-                    <div class="row advnce" style="padding: 60px 0px;">
-                      <div class="advancebooking-calender">
-                        <h2>Set Your Advance Booking</h2>
-                        <div class="innerrow">
-                          <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                            <h1> <img src="./images/calender.png" />29-June-2023 , MON</h1>
+                  </div> -->
+                  <div class="proposal" style="backgroun-color:antiquewhite">
+                            <div class="innerrow">
+                              <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
+                                <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="selected_date" type="date"></div>
+                              </div>
+                              <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
+                                <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
+                                  <div style="text-align: left;">
+                                    <p style="text-align:left; font-size:20px">From</p>
+                                    <li><input type="time" id="from"></li>
+                                  </div>
+                                  <div style="text-align: left;">
+                                    <p style="text-align:left; font-size:20px">To</p>
+                                    <li><input type="time" id="to"></li>
+                                  </div>
+                                </ul>
+                                <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
+                                <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
+                                <ul class="time-advance">
+                                  <p style="text-align:left; font-size:20px">Already Booked Timing</p>
+                                  <li><input type="time"></li>
+                                  <li><input type="time"></li>
+                                </ul>
+                              </div>
+                            </div>
                           </div>
-                          <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                            <h5>Hours Require <span>02</span></h5>
-                            <ul class="time-advance">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                            <ul class="time-advance1">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                          </div>
-
-                        </div>
-                        <div class="innerrow" style="margin-top: 30px; background-color: #E7212121;">
-                          <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                            <h1> <img src="./images/calender.png" />29-June-2023 , MON</h1>
-                          </div>
-                          <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                            <h5>Hours Require <span>02</span></h5>
-                            <ul class="time-advance">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                            <ul class="time-advance1">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                          </div>
-
-                        </div>
-
-                        <div class="innerrow"
-                          style="margin-top: 30px; background-color: #ffc4006e                                          ;">
-                          <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                            <h1> <img src="./images/calender.png" />29-June-2023 , MON</h1>
-                          </div>
-                          <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                            <h5>Hours Require <span>02</span></h5>
-                            <ul class="time-advance">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                            <ul class="time-advance1">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                          </div>
-
-                        </div>
-                      </div>
-                    </div>
-                    <div class="shortmessage">
-                      <h4 style="text-align: center;">Describe your task</h4>
-                      <textarea placeholder="Give your Note to the worker"></textarea>
-                    </div>
-                  </div>
-                  <div id="content-off" style="display: block;width:100%">
                       <div class="booked-hours">
                         <h4>Already Booked hours</h4>
                         <div class="row">
@@ -552,7 +550,7 @@ foreach ($servicesArray as $individualService) {
                           </div>
                         </div>
                       </div>
-                      <div class="text-header">
+                      <!-- <div class="text-header">
                         <h4>Set Time</h4>
                       </div>
                       <div class="time-selection">
@@ -794,12 +792,13 @@ foreach ($servicesArray as $individualService) {
                             </li>
                           </ul>
                         </div>
-                      </div>
-                      <div class="shortmessage">
+                      </div> -->
+                     
+                  </div>
+                  <div class="shortmessage">
                         <h4>Task Description</h4>
                         <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
                       </div>
-                  </div>
                 </div>
                 <input type="button" name="next" class="next action-button" value="Continue" />
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
@@ -848,7 +847,7 @@ foreach ($servicesArray as $individualService) {
                             <h4>Booking Timing</h4>
                             <li>
                                 <i style="color: #70BE44;" class="fa fa-clock" aria-hidden="true"></i>
-                                <span id="selected-booking-time"></span>
+                                <span id="date_display_from"></span>
                             </li>
                         </ul>
 
@@ -966,8 +965,7 @@ foreach ($servicesArray as $individualService) {
  
 <script>
   const totalAmountElement = document.getElementById('total-amount');
-
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+ const checkboxes = document.querySelectorAll('input[type="checkbox"]');
   const selectedServicesList2 = document.getElementById('selected-services-list2');
 
   function updateTotalAmount() {
@@ -999,99 +997,28 @@ foreach ($servicesArray as $individualService) {
     });
   });
 </script>
-<script>
-    // Get all the time slot elements
-    const timeSlots = document.querySelectorAll('#custom-timeslot li');
-    const timeSlotMinutes = document.querySelectorAll('#custom-timeslot1 li');
-    const amPmElements = document.querySelectorAll('#custom-timeslot2 li');
 
-    // Initialize selected time variables
-    let selectedHour = '01'; // Default selected hour
-    let selectedMinute = '00'; // Default selected minute
-    let selectedAmPm = 'AM'; // Default selected AM/PM
-
-    // Function to update the selected time
-    function updateSelectedTime() {
-        // Find the selected hour and minute
-        timeSlots.forEach((slot, index) => {
-            if (slot.classList.contains('selected')) {
-                selectedHour = ('0' + (index + 1)).slice(-2); // Format to two digits
-            }
-        });
-
-        timeSlotMinutes.forEach((minuteSlot, index) => {
-            if (minuteSlot.classList.contains('selected')) {
-                selectedMinute = ('0' + index).slice(-2); // Format to two digits
-            }
-        });
-
-        // Find the selected AM/PM
-        amPmElements.forEach((element) => {
-            if (element.classList.contains('selected')) {
-                selectedAmPm = element.textContent;
-            }
-        });
-
-        // Update the <span> with the selected time
-        const selectedTimeElement = document.getElementById('selected-booking-time');
-        selectedTimeElement.textContent = `${selectedHour}:${selectedMinute} ${selectedAmPm}`;
-    }
-
-      // Add event listeners to time slots for click events
-      timeSlots.forEach((slot) => {
-          slot.addEventListener('click', () => {
-              // Toggle the 'selected' class on click
-              timeSlots.forEach((s) => s.classList.remove('selected'));
-              slot.classList.add('selected');
-
-              // Update the selected time
-              updateSelectedTime();
-          });
-      });
-
-      // Add event listeners to time slot minutes for click events
-      timeSlotMinutes.forEach((minuteSlot) => {
-          minuteSlot.addEventListener('click', () => {
-              // Toggle the 'selected' class on click
-              timeSlotMinutes.forEach((s) => s.classList.remove('selected'));
-              minuteSlot.classList.add('selected');
-
-              // Update the selected time
-              updateSelectedTime();
-          });
-      });
-
-      // Add event listeners to AM/PM elements for click events
-      amPmElements.forEach((element) => {
-          element.addEventListener('click', () => {
-              // Toggle the 'selected' class on click
-              amPmElements.forEach((el) => el.classList.remove('selected'));
-              element.classList.add('selected');
-
-              // Update the selected time
-              updateSelectedTime();
-          });
-      });
-
-      // Initial update when the page loads
-      updateSelectedTime();
-
-  </script>
   <script>
-  const toggleSwitch = document.getElementById("toggle-switch");
-  const contentOn = document.getElementById("content-on");
-  const contentOff = document.getElementById("content-off");
+      document.addEventListener('DOMContentLoaded', function () {
+      const slider = document.getElementById('custom-slider');
+      const onContent = document.getElementById('custom-on-content');
+      const offContent = document.getElementById('custom-off-content');
+      let isToggled = false;
+      slider.addEventListener('click', function () {
+          isToggled = !isToggled;
 
-  toggleSwitch.addEventListener("change", function () {
-    if (toggleSwitch.checked) {
-      contentOn.style.display = "block"; // Show the "on" content
-      contentOff.style.display = "none"; // Hide the "off" content
-    } else {
-      contentOn.style.display = "none"; // Hide the "on" content
-      contentOff.style.display = "block"; // Show the "off" content
-    }
-  });
-</script>
+          if (isToggled) {
+              slider.style.left = '30px';
+              onContent.classList.remove('hidden');
+              offContent.classList.add('hidden');
+          } else {
+              slider.style.left = '0';
+              onContent.classList.add('hidden');
+              offContent.classList.remove('hidden');
+          }
+      });
+        });
+  </script>
 <script>
    // JavaScript
    document.getElementById('task-description').addEventListener('input', function () {
@@ -1101,13 +1028,40 @@ foreach ($servicesArray as $individualService) {
         // Display the input in the <p> element
         document.getElementById('display-task-description').textContent = userContent;
     });
+    // selectedTime: document.getElementById('from').value,
+    document.getElementById('from').addEventListener('input', function () {
+    // Get the input from the textarea
+    const selectedTime = this.value;
+
+    // Parse the input as a time and create a Date object
+    const timeParts = selectedTime.split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = parseInt(timeParts[1], 10);
+    const isPM = hours >= 12;
+
+    // Format the time in 12-hour AM/PM format
+    let formattedTime;
+    if (hours === 0) {
+        formattedTime = `12:${minutes} AM`;
+    } else if (hours === 12) {
+        formattedTime = `12:${minutes} PM`;
+    } else if (isPM) {
+        formattedTime = `${hours - 12}:${minutes} PM`;
+    } else {
+        formattedTime = `${hours}:${minutes} AM`;
+    }
+
+    // Display the formatted time in the <p> element
+    document.getElementById('date_display_from').textContent = formattedTime;
+});
+
   function preview_images() {
     var preview = document.getElementById("image_preview");
     var files = document.getElementById("images").files;
 
     if (files.length !== 5) {
         alert("Please select exactly 5 images.");
-        return;
+        // return;
     }
 
     preview.innerHTML = ""; // Clear previous preview
@@ -1129,38 +1083,8 @@ foreach ($servicesArray as $individualService) {
         reader.readAsDataURL(file);
     }
   }
-  // function uploadImages(customerId, providerId) {
-  //   const files = document.getElementById("images").files;
-
-  //   if (files.length !== 5) {
-  //       alert("Please select exactly 5 images.");
-  //       return;
-  //   }
-
-  //   const formData = new FormData();
-
-  //   for (let i = 0; i < files.length; i++) {
-  //       formData.append("images[]", files[i]);
-  //   }
-
-  //   // Include both customerId and providerId in the form data
-  //   formData.append("customerId", customerId);
-  //   formData.append("providerId", providerId);
-
-  //   // Send the image data to the server using a new AJAX request
-  //   const xhr = new XMLHttpRequest();
-  //   xhr.open('POST', 'add.php'); // Create a new PHP file to handle image uploads
-  //   xhr.send(formData);
-
-  //   xhr.onreadystatechange = function () {
-  //       if (xhr.readyState === 4 && xhr.status === 200) {
-  //           // Handle the server's response here, if needed
-  //           console.log(xhr.responseText);
-  //       }
-  //   };
-  // }
   function getSelectedServicesWithPrices() {
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+   
     const selectedServices = [];
 
     checkboxes.forEach((checkbox, index) => {
@@ -1200,16 +1124,6 @@ function uploadImages(customerId, providerId, files) {
 
 document.getElementById('submit-date').addEventListener('click', function () {
 
-    // Find the selected date from the calendar
-    const selectedDateElement = document.querySelector('.calendar-day.active');
-    if (selectedDateElement) {
-
-        const dateYear = selectedDateElement.getAttribute('date-year');
-        const dateMonth = selectedDateElement.getAttribute('date-month');
-        const dateDay = selectedDateElement.getAttribute('date-day');
-
-        // Get the selected time
-        const selectedTime = getSelectedTime();
 
         // Get the customer ID from the input field
         const customerId = document.getElementById('customer-id').value;
@@ -1230,19 +1144,23 @@ document.getElementById('submit-date').addEventListener('click', function () {
         
         // Create an array to store the selected image files
         const imageFiles = document.getElementById('images').files;
+// Parse and format the selectedTime and selectedTimeTo
+const selectedTime = document.getElementById('from').value;
+    const selectedTimeTo = document.getElementById('to').value;
 
+    const formattedTime = formatTime(selectedTime);
+    const formattedTimeTo = formatTime(selectedTimeTo);
         // Create a JavaScript object with all the non-image data
         const data = {
+            selectedDate: document.getElementById('selected_date').value,
+            selectedTime: formattedTime, // Use the formatted time
+        selectedTimeTo: formattedTimeTo, // Use the formatted time
+            customerId: document.getElementById('customer-id').value,
+            // providerId: document.getElementById('provider-id').value,
             customerId: customerId,
             providerId: providerId,
             statusFrom: 'customer_send',
             messageContent: messageContent,
-            selectedDate: {
-                year: dateYear,
-                month: dateMonth,
-                day: dateDay,
-            },
-            selectedTime: selectedTime,
             userContent: userContent,
             selectedServices: getSelectedServicesWithPrices(),
             totalAmount: totalAmount,
@@ -1264,12 +1182,26 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
         // After sending non-image data, upload images separately
         uploadImages(customerId, providerId, imageFiles);
-    } else {
-        alert('Please select a date from the calendar.');
-    }
+    
 });
 
+// Function to format time from 24-hour to 12-hour format
+function formatTime(time) {
+    const timeParts = time.split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = timeParts[1];
+    const isPM = hours >= 12;
 
+    if (hours === 0) {
+        return `12:${minutes} AM`;
+    } else if (hours === 12) {
+        return `12:${minutes} PM`;
+    } else if (isPM) {
+        return `${hours - 12}:${minutes} PM`;
+    } else {
+        return `${hours}:${minutes} AM`;
+    }
+}
     // Implement a function to get the selected time from your time selection elements
     function getSelectedTime() {
         const amPmElement = document.querySelector('#custom-timeslot2 li.selected p');
@@ -1285,7 +1217,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
     // Function to get the selected services
     function getSelectedServices() {
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+     
       const selectedServices = [];
 
       checkboxes.forEach((checkbox) => {
@@ -1302,7 +1234,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
     // Function to calculate the total amount based on selected services
     function calculateTotalAmount() {
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+       
         let totalAmount = 0;
 
         checkboxes.forEach((checkbox) => {
@@ -1334,15 +1266,15 @@ submitButton.addEventListener('click', function () {
         // Redirect to the service page after 5 seconds
         setTimeout(function () {
             window.location.href = 'services.php'; // Replace with the actual URL
-        }, 100); // 5000 milliseconds (5 seconds)
-    }, 4000); // 5000 milliseconds (5 seconds)
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
 });
 
 </script>
 <script>
   const selectedServicesList = document.getElementById('selected-services-list');
   const totalAmountElement = document.getElementById('total-amount');
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+ 
 
   function updateSelectedServices() {
     selectedServicesList.innerHTML = ''; // Clear the selected services list
@@ -1376,7 +1308,46 @@ submitButton.addEventListener('click', function () {
   updateSelectedServices();
 </script>
 
+<script>
+                 document.addEventListener('DOMContentLoaded', function () {
+                const addProposalButton = document.getElementById('addProposal');
+                const proposalContainer = document.querySelector('.proposal-container');
+                const proposalTemplate = document.querySelector('.proposal'); // Template for cloning
+                const maxProposals = 9; // Maximum number of proposals
+                let proposalCount = 0;
 
+                // Function to generate a random pastel background color
+                function getRandomPastelColor() {
+                    const letters = '89ABCDEF'; // Use a limited range of letters for lighter colors
+                    let color = '#';
+                    for (let i = 0; i < 6; i++) {
+                        color += letters[Math.floor(Math.random() * letters.length)];
+                    }
+                    return color;
+                }
+
+                addProposalButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    if (proposalCount < maxProposals) {
+                        const newProposal = proposalTemplate.cloneNode(true); // Clone the proposal template
+                        proposalContainer.appendChild(newProposal); // Append the cloned proposal
+
+                        // Change the background color of the newly added proposal to a random pastel color
+                        newProposal.style.backgroundColor = getRandomPastelColor();
+                        newProposal.style.marginTop = '20px';
+                        newProposal.style.borderRadius = '20px';
+
+                        proposalCount++;
+
+                        if (proposalCount === maxProposals) {
+                            addProposalButton.disabled = true; // Disable the button when the maximum limit is reached
+                        }
+                    }
+                });
+              });
+
+            </script>
 
   <!-- jQuery -->
   <script src="plugins/jQuery/jquery.min.js"></script>

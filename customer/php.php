@@ -18,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         isset($postData->selectedServices) &&
         isset($postData->totalAmount) &&
         isset($postData->statusFrom) &&
-        !empty($postData->messageContent)
+        isset($postData->selectedTimeTo) &&
+        !empty($postData->messageContent) 
     ) {
         // Extract customer ID, provider ID, selected date, selected time, user content, selected services, and total amount
         $customerId = $postData->customerId;
@@ -29,20 +30,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selectedServices = $postData->selectedServices;//implode(', ',$postData->selectedServices);
         $totalAmount = $postData->totalAmount;
         $statusFrom = $postData->statusFrom;
+        $selectedTimeTo = $postData->selectedTimeTo;
         $messageContent = $postData->messageContent;
         
         // Start a database transaction
         $conn->begin_transaction();
 
         // Insert data into your customer_proposal table
-        $sql = "INSERT INTO customer_proposal (customer_id, provider_id, year, month, day, selected_time, user_content, selected_services, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO customer_proposal (customer_id, provider_id, selected_date, selected_time, user_content, selected_services, total_amount, selected_time_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $servicename = array();
         foreach($selectedServices as $val) {
             $servicename[] = $val->serviceName;
         }
         $serviceNames  = implode(', ',$servicename);
-        $stmt->bind_param('ssssssssd', $customerId, $providerId, $selectedDate->year, $selectedDate->month, $selectedDate->day, $selectedTime, $userContent, $serviceNames, $totalAmount);
+        $stmt->bind_param('ssssssdd', $customerId, $providerId, $selectedDate, $selectedTime, $userContent, $serviceNames, $totalAmount, $selectedTimeTo);
 
         if ($stmt->execute()) {
             $proposalId = $stmt->insert_id; // Get the generated proposal_id

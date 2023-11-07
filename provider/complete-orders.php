@@ -193,7 +193,7 @@ function getServiceImages($service) {
               $proposalId = $row['id'];
               $customerId = $row['customer_id'];
               $providerId = $row['provider_id'];
-              $selectedDate = $row['year'] . '-' . $row['month'] . '-' . $row['day'];
+              $selectedDate = $row['selected_date'];
               $selectedTime = $row['selected_time'];
               $userContent = $row['user_content'];
               $selectedServices = explode(', ', $row['selected_services']);
