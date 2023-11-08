@@ -3629,8 +3629,11 @@ padding-top:20px;
   border-radius: 2px;
 }
 .booked-hours {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
   width: 100%;
-  padding: 60px 140px;
+  padding: 0px 140px;
 }
 .booked-hours button.blue {
   background: #00b2ff7d;

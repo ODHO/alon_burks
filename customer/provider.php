@@ -422,17 +422,16 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                   <div class="select-service-booking">
                     <h4>Select Services you need</h4>
                     <div class="row">
-                    <?php
-foreach ($servicesArray as $individualService) {
-    $serviceInfo = $serviceData[$individualService];
-    $serviceId = $serviceInfo['id'];
-    // print_r($individualService);
-    echo "<div class='col-lg-3 mb-3 mb-lg-0'>";
-    echo "<label><input type='checkbox' name='selected_services[]' value='$individualService' data-service-id='$serviceId'>$individualService</label>";
-    echo "</div>";
-}
-?>
-
+                      <?php
+                        foreach ($servicesArray as $individualService) {
+                            $serviceInfo = $serviceData[$individualService];
+                            $serviceId = $serviceInfo['id'];
+                            // print_r($individualService);
+                            echo "<div class='col-lg-3 mb-3 mb-lg-0'>";
+                            echo "<label><input type='checkbox' name='selected_services[]' value='$individualService' data-service-id='$serviceId'>$individualService</label>";
+                            echo "</div>";
+                        }
+                      ?>
                     </div>
                   </div>
 
@@ -485,8 +484,8 @@ foreach ($servicesArray as $individualService) {
                                 </ul>
                                 <ul class="time-advance">
                                   <p style="text-align:left; font-size:20px">Already Booked Timing</p>
-                                  <li><input type="time"></li>
-                                  <li><input type="time"></li>
+                                  <li><input type="time" /></li>
+                                  <li><input type="time" /></li>
                                 </ul>
                               </div>
                             </div>
@@ -503,302 +502,49 @@ foreach ($servicesArray as $individualService) {
            
                   </div>
                   <div id="custom-off-content" class="custom-content" style="width:100%">
-                  <!-- <div id='main'>
-                    <h3>Choose Your Time & Date</h3>
-                    <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
-                    <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
-                    <div id='app'></div>
-                  </div> -->
-                  <div class="proposal" style="backgroun-color:antiquewhite">
-                            <div class="innerrow">
-                              <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                                <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="selected_date" type="date"></div>
-                              </div>
-                              <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                                <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
-                                  <div style="text-align: left;">
-                                    <p style="text-align:left; font-size:20px">From</p>
-                                    <li><input type="time" id="from"></li>
-                                  </div>
-                                  <div style="text-align: left;">
-                                    <p style="text-align:left; font-size:20px">To</p>
-                                    <li><input type="time" id="to"></li>
-                                  </div>
-                                </ul>
-                                <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
-                                <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
-                                <ul class="time-advance">
-                                  <p style="text-align:left; font-size:20px">Already Booked Timing</p>
-                                  <li><input type="time"></li>
-                                  <li><input type="time"></li>
-                                </ul>
-                              </div>
-                            </div>
+                    <div class="proposal" style="backgroun-color:antiquewhite">
+                        <div class="innerrow">
+                          <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
+                            <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="selected_date" type="date"></div>
                           </div>
-                      <div class="booked-hours">
+                          <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
+                            <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
+                              <div style="text-align: left;">
+                                <p style="text-align:left; font-size:20px">From</p>
+                                <li><input type="time" id="from"></li>
+                              </div>
+                              <div style="text-align: left;">
+                                <p style="text-align:left; font-size:20px">To</p>
+                                <li><input type="time" id="to"></li>
+                              </div>
+                            </ul>
+                            <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
+                            <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
+                            
+                          </div>
+                        </div>
+                      <div style="marging-top:20px">
                         <h4>Already Booked hours</h4>
-                        <div class="row">
-                          <div class="col-lg-4 mb-4 mb-lg-0">
-                            <button type="button" class="green">6PM -9 PM</button>
+                        <div class="booked-hours">
+                          <div class="row">
+                            <!-- <div class="col-lg-4 mb-4 mb-lg-0">
+                              <button type="button" class="green">6PM -9 PM</button>
+                            </div>
+                            <div class="col-lg-4 mb-4 mb-lg-0">
+                              <button type="button" class="orange">10 AM -12 PM</button>
+                            </div>
+                            <div class="col-lg-4 mb-4 mb-lg-0">
+                              <button type="button" class="blue">2PM-4PM</button>
+                            </div> -->
                           </div>
-                          <div class="col-lg-4 mb-4 mb-lg-0">
-                            <button type="button" class="orange">10 AM -12 PM</button>
-                          </div>
-                          <div class="col-lg-4 mb-4 mb-lg-0">
-                            <button type="button" class="blue">2PM-4PM</button>
-
-                          </div>
                         </div>
-                      </div>
-                      <!-- <div class="text-header">
-                        <h4>Set Time</h4>
-                      </div>
-                      <div class="time-selection">
-                        <div class="hours-slots">
-                          <ul id="custom-timeslot">
-                            <li>
-                              <p>01</p>
-                            </li>
-                            <li>
-                              <p oncha>02</p>
-                            </li>
-                            <li>
-                              <p>03</p>
-                            </li>
-                            <li>
-                              <p>04</p>
-                            </li>
-                            <li>
-                              <p>05</p>
-                            </li>
-                            <li>
-                              <p>06</p>
-                            </li>
-                            <li>
-                              <p>07</p>
-                            </li>
-                            <li>
-                              <p>08</p>
-                            </li>
-                            <li>
-                              <p>09</p>
-                            </li>
-                            <li>
-                              <p>10</p>
-                            </li>
-                            <li>
-                              <p>11</p>
-                            </li>
-                            <li>
-                              <p>12</p>
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div class="ratio-time">:</div>
-                        <div class="hours-slots">
-
-                          <ul id="custom-timeslot1">
-                            <li>
-                              <p>00</p>
-                            </li>
-                            <li>
-                              <p>01</p>
-                            </li>
-                            <li>
-                              <p>02</p>
-                            </li>
-                            <li>
-                              <p>03</p>
-                            </li>
-                            <li>
-                              <p>04</p>
-                            </li>
-                            <li>
-                              <p>05</p>
-                            </li>
-                            <li>
-                              <p>06</p>
-                            </li>
-                            <li>
-                              <p>07</p>
-                            </li>
-                            <li>
-                              <p>08</p>
-                            </li>
-                            <li>
-                              <p>09</p>
-                            </li>
-                            <li>
-                              <p>10</p>
-                            </li>
-                            <li>
-                              <p>11</p>
-                            </li>
-                            <li>
-                              <p>12</p>
-                            </li>
-                            <li>
-                              <p>13</p>
-                            </li>
-                            <li>
-                              <p>14</p>
-                            </li>
-                            <li>
-                              <p>15</p>
-                            </li>
-                            <li>
-                              <p>16</p>
-                            </li>
-                            <li>
-                              <p>17</p>
-                            </li>
-                            <li>
-                              <p>18</p>
-                            </li>
-                            <li>
-                              <p>19</p>
-                            </li>
-                            <li>
-                              <p>20</p>
-                            </li>
-                            <li>
-                              <p>21</p>
-                            </li>
-                            <li>
-                              <p>22</p>
-                            </li>
-                            <li>
-                              <p>23</p>
-                            </li>
-                            <li>
-                              <p>24</p>
-                            </li>
-                            <li>
-                              <p>25</p>
-                            </li>
-                            <li>
-                              <p>26</p>
-                            </li>
-                            <li>
-                              <p>27</p>
-                            </li>
-                            <li>
-                              <p>28</p>
-                            </li>
-                            <li>
-                              <p>29</p>
-                            </li>
-                            <li>
-                              <p>30</p>
-                            </li>
-                            <li>
-                              <p>31</p>
-                            </li>
-                            <li>
-                              <p>32</p>
-                            </li>
-                            <li>
-                              <p>33</p>
-                            </li>
-                            <li>
-                              <p>34</p>
-                            </li>
-                            <li>
-                              <p>35</p>
-                            </li>
-                            <li>
-                              <p>36</p>
-                            </li>
-                            <li>
-                              <p>37</p>
-                            </li>
-                            <li>
-                              <p>38</p>
-                            </li>
-                            <li>
-                              <p>39</p>
-                            </li>
-                            <li>
-                              <p>40</p>
-                            </li>
-                            <li>
-                              <p>41</p>
-                            </li>
-                            <li>
-                              <p>42</p>
-                            </li>
-                            <li>
-                              <p>43</p>
-                            </li>
-                            <li>
-                              <p>44</p>
-                            </li>
-                            <li>
-                              <p>45</p>
-                            </li>
-                            <li>
-                              <p>46</p>
-                            </li>
-                            <li>
-                              <p>47</p>
-                            </li>
-                            <li>
-                              <p>48</p>
-                            </li>
-                            <li>
-                              <p>49</p>
-                            </li>
-                            <li>
-                              <p>50</p>
-                            </li>
-                            <li>
-                              <p>51</p>
-                            </li>
-                            <li>
-                              <p>52</p>
-                            </li>
-                            <li>
-                              <p>53</p>
-                            </li>
-                            <li>
-                              <p>54</p>
-                            </li>
-                            <li>
-                              <p>55</p>
-                            </li>
-                            <li>
-                              <p>56</p>
-                            </li>
-                            <li>
-                              <p>57</p>
-                            </li>
-                            <li>
-                              <p>58</p>
-                            </li>
-                            <li>
-                              <p>59</p>
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div class="hours-slots">
-                          <ul id="custom-timeslot2">
-                            <li>
-                              <p>AM</p>
-                            </li>
-                            <li>
-                              <p>PM</p>
-                            </li>
-                          </ul>
-                        </div>
-                      </div> -->
-                     
+                      </div> 
+                    </div>
                   </div>
                   <div class="shortmessage">
-                        <h4>Task Description</h4>
-                        <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
-                      </div>
+                    <h4>Task Description</h4>
+                    <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
+                  </div>
                 </div>
                 <input type="button" name="next" class="next action-button" value="Continue" />
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
@@ -962,7 +708,53 @@ foreach ($servicesArray as $individualService) {
   </footer>
 
   <!-- footer end -->
- 
+ <script>
+  // Add this code to your existing JavaScript
+
+// Function to fetch and display already booked hours for the selected date
+function fetchBookedHours(providerId, selectedDate) {
+    const bookedHoursElement = document.querySelector('.booked-hours');
+
+    // Use AJAX to fetch booked hours
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'get_booked_hours.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const bookedHours = JSON.parse(xhr.responseText);
+
+            // Clear the current booked hours
+            bookedHoursElement.innerHTML = '';
+
+            // Add booked hours to the page
+            for (const bookedHour of bookedHours) {
+                const bookedHourButton = document.createElement('button');
+                bookedHourButton.textContent = `${bookedHour.from} - ${bookedHour.to}`;
+                bookedHourButton.setAttribute('type', 'button');
+                // Add a class or style based on your color code (e.g., green, orange, blue)
+                // Example: bookedHourButton.classList.add('green');
+                bookedHoursElement.appendChild(bookedHourButton);
+            }
+        }
+    };
+
+    // Send the provider ID and selected date to the PHP script
+    const requestData = {
+        providerId: providerId,
+        selectedDate: selectedDate,
+    };
+    xhr.send(JSON.stringify(requestData));
+}
+
+// Add an event listener to the date input
+const selectedDateInput = document.getElementById('selected_date');
+selectedDateInput.addEventListener('change', function () {
+    const providerId = document.getElementById('provider-id').value;
+    const selectedDate = selectedDateInput.value;
+    fetchBookedHours(providerId, selectedDate);
+});
+
+ </script>
 <script>
   const totalAmountElement = document.getElementById('total-amount');
  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
@@ -1266,8 +1058,8 @@ submitButton.addEventListener('click', function () {
         // Redirect to the service page after 5 seconds
         setTimeout(function () {
             window.location.href = 'services.php'; // Replace with the actual URL
-        }, 1000000); // 5000 milliseconds (5 seconds)
-    }, 40000000); // 5000 milliseconds (5 seconds)
+        }, 100); // 5000 milliseconds (5 seconds)
+    }, 4000); // 5000 milliseconds (5 seconds)
 });
 
 </script>

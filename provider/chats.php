@@ -93,6 +93,38 @@ function getServiceImages($service) {
 
   return $servicesImages;
 }
+// Define the getChatMessages function
+// function getChatMessages($customerId, $proposalId) {
+//     global $conn;
+
+//     // Prepare a SQL query to fetch chat messages
+//     $sql = "SELECT * FROM chat WHERE customer_id = ? AND proposal_id = ? ORDER BY created_at ASC";
+//     $stmt = $conn->prepare($sql);
+//     $stmt->bind_param('ss', $customerId, $proposalId);
+
+//     // Execute the query
+//     if ($stmt->execute()) {
+//         $result = $stmt->get_result();
+
+//         // Create an array to store the chat messages
+//         $chatMessages = array();
+
+//         // Fetch chat messages and add them to the array
+//         while ($row = $result->fetch_assoc()) {
+//             $chatMessages[] = array(
+//                 'message' => $row['message'],
+//                 'created_at' => $row['created_at']
+//             );
+//         }
+
+//         // Return the array of chat messages
+//         return $chatMessages;
+//     } else {
+//         // Handle any errors in executing the query
+//         return array(); // Return an empty array on error
+//     }
+// }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -156,13 +188,288 @@ function getServiceImages($service) {
         <!-- START ROW MAIN-PANEL -->
         <!-- MESSAGE BOX START  -->
       <!-- char-area -->
+      <style>
+.chat-container {
+    display: flex;
+}
+
+.sidebar {
+    width: 20%;
+    background: #f0f0f0;
+    padding: 20px;
+}
+
+.chat-tabs {
+    list-style: none;
+    padding: 0;
+}
+
+.chat-tabs li {
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #fff;
+}
+
+.chat-tabs li.active {
+    background: #007BFF;
+    color: #fff;
+}
+
+.chat-area {
+    flex: 1;
+    padding: 20px;
+}
+
+.chat-header {
+    background: #007BFF;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+}
+
+.chat-messages {
+    min-height: 300px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    overflow-y: scroll;
+}
+
+.chat-input {
+  display: flex;
+    align-items: center;
+    padding: 10px;
+    justify-content: center;
+    width: 100%;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.chat-input button {
+    background: #007BFF;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+      </style>
 <section class="message-area">
-    <div class="container">
-        <h2 style="color: #000; font-weight: bold;">Messages</h2>
-        <p style="color: #70BE44; padding-bottom: 20px;">Here are your Customers Chats </p>
-      <div class="row">
-        <div class="col-12">
-       
+<?php
+// Include your connection and functions here
+include 'connection.php'; // Include your database connection file
+
+// Function to get chat messages for a specific customer and proposal
+function getChatMessages($customerId, $proposalId) {
+    global $conn;
+
+    // Prepare a SQL query to fetch chat messages
+    $sql = "SELECT * FROM chat WHERE customer_id = ? AND proposal_id = ? ORDER BY created_at ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ss', $customerId, $proposalId);
+
+    // Execute the query
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+
+        // Create an array to store the chat messages
+        $chatMessages = array();
+
+        // Fetch chat messages and add them to the array
+        while ($row = $result->fetch_assoc()) {
+            $chatMessages[] = array(
+                'message' => $row['message'],
+                'created_at' => $row['created_at']
+            );
+        }
+
+        // Return the array of chat messages
+        return $chatMessages;
+    } else {
+        // Handle any errors in executing the query
+        return array(); // Return an empty array on error
+    }
+}
+
+// Check if a message is submitted
+if (isset($_POST['message']) && isset($_POST['customerId']) && isset($_POST['proposalId'])) {
+    // Get the message content, customer ID, proposal ID, and provider ID
+    $message = $_POST['message'];
+    $customerId = $_POST['customerId'];
+    $proposalId = $_POST['proposalId'];
+    $userId = $_SESSION['user_id']; // Provider's ID
+
+    // Insert the message into the chat table
+    $sql = "INSERT INTO chat (customer_id, provider_id, proposal_id, message, created_at) VALUES (?, ?, ?, ?, NOW())";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ssss', $customerId, $userId, $proposalId, $message);
+
+    if ($stmt->execute()) {
+        // Message inserted successfully
+        // You can provide a success message or redirect back to the chat page
+    } else {
+        // Handle the case where the message insertion fails
+        echo 'Error inserting the message.';
+    }
+}
+
+// Assuming you have a session with the provider's user_id
+$userId = $_SESSION['user_id'];
+
+// Query to fetch the list of customers for the provider
+$sql = "SELECT DISTINCT customer_id FROM customer_proposal WHERE provider_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $userId);
+
+if ($stmt->execute()) {
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        echo '<div class="container">';
+        echo '<h2 style="color: #000; font-weight: bold;">Messages</h2>';
+        echo '<p style="color: #70BE44; padding-bottom: 20px;">Here are your Customers Chats</p>';
+        echo '<div class="row">';
+        echo '<div class="col-12">';
+        echo '<div class="chat-container">';
+        echo '<div class="sidebar">';
+        echo '<h2>Chats</h2>';
+        echo '<ul class="chat-tabs">';
+
+        while ($row = $result->fetch_assoc()) {
+            $customerId = $row['customer_id'];
+
+            // Retrieve customer information
+            $customerInfo = getCustomerInfo($customerId);
+            $customerName = $customerInfo['fullname'];
+            $profile_picture = $customerInfo['profile_picture'];
+
+            // Generate a chat tab for each customer
+            echo '<li data-customer-id="' . $customerId . '">';
+            echo '<div class="img-box"><img src="../customer/' . $profile_picture . '"/>';
+            echo '<h3>' . $customerName . '</h3>';
+            echo '</div>';
+            echo '</li>';
+        }
+
+        echo '</ul>';
+        echo '</div>';
+        echo '<div class="chat-area">';
+        echo '<div class="chat-header">';
+        echo '<h2>Customer Name</h2>';
+        echo '</div>';
+        ?>
+
+        <div class="modal-body">
+            <div class="msg-body">
+                <ul>
+                    <!-- Display chat messages here -->
+                    <?php
+                    if (isset($_POST['customerId'])) {
+                        // Get the selected customer and proposal IDs
+                        $customerId = $_POST['customerId'];
+                        $proposalId = $_POST['proposalId']; // Retrieve the proposal ID
+
+                        // Fetch chat messages for the selected customer and proposal
+                        $chatMessages = getChatMessages($customerId, $proposalId);
+
+                        // Loop through and display the messages
+                        foreach ($chatMessages as $message) {
+                            $messageContent = $message['message'];
+                            $messageTime = $message['created_at'];
+
+                            // You can format the message time as needed
+                            echo '<li class="sender">';
+                            echo '<p>' . $messageContent . '</p>';
+                            echo '<span class="time">' . $messageTime . '</span>';
+                            echo '</li>';
+                        }
+                    }
+                    ?>
+                </ul>
+            </div>
+        </div>
+
+        <?php
+        echo '<div class="chat-input">';
+        echo '<form style="width: 100%;display: contents;" method="POST" action="">'; // Add the action to submit the form
+        echo '<input type="text" name="message" placeholder="Type your message">';
+        echo '<input type="hidden" name="customerId" id="customer-id-input">';
+        echo '<input type="hidden" name="proposalId" id="proposal-id-input">';
+        echo '<button type="submit">Send</button>';
+        echo '</form>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+    } else {
+        echo '<p>No customers available.</p>';
+    }
+} else {
+    echo 'Error executing the query.';
+}
+?>
+
+
+<script>
+    const chatTabs = document.querySelectorAll('.chat-tabs li');
+    const chatMessages = document.querySelector('.msg-body');
+    const chatHeader = document.querySelector('.chat-header h2');
+    const customerIdInput = document.querySelector('#customer-id-input');
+    const proposalIdInput = document.querySelector('#proposal-id-input');
+
+    chatTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove the 'active' class from all tabs
+            chatTabs.forEach(tab => tab.classList.remove('active'));
+
+            // Add the 'active' class to the clicked tab
+            tab.classList.add('active');
+
+            // Update the chat header with the customer's name
+            chatHeader.textContent = tab.querySelector('h3').textContent;
+
+            // Update the hidden input fields with customer and proposal IDs
+            customerIdInput.value = tab.dataset.customerId;
+            proposalIdInput.value = proposalId; // You should set the proposal ID accordingly
+
+            // Submit the form to load chat messages for the selected customer
+            document.querySelector('.chat-input form').submit();
+        });
+    });
+</script>
+
+
+        <!-- <script>
+          const chatTabs = document.querySelectorAll('.chat-tabs li');
+          const chatMessages = document.querySelector('.chat-messages');
+          const chatHeader = document.querySelector('.chat-header h2');
+
+          chatTabs.forEach(tab => {
+              tab.addEventListener('click', () => {
+                  // Remove the 'active' class from all tabs
+                  chatTabs.forEach(tab => tab.classList.remove('active'));
+
+                  // Add the 'active' class to the clicked tab
+                  tab.classList.add('active');
+
+                  // Update the chat header with the customer's name
+                  chatHeader.textContent = tab.textContent;
+
+                  // Clear the chat messages
+                  chatMessages.innerHTML = '';
+
+                  // You can load chat history for the selected customer here
+                  // For this example, we're just clearing the messages
+              });
+          });
+
+        </script> -->
           <div class="chat-area">
             <!-- chatlist -->
             <div class="chatlist">
@@ -188,7 +495,7 @@ function getServiceImages($service) {
                     <!-- chat-list -->
                    
                       <div class="chat-lists">
-                          <div class="tab-content<?php echo $customerId?> active" id="myTabContent<?php echo $customerId?>">
+                          <div class="tab-content active" id="myTabContent">
                               <div class="tab-pane<?php echo $customerId?> fade show active" id="Open" role="tabpanel" aria-labelledby="Open-tab">
                                   <?php
                                   include 'connection.php';
@@ -208,6 +515,7 @@ function getServiceImages($service) {
                                     } else {
                                 while ($row = $result->fetch_assoc()) {
                                     $proposalId = $row['id'];
+                                    $_SESSION['proposalId'] = $row['id'];
                                     $customerId = $row['customer_id'];
                                     $providerId = $row['provider_id'];
                                     $selectedDate = $row['selected_date'];
@@ -271,7 +579,7 @@ function getServiceImages($service) {
             <div class="chatbox showbox">
 
               <div class="modal-dialog-scrollable">
-                <div class="tab-content<?php echo $customerId?>" id="myTabContent<?php echo $customerId?> active">
+                <div class="tab-content" id="myTabContent active">
                   <div class="tab-pane<?php echo $customerId?> fade show active in" id="home-tab<?php echo $customerId?>" role="tabpanel">
                     <div class="modal-content">
                       <div class="msg-head">
@@ -369,6 +677,208 @@ function getServiceImages($service) {
               </div>
             </div>
           </div>
+          <div class="wrapper">
+    <div class="container">
+        <div class="left">
+            <div class="top">
+                <input type="text" />
+                <a href="javascript:;" class="search"></a>
+            </div>
+            <ul class="people">
+                <li class="person" data-chat="person1">
+                    <img src="https://s13.postimg.org/ih41k9tqr/img1.jpg" alt="" />
+                    <span class="name">Thomas Bangalter</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">I was wondering...</span>
+                </li>
+                <li class="person" data-chat="person2">
+                    <img src="https://s3.postimg.org/yf86x7z1r/img2.jpg" alt="" />
+                    <span class="name">Dog Woofson</span>
+                    <span class="time">1:44 PM</span>
+                    <span class="preview">I've forgotten how it felt before</span>
+                </li>
+                <li class="person" data-chat="person3">
+                    <img src="https://s3.postimg.org/h9q4sm433/img3.jpg" alt="" />
+                    <span class="name">Louis CK</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">But we’re probably gonna need a new carpet.</span>
+                </li>
+                <li class="person" data-chat="person4">
+                    <img src="https://s3.postimg.org/quect8isv/img4.jpg" alt="" />
+                    <span class="name">Bo Jackson</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">It’s not that bad...</span>
+                </li>
+                <li class="person" data-chat="person5">
+                    <img src="https://s16.postimg.org/ete1l89z5/img5.jpg" alt="" />
+                    <span class="name">Michael Jordan</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">Wasup for the third time like is 
+you bling bitch</span>
+                </li>
+                <li class="person" data-chat="person6">
+                    <img src="https://s30.postimg.org/kwi7e42rh/img6.jpg" alt="" />
+                    <span class="name">Drake</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">howdoyoudoaspace</span>
+                </li>
+            </ul>
+        </div>
+        <div class="right">
+            <div class="top"><span>To: <span class="name">Dog Woofson</span></span></div>
+            <div class="chat" data-chat="person1">
+                <div class="conversation-start">
+                    <span>Today, 6:48 AM</span>
+                </div>
+                <div class="bubble you">
+                    Hello,
+                </div>
+                <div class="bubble you">
+                    it's me.
+                </div>
+                <div class="bubble you">
+                    I was wondering...
+                </div>
+                                <div class="bubble you">
+                    Hello,
+                </div>
+                <div class="bubble you">
+                    it's me.
+                </div>
+                <div class="bubble you">
+                    I was wondering...
+                </div>
+                                <div class="bubble you">
+                    Hello,
+                </div>
+           <div class="bubble me">
+                    it's me.
+                </div>
+                <div class="bubble me">
+                    I was wondering...
+                </div>
+                <div class="bubble me">
+                    Hello,
+                </div>            
+                               
+                
+            </div>
+            <div class="chat" data-chat="person2">
+                <div class="conversation-start">
+                    <span>Today, 5:38 PM</span>
+                </div>
+                <div class="bubble you">
+                    Hello, can you hear me?
+                </div>
+                <div class="bubble you">
+                    I'm in California dreaming
+                </div>
+                <div class="bubble me">
+                    ... about who we used to be.
+                </div>
+                <div class="bubble me">
+                    Are you serious?
+                </div>
+                <div class="bubble you">
+                    When we were younger and free...
+                </div>
+                <div class="bubble you">
+                    I've forgotten how it felt before
+                </div>
+            </div>
+            <div class="chat" data-chat="person3">
+                <div class="conversation-start">
+                    <span>Today, 3:38 AM</span>
+                </div>
+                <div class="bubble you">
+                    Hey human!
+                </div>
+                <div class="bubble you">
+                    Umm... Someone took a shit in the hallway.
+                </div>
+                <div class="bubble me">
+                    ... what.
+                </div>
+                <div class="bubble me">
+                    Are you serious?
+                </div>
+                <div class="bubble you">
+                    I mean...
+                </div>
+                <div class="bubble you">
+                    It’s not that bad...
+                </div>
+                <div class="bubble you">
+                    But we’re probably gonna need a new carpet.
+                </div>
+            </div>
+            <div class="chat" data-chat="person4">
+                <div class="conversation-start">
+                    <span>Yesterday, 4:20 PM</span>
+                </div>
+                <div class="bubble me">
+                    Hey human!
+                </div>
+                <div class="bubble me">
+                    Umm... Someone took a shit in the hallway.
+                </div>
+                <div class="bubble you">
+                    ... what.
+                </div>
+                <div class="bubble you">
+                    Are you serious?
+                </div>
+                <div class="bubble me">
+                    I mean...
+                </div>
+                <div class="bubble me">
+                    It’s not that bad...
+                </div>
+            </div>
+            <div class="chat" data-chat="person5">
+                <div class="conversation-start">
+                    <span>Today, 6:28 AM</span>
+                </div>
+                <div class="bubble you">
+                    Wasup
+                </div>
+                <div class="bubble you">
+                    Wasup
+                </div>
+                <div class="bubble you">
+                    Wasup for the third time like is <br />you blind bitch
+                </div>
+
+            </div>
+            <div class="chat" data-chat="person6">
+                <div class="conversation-start">
+                    <span>Monday, 1:27 PM</span>
+                </div>
+                <div class="bubble you">
+                    So, how's your new phone?
+                </div>
+                <div class="bubble you">
+                    You finally have a smartphone :D
+                </div>
+                <div class="bubble me">
+                    Drake?
+                </div>
+                <div class="bubble me">
+                    Why aren't you answering?
+                </div>
+                <div class="bubble you">
+                    howdoyoudoaspace
+                </div>
+            </div>
+            <div class="write">
+                <a href="javascript:;" class="write-link attach"></a>
+                <input type="text" />
+                <a href="javascript:;" class="write-link send"></a>
+                <a href="javascript:;" class="write-link smiley"></a>
+            </div>
+        </div>
+    </div>
+</div>
           <!-- chatbox -->
   
         </div>

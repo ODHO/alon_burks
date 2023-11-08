@@ -31711,6 +31711,21 @@ li.nav-item.signup a {
    border-radius: 5px;
    box-shadow: none;
 }
+.img-box img{
+  object-fit: cover;
+  width: 40px;
+  border-radius: 103px;
+  height: 40px;
+}
+.img-box h3{
+  font-size: 16px;
+}
+.img-box{
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .steps-3 .progress-bar:after{
    top: -7px;
    right: 0;
@@ -33705,7 +33720,7 @@ button.messagebutton {
   border-radius: 10px;
 }
 .modal-body {
-  height: 568px;
+  height: 461px;
   overflow-y: scroll;
 }
 ::-webkit-scrollbar {

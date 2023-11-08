@@ -32,7 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $statusFrom = $postData->statusFrom;
         $selectedTimeTo = $postData->selectedTimeTo;
         $messageContent = $postData->messageContent;
-        
+        // echo $selectedTimeTo;
+        // die();
         // Start a database transaction
         $conn->begin_transaction();
 
@@ -44,8 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $servicename[] = $val->serviceName;
         }
         $serviceNames  = implode(', ',$servicename);
-        $stmt->bind_param('ssssssdd', $customerId, $providerId, $selectedDate, $selectedTime, $userContent, $serviceNames, $totalAmount, $selectedTimeTo);
-
+        $stmt->bind_param('ssssssds', $customerId, $providerId, $selectedDate, $selectedTime, $userContent, $serviceNames, $totalAmount, $selectedTimeTo);
+        $abc = $sql = "INSERT INTO customer_proposal (customer_id, provider_id, selected_date, selected_time, user_content, selected_services, total_amount, selected_time_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        // print_r($selectedTimeTo);
+        // die();
         if ($stmt->execute()) {
             $proposalId = $stmt->insert_id; // Get the generated proposal_id
 
