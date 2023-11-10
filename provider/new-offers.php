@@ -183,8 +183,8 @@ function getServiceImages($service) {
                   $proposalId = $row['id'];
                   $customerId = $row['customer_id'];
                   $providerId = $row['provider_id'];
-                  $selectedDate = $row['selected_date'];
-                  $selectedTime = $row['selected_time'];
+                  $selectedDate = explode(', ', $row['selected_date']);
+                  $selectedTime = explode(', ', $row['selected_time']);
                   $userContent = $row['user_content'];
                   $selectedServices = explode(', ', $row['selected_services']);
                   $totalAmount = $row['total_amount'];
@@ -428,10 +428,11 @@ function getServiceImages($service) {
                                         </h3>
                                     </div>
                                     <div class="col-md-3 d-flex align-items-center">
+                                    <?php foreach ($selectedDate as $key => $date): ?>
                                         <h6 style="color: #4492BE;"><img src="./images/scheduled.png" />
-                                            <?php echo $selectedDate?> /
-                                            <?php echo $selectedTime?>
+                                        <?php echo date('d-M-Y , D', strtotime($date)); ?><?php echo $selectedTime[$key]; ?>
                                         </h6>
+                                        <?php endforeach; ?>
                                     </div>
                                     <div class="col-md-3 d-flex align-items-center">
                                         <h4 style="color: #70BE44;font-size: 14px;">Offered On
@@ -511,7 +512,7 @@ function getServiceImages($service) {
                                     <a href="javascript:void(0);" data-toggle="modal" data-target="#new<?php echo $proposalId?>" 
                                         data-total-amount="<?php echo $totalAmount; ?>" 
                                         data-selected-services="<?php echo json_encode($selectedServices); ?>" 
-                                        data-service-customers="<?php echo json_encode($serviceCustomers1); ?>"><button>Counter Offer</button>
+                                        data-service-customers="<?php echo json_encode($serviceCustomers1); ?>"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">Counter Offer</button>
                                     </a>
 
                                     </div>

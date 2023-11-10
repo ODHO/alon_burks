@@ -328,13 +328,22 @@ function getServiceImages($service) {
 
           <div class="order-in-progress replied-main-row">
             <h1><b style="color: #70BE44;">Replied </b>Offers</h1>
+            <div class="onetime-advancebokingbutton">
+                            <ul>
+                                <li><a href="replied-offers.php"><button style="color: #fff; background-color: #70BE44;">One
+                                            Time Service</button></a></li>
+                                <li><a href="replied-offers-advancebooking.php"><button
+                                            style="color: #959595; background-color: #E6E6E6;">Advance
+                                            Bookings</button></a></li>
+                            </ul>
+                        </div>
             <!-- FIRST NEW OFFER -->
             <?php
                 include 'connection.php';
 
                 $userId = $_SESSION['user_id'];
 
-                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'replied_offer'";
+                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'replied_offer' AND proposal_status = 'OneTime'";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param('s', $userId);
 
@@ -348,8 +357,8 @@ function getServiceImages($service) {
                   $proposalId = $row['id'];
                   $customerId = $row['customer_id'];
                   $providerId = $row['provider_id'];
-                  $selectedDate = $row['selected_date'];
-                  $selectedTime = $row['selected_time'];
+                  $selectedDate = explode(', ', $row['selected_date']);
+                  $selectedTime = explode(', ', $row['selected_time']);
                   $userContent = $row['user_content'];
                   $selectedServices = explode(', ', $row['selected_services']);
                   $totalAmount = $row['total_amount'];
@@ -398,7 +407,7 @@ function getServiceImages($service) {
                   </div>
                   <div class="col-md-3 align-items-center">
                     <h5 style="color: #70BE44; text-align: right; font-weight: bold;">Pending</h5>
-                    <h4 style="color: #70BE44; text-align: right;"><?php echo $selectedDate?></h4>
+                    <h4 style="color: #70BE44; text-align: right;"><?php echo $current_time?></h4>
                   </div>
                 </div>
               </div>
@@ -410,7 +419,11 @@ function getServiceImages($service) {
                       <h2>Customer Offer Details</h2>
                       <ul class="orderdetails-lists">
                         <!-- <li><em>Customer Offer</em><span style="color: #70BE44;"><?php //echo $totalAmount?></span></li> -->
-                        <li><em>Booking Time</em><span style="color: #70BE44;"><?php echo $selectedDate , str_repeat('&nbsp;', 5), $selectedTime?></span></li>
+                        <?php foreach ($selectedDate as $key => $date): ?>
+                          <li><em>Booking Time</em><span style="color: #70BE44;"><?php echo date('d-M-Y , D', strtotime($date)); ?>, <?php echo $selectedTime[$key]; ?></span></li>
+                                       
+                                        <?php endforeach; ?>
+                        
                         <li>
                           <em> Services</em>
                           <div style="display: inline-flex;flex-direction: column;float: inline-end;text-align: end;">

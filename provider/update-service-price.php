@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Parse the JSON data received from the client
     $postData = json_decode(file_get_contents('php://input'), true);
-
+  
     if ($postData && isset($postData['proposalId'], $postData['servicePrices'], $postData['totalAmount'], $postData['counterNote'])) {
         $proposalId = $postData['proposalId'];
         $servicePrices = $postData['servicePrices'];
@@ -17,7 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $providerId = $postData['providerId'];
         $customerId = $postData['customerId'];
         $providerName = $postData['providerName'];
-
+        echo $counterNote;
+        // die();
         // Update the service prices in the database
         if (updateServicePrices($proposalId, $servicePrices, $totalAmount, $counterNote) && updateTotalAmount($proposalId, $totalAmount)) {
             $messageContent = "$providerName has made a counter offer.";

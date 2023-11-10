@@ -32482,7 +32482,7 @@ ul.paid li.paid-text h5 {
   padding: 20px 20px;
 }
 .order-in-progress .first-offer {
-  margin-top: 20px;
+  margin-top: 50px;
   border: 1px solid #70BE44;
   border-radius: 20px;
   padding: 20px 40px;
@@ -34102,7 +34102,7 @@ button.messagebutton {
 .modal-content {
     background: #fff;
     box-shadow: unset;
-    padding: 0 0;
+    padding: 20px 30px;
 }
     .chat-area .modal-dialog-scrollable {
         height: 100% !important;

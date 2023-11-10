@@ -1034,7 +1034,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
             totalAmount: totalAmount,
         };
         console.log(data);
-        return;
+        // return;
         // Send the non-image data to the server using AJAX
         const xhr = new XMLHttpRequest();
         xhr.open('POST', 'php.php');

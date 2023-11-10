@@ -10,40 +10,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $providerId = $postData->providerId;
         $selectedDate = $postData->selectedDate;
 
-        // Fetch already booked hours for the selected date
-        $sql = "SELECT selected_date, selected_time, selected_time_to FROM customer_proposal WHERE provider_id = ? AND selected_date = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('ss', $providerId, $selectedDate);
+        // Fetch already booked hours from customer_proposal table
+        $customerSql = "SELECT selected_time, selected_time_to FROM customer_proposal WHERE provider_id = ? AND selected_date = ?";
+        $customerStmt = $conn->prepare($customerSql);
+        $customerStmt->bind_param('ss', $providerId, $selectedDate);
 
-        if ($stmt->execute()) {
-            $result = $stmt->get_result();
-            $bookedSlots = [];
+        // Fetch already booked hours from advance_proposal table
+        $advanceSql = "SELECT selected_time, selected_time_to FROM advance_proposal WHERE provider_id = ? AND selected_date = ?";
+        $advanceStmt = $conn->prepare($advanceSql);
+        $advanceStmt->bind_param('ss', $providerId, $selectedDate);
 
-            while ($row = $result->fetch_assoc()) {
-                // If the selected_date or selected_time is an array, explode it
-                $dateArray = is_array($row['selected_date']) ? $row['selected_date'] : explode(',', $row['selected_date']);
-                $fromArray = is_array($row['selected_time']) ? $row['selected_time'] : explode(',', $row['selected_time']);
-                $toArray = is_array($row['selected_time_to']) ? $row['selected_time_to'] : explode(',', $row['selected_time_to']);
-                
-                foreach ($dateArray as $key => $date) {
-                    $bookedSlots[] = [
-                        'date' => $date,
-                        'from' => $fromArray[$key],
-                        'to' => $toArray[$key],
-                    ];
-                    // echo json_decode($bookedSlots);
-                    // die();
-                }
+        // Initialize result arrays
+        $bookedSlots = [];
+
+        // Execute the queries
+        if ($customerStmt->execute()) {
+            $customerResult = $customerStmt->get_result();
+
+            while ($row = $customerResult->fetch_assoc()) {
+                $bookedSlots[] = [
+                    'from' => $row['selected_time'],
+                    'to' => $row['selected_time_to'],
+                ];
             }
-
-            print_r(json_encode($bookedSlots));
-        } else {
-            echo 'Error executing the query.';
         }
+
+        if ($advanceStmt->execute()) {
+            $advanceResult = $advanceStmt->get_result();
+
+            while ($row = $advanceResult->fetch_assoc()) {
+                $bookedSlots[] = [
+                    'from' => $row['selected_time'],
+                    'to' => $row['selected_time_to'],
+                ];
+            }
+        }
+
+        // Respond with JSON
+        echo json_encode($bookedSlots);
     } else {
-        echo 'Invalid data.';
+        // Respond with an error message
+        echo json_encode(['error' => 'Invalid data.']);
     }
 } else {
-    echo 'Invalid request method.';
+    // Respond with an error message
+    echo json_encode(['error' => 'Invalid request method.']);
 }
 ?>

@@ -151,7 +151,7 @@ include 'Black_logo_header.php'
         <h2 style="color: #000; font-weight: bold;">My Hirings</h2>
         <p style="color: #70BE44;">Here are your past services you availed and hired!</p>
         <ul>
-          <li><a href="#"><button style="background-color: #70BE44; font-family: Cairo;
+          <li><a href="myhirings.php"><button style="background-color: #70BE44; font-family: Cairo;
                 font-size: 30px;
                 font-weight: 600;
                 line-height: 56px;
@@ -159,7 +159,7 @@ include 'Black_logo_header.php'
                 text-align: left;
                 color: #fff;
                 ">One Time Service</button></a></li>
-          <li><a href="#"><button style="background-color: #E6E6E6; font-family: Cairo;
+          <li><a href="myrecurrings.php"><button style="background-color: #E6E6E6; font-family: Cairo;
                 font-size: 30px;
                 font-weight: 600;
                 line-height: 56px;
