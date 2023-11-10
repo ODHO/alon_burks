@@ -12,26 +12,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (
         isset($postData->customerId) &&
         isset($postData->providerId) &&
-        isset($postData->selectedDate) &&
-        isset($postData->selectedTime) &&
+        isset($postData->advanceProposals) &&
         isset($postData->userContent) &&
         isset($postData->selectedServices) &&
         isset($postData->totalAmount) &&
         isset($postData->statusFrom) &&
-        isset($postData->selectedTimeTo) &&
         isset($postData->proposal_status) &&
         !empty($postData->messageContent) 
     ) {
-        // Extract customer ID, provider ID, selected date, selected time, user content, selected services, and total amount
         $customerId = $postData->customerId;
         $providerId = $postData->providerId;
-        $selectedDate = $postData->selectedDate;
-        $selectedTime = $postData->selectedTime;
+        $advanceProposals = $postData->advanceProposals;
         $userContent = $postData->userContent;
         $selectedServices = $postData->selectedServices;//implode(', ',$postData->selectedServices);
         $totalAmount = $postData->totalAmount;
         $statusFrom = $postData->statusFrom;
-        $selectedTimeTo = $postData->selectedTimeTo;
         $proposal_status = $postData->proposal_status;
         $messageContent = $postData->messageContent;
         // echo $selectedTimeTo;
@@ -46,6 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach($selectedServices as $val) {
             $servicename[] = $val->serviceName;
         }
+        $selectedDateAdv = array();
+        $selectedTimeAdv = array();
+        $selectedTimeToAdv = array();
+        foreach($advanceProposals as $val) {
+            $selectedDateAdv[] = $val->selectedDateAdv;
+            $selectedTimeAdv[] = $val->selectedTimeAdv;
+            $selectedTimeToAdv[] = $val->selectedTimeToAdv;
+        }
+        $selectedDate  = implode(', ',$selectedDateAdv);
+        $selectedTime  = implode(', ',$selectedTimeAdv);
+        $selectedTimeTo  = implode(', ',$selectedTimeToAdv);
         $serviceNames  = implode(', ',$servicename);
         $stmt->bind_param('ssssssdss', $customerId, $providerId, $selectedDate, $selectedTime, $userContent, $serviceNames, $totalAmount, $selectedTimeTo, $proposal_status);
         // $abc = $sql = "INSERT INTO customer_proposal (customer_id, provider_id, selected_date, selected_time, user_content, selected_services, total_amount, selected_time_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";

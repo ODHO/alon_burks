@@ -169,7 +169,7 @@ function getServiceImages($service) {
                 $userId = $_SESSION['user_id'];
                 $providerName = $_SESSION['providerName'];
 
-                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'new_offer'";
+                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime' ";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param('s', $userId);
 

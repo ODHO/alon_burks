@@ -3650,6 +3650,28 @@ padding-top:20px;
   padding: 15px 0;
   border-radius: 21px;
 }
+.booked-hours1 {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 0px 140px;
+}
+.booked-hours1 button.blue {
+  background: #00b2ff7d;
+}
+.booked-hours1 button.orange {
+  background: #ff4d0080;
+}
+.booked-hours1 button {
+  width: 100%;
+  background: #70be4470;
+  border: 0;
+  font-size: 32px;
+  line-height: 42px;
+  padding: 15px 0;
+  border-radius: 21px;
+}
 .recurr #button-1 .knobs:before {
   background: #70be44;
 }
@@ -3681,7 +3703,9 @@ position: absolute;
 transition: 0.2s;
 cursor: pointer;
 }
-
+.on-content-button{
+  display: contents;
+}
 .custom-content {
 margin-top: 10px;
 }

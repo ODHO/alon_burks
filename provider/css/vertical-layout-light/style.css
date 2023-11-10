@@ -32502,9 +32502,9 @@ ul.paid li.paid-text h5 {
   position: absolute;
   left: 0;
 }
-.offerprofile-name {
+/* .offerprofile-name {
   padding-left: 40px;
-}
+} */
 .first-offer .profileheadsection h3.address {
   font-family: Segoe UI;
   font-size: 14px;

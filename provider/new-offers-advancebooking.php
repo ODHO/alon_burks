@@ -1,6 +1,97 @@
 <?php
 session_start();
+// Function to get customer information from the provider_registration table
+function getCustomerInfo($customerId) {
+  global $conn;
+  $sql = "SELECT fullname, profile_picture, address FROM provider_registration WHERE id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('s', $customerId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          return $row;
+      }
+  }
+  return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
+}
+// Function to get the price of a service from the categories table
+function getCustomerServicesAndPrices($customerId, $proposalId) {
+    global $conn;
+    $sql = "SELECT service_name, price FROM customer_services WHERE customer_id = ? AND proposal_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ss', $customerId, $proposalId);
 
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $servicesAndPrices = array();
+
+        while ($row = $result->fetch_assoc()) {
+            $serviceCustomers = $row['service_name'];
+            $priceService = $row['price'];
+            $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService);
+            
+        }
+
+        return $servicesAndPrices;
+    }
+
+    return array();
+}
+function getServicePrice($service) {
+    global $conn;
+    $sql = "SELECT price FROM customer_services WHERE service_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $service);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['price'];
+        }
+    }
+    return 'N/A'; // Provide a default value if service price not found
+  }
+function getCustomerImagesForProvider($customerId, $providerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT image_path FROM customer_images WHERE customer_id = ? AND provider_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('sss', $customerId, $providerId, $proposalId);
+  if ($stmt->execute()) {
+    $result = $stmt->get_result();
+    $images = array();
+    while ($row = $result->fetch_assoc()) {
+      $images[] = $row['image_path'];
+    }
+    return $images;
+  }
+  return array();
+}
+
+
+function getServiceImages($service) {
+  global $conn;
+  $servicesImages = array();
+
+  // Create a prepared statement to select servicesImages based on service names
+  $sql = "SELECT image FROM categories WHERE heading IN (?)";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+      $categories = implode("', '", $service); // Assuming service names are in an array
+      $stmt->bind_param('s', $categories);
+
+      if ($stmt->execute()) {
+          $result = $stmt->get_result();
+
+          while ($row = $result->fetch_assoc()) {
+              $servicesImages[] = $row['image'];
+          }
+      }
+  }
+
+  return $servicesImages;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -333,14 +424,63 @@ session_start();
               </ul>
             </div>
             <!-- FIRST NEW OFFER -->
+            <?php
+                include 'connection.php';
+
+                $userId = $_SESSION['user_id'];
+                $providerName = $_SESSION['providerName'];
+
+                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'new_offer' AND proposal_status = 'AdvancedProposal' ";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param('s', $userId);
+
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+                    if ($result->num_rows == 0) {
+                      // No orders found for the provider
+                      echo '<h2 class="text-center texter">No new orders available.</h2>';
+                  } else {
+              while ($row = $result->fetch_assoc()) {
+                  $proposalId = $row['id'];
+                  $customerId = $row['customer_id'];
+                  $providerId = $row['provider_id'];
+                  $selectedDate = explode(', ', $row['selected_date']);
+                  $selectedTime = explode(', ', $row['selected_time']);
+                  // print_r($selectedTime);
+                  // print_r($selectedDate);
+                  // die();
+                  $userContent = $row['user_content'];
+                  $selectedServices = explode(', ', $row['selected_services']);
+                  $totalAmount = $row['total_amount'];
+                  $current_time = $row['current_time'];
+                  // Retrieve customer name and address based on customerId
+                  $customerInfo = getCustomerInfo($customerId);
+
+                  $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+                  $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+                  $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+                  
+                  
+                  // Now you have an array containing the selected services and their prices for the customer
+                  
+                  // Output the retrieved customer name and address
+                  $customerName = $customerInfo['fullname'];
+                  $customerAddress = $customerInfo['address'];
+                  $profile_picture = $customerInfo['profile_picture'];
+                  // $image_path = $customerImages['image_path'];
+                ?>
         <div class="first-offer">
             <div class="profileheadsection">
-            <div class="row">
+              <div class="row">
                 <div class="col-md-3">
-                    <div class="offerprofile-name">
-                        <img src="./images/profileman.png"/>
-                        <h3>David Johnson<br><b>User ID # 4ISK4DH</b></h3>
+                  <div style="display:flex; gap:10px; align-items:center">
+                    <div>
+                      <img style="width: 60px;object-fit: fill;height: 60px;border-radius: 118px;" src="../customer/<?php echo $profile_picture; ?>"/>
                     </div>
+                    <div class="offerprofile-name">
+                      <h3><?php echo $customerName?><br><b>User ID # <?php echo $customerId?></b></h3>
+                    </div>
+                  </div>
                 </div>
                 <div class="col-md-3 d-flex align-items-center">
                     <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
@@ -350,223 +490,83 @@ session_start();
                     <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
                 </div>
                 <div class="col-md-3 d-flex align-items-center">
-                    <h4 style="color: #000;">Offered On 22,August,2022</h4>
+                    <h4 style="color: #000;">Offered On <?php echo $current_time?></h4>
+                </div>
+              </div>
+            </div>
+
+            <div class="service-selectedsection">
+                <div class="row">
+                    <div class="col-md-7">
+                        <div class="order-details-progress">
+                            <h2>Service Cost Offer</h2>
+                            <ul class="orderdetails-lists">
+                            <?php foreach ($serviceCustomers as $servicenew) {
+                                                            $services = $servicenew['service_name'];
+                                                            $servicePrice = $servicenew['price'];
+
+                                                            // echo $serviceCustomers; echo "<br/>";
+                                                            // echo $servicePrice;echo "<br/>";
+                                                            ?>
+                                 <li><em><img src="./images/Snow Plow.png"/> <?php echo $services ?></em><span style="color: #70BE44;">$ <?php echo $servicePrice; ?></span></li>
+
+                                                <?php
+                                            }?>
+                              
+                              <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ <?php echo $totalAmount?></b></span></li>
+                            </ul>
+                          </div>
+                    </div>
+                    <div class="col-md-5">
+                        <h2>Advance Booking Timings</h2>
+                        <table style="padding: 20px;">
+                            <tbody><tr style="margin-bottom:10px;">
+                              <th width="100%"></th>
+                            </tr>
+                            <tr style="margin-bottom:10px;"> 
+                              <td width="100%" class="date-inner">
+                              <?php foreach ($selectedDate as $key => $date): ?>
+                                <li><em><?php echo date('d-M-Y , D', strtotime($date)); ?></em><span><?php echo $selectedTime[$key]; ?></span></li>
+        
+                              <?php endforeach; ?>
+                              </td>
+                              </tr>
+                            
+                          
+                          </tbody></table>
+                    </div>
+                    <div class="task-description">
+                    <h2>Task Description</h2>
+                    <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+                        Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
+                          when an unknown printer took a galley of type and scrambled it to make a type 
+                          specimen book. It has survived not only five centuries, but also the leap into 
+                          electronic typesetting, remaining essentially unchanged. It was popularised in 
+                          the 1960s with the release of Letraset</p>
+                </div>
+
+                <div class="newoffer-button-advancebooking">
+                    <ul>
+                        <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
+                        </button></a></li>
+                        <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
+                        </button></a></li>
+                        <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
+                        </button></a></li>
+                    </ul>
+                </div>
                 </div>
             </div>
         </div>
-
-        <div class="service-selectedsection">
-            <div class="row">
-                <div class="col-md-7">
-                    <div class="order-details-progress">
-                        <h2>Service Cost Offer</h2>
-                        <ul class="orderdetails-lists">
-                          <li><em><img src="./images/Snow Plow.png"/> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                          <li><em><img src="./images/Cover Up.png"/> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                          <li><em><img src="./images/Grass.png"/> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                          <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                        </ul>
-                      </div>
-                </div>
-                <div class="col-md-5">
-                    <h2>Advance Booking Timings</h2>
-                    <table style="padding: 20px;">
-                        <tbody><tr style="margin-bottom:10px;">
-                          <th width="100%"></th>
-                        </tr>
-                        <tr style="margin-bottom:10px;"> 
-                          <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                          </tr>
-                        <tr style="margin-bottom:10px;">
-                          <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                          </tr>
-                        <tr>
-                          <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                          </tr>
-                       
-                      </tbody></table>
-                </div>
-                <div class="task-description">
-                <h2>Task Description</h2>
-                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                     Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-                      when an unknown printer took a galley of type and scrambled it to make a type 
-                      specimen book. It has survived not only five centuries, but also the leap into 
-                      electronic typesetting, remaining essentially unchanged. It was popularised in 
-                      the 1960s with the release of Letraset</p>
-            </div>
-
-            <div class="newoffer-button-advancebooking">
-                <ul>
-                    <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
-                    </button></a></li>
-                    <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
-                    </button></a></li>
-                    <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
-                    </button></a></li>
-                </ul>
-            </div>
-            </div>
-        </div>
-</div>
+        <?php
+              }
+            }
+        } else {
+            echo 'Error executing the query.';
+        }
+        ?>
  <!-- FIRST ROW END -->
 
- <!-- SECOND ROW START -->
- <div class="first-offer" style="margin-top: 100px;">
-    <div class="profileheadsection">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="offerprofile-name">
-                <img src="./images/profileman.png">
-                <h3>David Johnson<br><b>User ID # 4ISK4DH</b></h3>
-            </div>
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
-                House No- B-242</h3> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <h4 style="color: #000;">Offered On 22,August,2022</h4>
-        </div>
-    </div>
-</div>
-
-<div class="service-selectedsection">
-    <div class="row">
-        <div class="col-md-7">
-            <div class="order-details-progress">
-                <h2>Service Cost Offer</h2>
-                <ul class="orderdetails-lists">
-                  <li><em><img src="./images/Snow Plow.png"> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Cover Up.png"> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Grass.png"> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                </ul>
-              </div>
-        </div>
-        <div class="col-md-5">
-            <h2>Advance Booking Timings</h2>
-            <table style="padding: 20px;">
-                <tbody><tr style="margin-bottom:10px;">
-                  <th width="100%"></th>
-                </tr>
-                <tr style="margin-bottom:10px;"> 
-                  <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr style="margin-bottom:10px;">
-                  <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr>
-                  <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-               
-              </tbody></table>
-        </div>
-        <div class="task-description">
-        <h2>Task Description</h2>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-             Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-              when an unknown printer took a galley of type and scrambled it to make a type 
-              specimen book. It has survived not only five centuries, but also the leap into 
-              electronic typesetting, remaining essentially unchanged. It was popularised in 
-              the 1960s with the release of Letraset</p>
-    </div>
-
-    <div class="newoffer-button-advancebooking">
-        <ul>
-            <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
-            </button></a></li>
-        </ul>
-    </div>
-    </div>
-</div>
-</div>
- <!-- SECOND ROW END -->
-
- <!-- THIRD ROW START -->
- <div class="first-offer" style="margin-top: 100px;">
-    <div class="profileheadsection">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="offerprofile-name">
-                <img src="./images/profileman.png">
-                <h3>David Johnson<br><b>User ID # 4ISK4DH</b></h3>
-            </div>
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
-                House No- B-242</h3> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <h4 style="color: #000;">Offered On 22,August,2022</h4>
-        </div>
-    </div>
-</div>
-
-<div class="service-selectedsection">
-    <div class="row">
-        <div class="col-md-7">
-            <div class="order-details-progress">
-                <h2>Service Cost Offer</h2>
-                <ul class="orderdetails-lists">
-                  <li><em><img src="./images/Snow Plow.png"> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Cover Up.png"> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Grass.png"> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                </ul>
-              </div>
-        </div>
-        <div class="col-md-5">
-            <h2>Advance Booking Timings</h2>
-            <table style="padding: 20px;">
-                <tbody><tr style="margin-bottom:10px;">
-                  <th width="100%"></th>
-                </tr>
-                <tr style="margin-bottom:10px;"> 
-                  <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr style="margin-bottom:10px;">
-                  <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr>
-                  <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-               
-              </tbody></table>
-        </div>
-        <div class="task-description">
-        <h2>Task Description</h2>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-             Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-              when an unknown printer took a galley of type and scrambled it to make a type 
-              specimen book. It has survived not only five centuries, but also the leap into 
-              electronic typesetting, remaining essentially unchanged. It was popularised in 
-              the 1960s with the release of Letraset</p>
-    </div>
-
-    <div class="newoffer-button-advancebooking">
-        <ul>
-            <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
-            </button></a></li>
-        </ul>
-    </div>
-    </div>
-</div>
-</div>
  <!-- THIRD ROW END -->
 </div>
             <!-- END ROW MAIN-PANEL -->

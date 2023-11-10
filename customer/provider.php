@@ -466,7 +466,7 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       <div class="advancebooking-calender">
                         <h2>Set Your Advance Booking</h2>
                         <div class="proposal-container">
-                          <div class="proposal">
+                          <div class="proposal advancedProposal">
                             <div class="innerrow">
                               <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
                                 <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="combine-date" type="date"></div>
@@ -475,11 +475,11 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                                 <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
                                   <div style="text-align: left;">
                                     <p style="text-align:left; font-size:20px">From</p>
-                                    <li><input type="time"></li>
+                                    <li><input type="time" id="adv-from"></li>
                                   </div>
                                   <div style="text-align: left;">
                                     <p style="text-align:left; font-size:20px">To</p>
-                                    <li><input type="time"></li>
+                                    <li><input type="time" id="adv-to"></li>
                                   </div>
                                 </ul>
                                 <ul class="time-advance">
@@ -498,6 +498,10 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                           </button>
                         </div>
                       </div>
+                      <!-- <div class="shortmessage">
+                        <h4>Task Description</h4>
+                        <textarea id="task-description-adv" placeholder="Give your Note to the worker"></textarea>
+                      </div> -->
                     </div>
            
                   </div>
@@ -527,24 +531,18 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                         <h4>Already Booked hours</h4>
                         <div class="booked-hours">
                           <div class="row">
-                            <!-- <div class="col-lg-4 mb-4 mb-lg-0">
-                              <button type="button" class="green">6PM -9 PM</button>
-                            </div>
-                            <div class="col-lg-4 mb-4 mb-lg-0">
-                              <button type="button" class="orange">10 AM -12 PM</button>
-                            </div>
-                            <div class="col-lg-4 mb-4 mb-lg-0">
-                              <button type="button" class="blue">2PM-4PM</button>
-                            </div> -->
+                            
                           </div>
                         </div>
                       </div> 
                     </div>
+
                   </div>
                   <div class="shortmessage">
-                    <h4>Task Description</h4>
-                    <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
-                  </div>
+                  <h4>Task Description</h4>
+                  <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
+                </div>
+                 
                 </div>
                 <input type="button" name="next" class="next action-button" value="Continue" />
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
@@ -552,7 +550,61 @@ $serviceIds = getServiceIds($conn, $servicesArray);
               <!-- THIRD FEILD END -->
 
               <fieldset>
-                <div class="your-offer-selected">
+                <div class="your-offer-selected advanceoffer hidden" id="recure-on">
+                  <h2>Your offers for Advance booking Service</h2>
+                  <div class="row advance-offer-new">
+                    <div class="text-order-image">
+                      <img src="./images/hiring/hiring1.png" />
+                      <h2>David Johnson <br> <span>Lawn Mower</span></h2>
+
+                    </div>
+                    <div class="col-lg-6 col-sm-12">
+                      <div class="unorderlist-selected">
+                        <h2>Service Cost Offer</h2>
+                        <?php
+                          foreach ($servicesArray as $individualService) {
+                            $serviceInfo = $serviceData[$individualService];
+                            $price = $serviceInfo['price'];
+                            $imagePath = $serviceInfo['image'];
+                            echo "<li>
+                              <em><img src='../admin/uploads/$imagePath' />$individualService</em>
+                              <span>$<em contenteditable='true' onBlur='updateTotalAmount(this)'>$price</em></span>
+                            </li>";
+                          }
+                          ?>
+                      </div>
+                      <div class="totalselected">
+                          <li>
+                            <em><img src="./images/providerselected/total.png" />Total Charges</em>
+                            <span id="total-amount">$0</span>
+                          </li>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-sm-12">
+                      <h2>Advance Booking Timings</h2>
+                      <div class="advancebookedtimings">
+                        <ul>
+                          <li style="background-color: #70BE4442;"><em>29-June-2023 , MON</em> <span>10 am -12 am</span>
+                          </li>
+                          <li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em> <span>10 am -12 am</span>
+                          </li>
+                          <li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em> <span>10 am -12 am</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="row description-advance">
+                      <h2>Task Description</h2>
+                      <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+                        Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
+                        when an unknown printer took a galley of type and scrambled it to make a type
+                        specimen book. It has survived not only five centuries, but also the leap into
+                        electronic typesetting, remaining essentially unchanged. It was popularised in
+                        the 1960s with the release of Letraset</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="your-offer-selected" id="recure-off">
                   <div class="row">
                   <div class="col-lg-6 mb-3 mb-lg-0">
                       <h2>Your offers for services selected</h2>
@@ -619,23 +671,32 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                     </div>
                   </div>
                 </div>
-
-                <input type="button" id="submit-date" name="next" class="submit next action-button"
-                  value="Proceed & Send Request to Provider" />
+                <div style="display:contents">
+                <div id="on-content-button" class="hidden">
+                  <input type="button" id="submit-advance" data-toggle="modal" class="action-button-previous" data-target="#popupMessage" value="submit-advance" />
+                </div>
+                <div id="off-content-button">
+                  <input type="button" id="submit-date" class="action-button-previous" data-toggle="modal" data-target="#successMessage" value="Proceed & Send Request to Provider" />
+                </div>
+                </div>
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
               </fieldset>
-              <fieldset>
-                <div class="your-offer-selected popup-selected" id="popupMessage">
+              <div class="modal your-offer-selected popup-selected"  id="popupMessage" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="popup-selected-modal">
+                    <div class="popupsucessfully">
+                      <img src="./images/checktick.png" />
+                      <p>Your Offer Has been successfully sent to service provider</p>
+                    </div>
+                  </div>
+              </div>
+              <div class="modal your-offer-selected popup-selected"  id="successMessage" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="popup-selected-modal">
                     <div class="popupsucessfully">
                       <img src="./images/checktick.png" />
                       <p>Your Offer Has been successfully sent to service provider</p>
                     </div>
                   </div>
-
-                </div>
-
-              </fieldset>
+              </div>
             </form>
           </div>
         </div>
@@ -746,6 +807,10 @@ function fetchBookedHours(providerId, selectedDate) {
     xhr.send(JSON.stringify(requestData));
 }
 
+// Example usage:
+// Replace '123' and '2023-11-15' with the actual provider ID and selected date
+fetchBookedHours('123', '2023-11-15');
+
 // Add an event listener to the date input
 const selectedDateInput = document.getElementById('selected_date');
 selectedDateInput.addEventListener('change', function () {
@@ -794,7 +859,11 @@ selectedDateInput.addEventListener('change', function () {
       document.addEventListener('DOMContentLoaded', function () {
       const slider = document.getElementById('custom-slider');
       const onContent = document.getElementById('custom-on-content');
+      const recureOn = document.getElementById('recure-on');
+      const onContentButton = document.getElementById('on-content-button');
       const offContent = document.getElementById('custom-off-content');
+      const recureOff = document.getElementById('recure-off');
+      const offContentButton = document.getElementById('off-content-button');
       let isToggled = false;
       slider.addEventListener('click', function () {
           isToggled = !isToggled;
@@ -802,11 +871,19 @@ selectedDateInput.addEventListener('change', function () {
           if (isToggled) {
               slider.style.left = '30px';
               onContent.classList.remove('hidden');
+              recureOn.classList.remove('hidden');
               offContent.classList.add('hidden');
+              recureOff.classList.add('hidden');
+              onContentButton.classList.remove('hidden');
+              offContentButton.classList.add('hidden');
           } else {
               slider.style.left = '0';
               onContent.classList.add('hidden');
+              recureOn.classList.add('hidden');
               offContent.classList.remove('hidden');
+              recureOff.classList.remove('hidden');
+              onContentButton.classList.add('hidden');
+              offContentButton.classList.remove('hidden');
           }
       });
         });
@@ -915,8 +992,6 @@ function uploadImages(customerId, providerId, files) {
 }
 
 document.getElementById('submit-date').addEventListener('click', function () {
-
-
         // Get the customer ID from the input field
         const customerId = document.getElementById('customer-id').value;
         const providerId = document.getElementById('provider-id').value;
@@ -924,7 +999,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
     // return;
     const customerFullName = document.getElementById('customerFullName').value;
         // const serviceId = document.getElementById('service-id').value;
-        const messageContent = `You recive a new order from ${customerFullName}`;
+        const messageContent = `You recive a new Advanced Booking from ${customerFullName}`;
         // Get the task description from the <p> element
         const userContent = document.getElementById('display-task-description').textContent;
 
@@ -936,21 +1011,22 @@ document.getElementById('submit-date').addEventListener('click', function () {
         
         // Create an array to store the selected image files
         const imageFiles = document.getElementById('images').files;
-// Parse and format the selectedTime and selectedTimeTo
-const selectedTime = document.getElementById('from').value;
-    const selectedTimeTo = document.getElementById('to').value;
+        // Parse and format the selectedTime and selectedTimeTo
+        const selectedTime = document.getElementById('from').value;
+        const selectedTimeTo = document.getElementById('to').value;
 
-    const formattedTime = formatTime(selectedTime);
-    const formattedTimeTo = formatTime(selectedTimeTo);
+        const formattedTime = formatTime(selectedTime);
+        const formattedTimeTo = formatTime(selectedTimeTo);
         // Create a JavaScript object with all the non-image data
         const data = {
             selectedDate: document.getElementById('selected_date').value,
             selectedTime: formattedTime, // Use the formatted time
-        selectedTimeTo: formattedTimeTo, // Use the formatted time
+            selectedTimeTo: formattedTimeTo, // Use the formatted time
             customerId: document.getElementById('customer-id').value,
             // providerId: document.getElementById('provider-id').value,
             customerId: customerId,
             providerId: providerId,
+            proposal_status: 'OneTime',
             statusFrom: 'customer_send',
             messageContent: messageContent,
             userContent: userContent,
@@ -958,7 +1034,7 @@ const selectedTime = document.getElementById('from').value;
             totalAmount: totalAmount,
         };
         console.log(data);
-        // return;
+        return;
         // Send the non-image data to the server using AJAX
         const xhr = new XMLHttpRequest();
         xhr.open('POST', 'php.php');
@@ -976,7 +1052,6 @@ const selectedTime = document.getElementById('from').value;
         uploadImages(customerId, providerId, imageFiles);
     
 });
-
 // Function to format time from 24-hour to 12-hour format
 function formatTime(time) {
     const timeParts = time.split(':');
@@ -1041,7 +1116,7 @@ function formatTime(time) {
     }
     // After preview_images() is called, you can add the base64-encoded images to the data array
 // Get the submit button
-const submitButton = document.getElementById('submit-date');
+const submitButton = document.getElementById('submit-advance');
 
 // Get the popup message element
 const popupMessage = document.getElementById('popupMessage');
@@ -1058,8 +1133,30 @@ submitButton.addEventListener('click', function () {
         // Redirect to the service page after 5 seconds
         setTimeout(function () {
             window.location.href = 'services.php'; // Replace with the actual URL
-        }, 100); // 5000 milliseconds (5 seconds)
-    }, 4000); // 5000 milliseconds (5 seconds)
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
+});
+
+
+const submitDate = document.getElementById('submit-date');
+
+// Get the popup message element
+const successMessage = document.getElementById('successMessage');
+
+// Add a click event listener to the submit button
+submitDate.addEventListener('click', function () {
+    // Show the popup message
+    successMessage.style.display = 'block';
+
+    // Automatically hide the popup message after 5 seconds
+    setTimeout(function () {
+      successMessage.style.display = 'none';
+
+        // Redirect to the service page after 5 seconds
+        setTimeout(function () {
+            window.location.href = 'services.php'; // Replace with the actual URL
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
 });
 
 </script>
@@ -1100,46 +1197,134 @@ submitButton.addEventListener('click', function () {
   updateSelectedServices();
 </script>
 
-<script>
-                 document.addEventListener('DOMContentLoaded', function () {
-                const addProposalButton = document.getElementById('addProposal');
-                const proposalContainer = document.querySelector('.proposal-container');
-                const proposalTemplate = document.querySelector('.proposal'); // Template for cloning
-                const maxProposals = 9; // Maximum number of proposals
-                let proposalCount = 0;
+  <script>
+    
+    let proposalCount = '';
 
-                // Function to generate a random pastel background color
-                function getRandomPastelColor() {
-                    const letters = '89ABCDEF'; // Use a limited range of letters for lighter colors
-                    let color = '#';
-                    for (let i = 0; i < 6; i++) {
-                        color += letters[Math.floor(Math.random() * letters.length)];
-                    }
-                    return color;
+    document.addEventListener('DOMContentLoaded', function () {
+        const addProposalButton = document.getElementById('addProposal');
+        const proposalContainer = document.querySelector('.proposal-container');
+        const proposalTemplate = document.querySelector('.proposal'); // Template for cloning
+        const maxProposals = 9; // Maximum number of proposals
+
+      // Function to generate a random pastel background color
+      function getRandomPastelColor() {
+            const letters = '89ABCDEF'; // Use a limited range of letters for lighter colors
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * letters.length)];
+            }
+            return color;
+        }
+
+        addProposalButton.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            if (proposalCount < maxProposals) {
+                const newProposal = proposalTemplate.cloneNode(true); // Clone the proposal template
+                proposalContainer.appendChild(newProposal); // Append the cloned proposal
+
+                // Change the background color of the newly added proposal to a random pastel color
+                newProposal.style.backgroundColor = getRandomPastelColor();
+                newProposal.style.marginTop = '20px';
+                newProposal.style.borderRadius = '20px';
+
+                // Increment the proposal counter
+                proposalCount++;
+
+                // Update IDs of cloned elements with a counter
+                updateElementIds(newProposal, proposalCount);
+
+                if (proposalCount === maxProposals) {
+                    addProposalButton.disabled = true; // Disable the button when the maximum limit is reached
                 }
+            }
+        });
+    });
 
-                addProposalButton.addEventListener('click', function (e) {
-                    e.preventDefault();
 
-                    if (proposalCount < maxProposals) {
-                        const newProposal = proposalTemplate.cloneNode(true); // Clone the proposal template
-                        proposalContainer.appendChild(newProposal); // Append the cloned proposal
+    function updateElementIds(container, counter) {
+        // Iterate over elements with IDs and update them
+        container.querySelectorAll('[id]').forEach(element => {
+            element.id = element.id + counter;
+        });
+    }
 
-                        // Change the background color of the newly added proposal to a random pastel color
-                        newProposal.style.backgroundColor = getRandomPastelColor();
-                        newProposal.style.marginTop = '20px';
-                        newProposal.style.borderRadius = '20px';
+    document.getElementById('submit-advance').addEventListener('click', function () {
+        // Get the customer ID from the input field
+        const customerId = document.getElementById('customer-id')?.value;
+        const providerId = document.getElementById('provider-id')?.value;
+        const customerFullName = document.getElementById('customerFullName')?.value;
+        // const userContentAdv = document.getElementById('task-description-adv')?.value;
+        const userContent = document.getElementById('display-task-description').textContent;
 
-                        proposalCount++;
+        // Create an array to store the advance booking proposals
+        const advanceProposals = [];
 
-                        if (proposalCount === maxProposals) {
-                            addProposalButton.disabled = true; // Disable the button when the maximum limit is reached
-                        }
-                    }
-                });
-              });
+        // Iterate over each proposal container
+        for (let i = ''; i <= proposalCount; i++) {
+            const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+            const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+            const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
 
-            </script>
+            if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+                // Format time and create a proposal object
+                const formattedTimeAdv = formatTime(selectedTimeAdv);
+                const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+
+                const proposalData = {
+                    selectedDateAdv: selectedDateAdv,
+                    selectedTimeAdv: formattedTimeAdv,
+                    selectedTimeToAdv: formattedTimeToAdv,
+                };
+
+                // Push the proposal object to the array
+                advanceProposals.push(proposalData);
+            } else {
+                console.error(`Error: Proposal data for proposal ${i} is missing.`);
+            }
+        }
+
+        // Get the selected services and total amount
+        const selectedServices = getSelectedServices();
+        const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
+
+        const totalAmount = totalAmountElement.textContent.replace('$', '');
+        const imageFiles = document.getElementById('images').files;
+
+        // Create a JavaScript object with all the non-image data
+        const data = {
+            advanceProposals: advanceProposals,
+            customerId: customerId,
+            providerId: providerId,
+            proposal_status: 'AdvancedProposal',
+            statusFrom: 'customer_send',
+            messageContent: `You receive a new order from ${customerFullName}`,
+            userContent: userContent,
+            selectedServices: getSelectedServicesWithPrices(),
+            totalAmount: totalAmount,
+        };
+        console.log(data);
+        // return;
+        // Send the non-image data to the server using AJAX
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'advance_proposal.php');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(data));
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                // Handle the server's response here, if needed
+                console.log(xhr.responseText);
+            }
+        };
+
+        // After sending non-image data, upload images separately
+        uploadImages(customerId, providerId, imageFiles);
+    });
+
+
+  </script>
 
   <!-- jQuery -->
   <script src="plugins/jQuery/jquery.min.js"></script>
