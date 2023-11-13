@@ -274,13 +274,13 @@
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item active">
             <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="ui-basic">
               <i class="menu-icon mdi mdi-format-list-bulleted"></i>
               <span class="menu-title">In Progress Orders</span>
             </a>
           </li>
-          <li class="nav-item active">
+          <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="form-elements">
               <i class="menu-icon mdi mdi-calendar"></i>
               <span class="menu-title">Scheduled Orders</span>
@@ -350,7 +350,7 @@
       <div class="main-panel">
         <!-- MAIN PANEL ROW START -->
         <div class="order-in-progress">
-            <h1><b style="color: #70BE44;">Scheduled </b>Order</h1>
+            <h1><b style="color: #70BE44;">Order</b> In Progress</h1>
             <div class="onetime-advancebokingbutton">
                 <ul>
                   <li><a href="#"><button style="color: #959595; background-color: #E6E6E6;">One Time Service</button></a></li>
@@ -375,18 +375,39 @@
                     <div class="scheduled-today">
                         <h3 style="color: #00B2FF;">Scheduled Today</h3>
                         <ul class="date">
-                            <li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li>
+                            <li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li>
                         </ul>
                     </div>
                 </div>
                 <div class="col-lg-2 mb-2 mb-lg-0 align-items-center">
                     <div class="inprocess-button">
-                        <a href="#"><button style="background-color: #00B2FF;" class="process">Scheduled</button></a>
+                        <a href="#"><button style="background-color: #00B2FF;" class="process">Scheduled Today</button></a>
                         <p>Hired On 23rd August 2023</p>
                 </div>
             </div>
         </div>
-        
+        <div class="services-selected">
+            <div class="row">
+            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                <h2>Service Status</h2>
+            </div>
+            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                <form action="">
+                    <select name="status" id="status">
+                      <option value="way">On the Way</option>
+                      <option value="reached">Reached</option>
+                    </select>
+
+                  </form>
+            </div>
+            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                <h2>Customer Verification</h2>
+            </div>
+            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                <a href="#"><button style="background-color: #70BE44; color: #fff;" class="verified">Verified</button></a>
+            </div>
+        </div>
+        </div>
 
         <div class="row align-items-center advancebookingschedule">
           <table style="padding: 20px;">
@@ -398,7 +419,7 @@
             <tr style="margin-bottom:10px;">
               <td width="25%"><li class="services-advance"><span><img src="./images/doubletick.png"/></span><strong> Snow Removal </strong><span><img src="./images/Snow Plow.png"/></span></li></td> 
               <td width="65%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-              <td width="10%"><a href="#"><button style="background-color: #70BE44;" class="process">Completed </button></a></td>
+              <td width="10%"><a href="#"><button style="background-color: #00B2FF;" class="process">Scheduled </button></a></td>
             </tr>
             <tr style="margin-bottom:10px;">
               <td width="25%"><li class="services-advance"><span><img src="./images/doubletick.png"/></span><strong> Spring Cleanup </strong><span><img src="./images/Cover Up.png"/></span></li></td>
