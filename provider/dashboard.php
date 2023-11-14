@@ -1,6 +1,22 @@
 <?php
 include '../connection.php';
 session_start();
+function getReviews(){
+  global $conn;
+  $sql =
+      "SELECT rating, Feedback, created_at FROM ratings WHERE provider_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("s", $_SESSION["user_id"]);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $rating = [];
+      while ($row = $result->fetch_assoc()) {
+          $rating[] = $row;
+      }
+      return $rating;
+  }
+  return "0";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -505,22 +521,35 @@ session_start();
                     <li><img src="./images/star.png"/><em>Job Success</em><span style="color: red;">10%</span></li>
                   </ul>
                   <h2><b style="color: #70BE44;">Recent</b> Feedbacks</h2>
-                  <div class="services-feedbacks">
+                  <?php 
+                    $getReviews = getReviews();
+                    foreach($getReviews as $getReview){
+                      // foreach($getReview as $review){
+                        ?>
+                        <div class="services-feedbacks">
+                            <img src="./images/profileman.png"/>
+                            <h4><?php echo $getReview['Feedback'];?></h4>
+                            <ul class="feedback-date-category">
+                              <li>1 hours ago</li>
+                              <li style="color: #227A4E;">Window Tint, Mechanic , Tuning .</li>
+                            </ul>
+                          </div>
+                        <?php
+                      // }
+                    ?>
+                    <?php
+                    }
+                    // print_r($getReview);
+                  ?>
+                  
+                  <!-- <div class="services-feedbacks">
                     <img src="./images/profileman.png"/>
                     <h4>Mick taison is available for the job with his expertise skills</h4>
                     <ul class="feedback-date-category">
                       <li>1 hours ago</li>
                       <li style="color: #227A4E;">Window Tint, Mechanic , Tuning .</li>
                     </ul>
-                  </div>
-                  <div class="services-feedbacks">
-                    <img src="./images/profileman.png"/>
-                    <h4>Mick taison is available for the job with his expertise skills</h4>
-                    <ul class="feedback-date-category">
-                      <li>1 hours ago</li>
-                      <li style="color: #227A4E;">Window Tint, Mechanic , Tuning .</li>
-                    </ul>
-                  </div>
+                  </div> -->
                 </div>
                 <!-- Schedule tasks -->
                 <div class="schedule-tasks-progress">

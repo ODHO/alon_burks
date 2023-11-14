@@ -441,8 +441,8 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                     <input type="file" class="form-control" id="images" name="images[]" onchange="preview_images();" multiple accept="image/*" />
                     </label>
                     <p style="text-align: left;">
-                      Minimum 5 images of Of your service area , make sure image should beclear
-                    </p>
+                    Minimum 5 images of Of your service area , make sure image should beclear
+                  </p>
                       <div class="row" id="image_preview"></div>
                   </div>
 
@@ -457,6 +457,10 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       </div>
                     </div>
                   </div>
+
+
+
+                  
                   <div id="custom-on-content" class="custom-content hidden" style="width:100%">
                     <div class="row advnce" style="padding: 60px 0px;">
                       <div class="advancebooking-calender">
@@ -601,14 +605,24 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                   <div class="row">
                   <div class="col-lg-6 mb-3 mb-lg-0">
                       <h2>Your offers for services selected</h2>
-                      <div class="unorderlist-selected" id="selected-services-list1">
-                          
+                      <div class="unorderlist-selected" id="selected-services-list">
+                          <?php
+                          foreach ($servicesArray as $individualService) {
+                            $serviceInfo = $serviceData[$individualService];
+                            $price = $serviceInfo['price'];
+                            $imagePath = $serviceInfo['image'];
+                            echo "<li>
+                              <em><img src='../admin/uploads/$imagePath' />$individualService</em>
+                              <span>$<em contenteditable='true' onBlur='updateTotalAmount(this)'>$price</em></span>
+                            </li>";
+                          }
+                          ?>
                         </div>
 
                         <div class="totalselected">
                           <li>
                             <em><img src="./images/providerselected/total.png" />Total Charges</em>
-                            <span id="total-amount1">$0</span>
+                            <span id="total-amount">$0</span>
                           </li>
                         </div>
                       </div>
@@ -837,61 +851,39 @@ selectedDateInput.addEventListener('change', function () {
         });
   </script>
 <script>
-  const totalAmountElement1 = document.getElementById('total-amount1');
-  const totalAmountElement2 = document.getElementById('total-amount2');
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-  const selectedServicesList1 = document.getElementById('selected-services-list1');
+  const totalAmountElement = document.getElementById('total-amount');
+ const checkboxes = document.querySelectorAll('input[type="checkbox"]');
   const selectedServicesList2 = document.getElementById('selected-services-list2');
 
   function updateTotalAmount() {
-    console.log('hello world')
-    let totalAmount1 = 0;
-    let totalAmount2 = 0;
+    let totalAmount = 0;
 
-    // Clear the existing lists
-    selectedServicesList1.innerHTML = '';
+    // Clear the existing list
     selectedServicesList2.innerHTML = '';
 
     checkboxes.forEach((checkbox, index) => {
-      const serviceName = checkbox.value;
-      const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
-      const price = parseFloat(priceElement.textContent) || 0;
-
-      // Display the selected services and prices in both lists
       if (checkbox.checked) {
-        totalAmount1 += price;
-        const listItem1 = document.createElement('li');
-        listItem1.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em contenteditable='true'>${price.toFixed(2)}</em></span>`;
-        selectedServicesList1.appendChild(listItem1);
-      }
+        const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+        const price = parseFloat(priceElement.textContent) || 0;
+        totalAmount += price;
 
-      // Display the selected services and prices only in the second list
-      if (checkbox.checked) {
-        totalAmount2 += price;
-        const listItem2 = document.createElement('li');
-        listItem2.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
-        selectedServicesList2.appendChild(listItem2);
+        // Display the edited price in the selected services list
+        const serviceName = checkbox.value;
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
+        selectedServicesList2.appendChild(listItem);
       }
     });
 
-    totalAmountElement1.textContent = `$${totalAmount1.toFixed(2)}`;
-    totalAmountElement2.textContent = `$${totalAmount2.toFixed(2)}`;
+    totalAmountElement.textContent = `$${totalAmount.toFixed(2)}`;
   }
 
-  checkboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', updateTotalAmount);
+  checkboxes.forEach((checkbox, index) => {
+    checkbox.addEventListener('change', function () {
+      updateTotalAmount();
+    });
   });
-
-  const contentEditableElements = document.querySelectorAll('em[contenteditable="true"]');
-
-  contentEditableElements.forEach((element) => {
-    element.addEventListener('blur', updateTotalAmount);
-  });
-
-  // ... (rest of your existing script)
-
 </script>
-
 
  
 <script>
@@ -1168,7 +1160,7 @@ submitDate.addEventListener('click', function () {
 
 </script>
 <script>
-  const selectedServicesList = document.getElementById('selected-services-list1');
+  const selectedServicesList = document.getElementById('selected-services-list');
   const totalAmountElement = document.getElementById('total-amount');
  
 

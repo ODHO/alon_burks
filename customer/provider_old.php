@@ -441,8 +441,8 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                     <input type="file" class="form-control" id="images" name="images[]" onchange="preview_images();" multiple accept="image/*" />
                     </label>
                     <p style="text-align: left;">
-                      Minimum 5 images of Of your service area , make sure image should beclear
-                    </p>
+                    Minimum 5 images of Of your service area , make sure image should beclear
+                  </p>
                       <div class="row" id="image_preview"></div>
                   </div>
 
@@ -457,6 +457,10 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       </div>
                     </div>
                   </div>
+
+
+
+                  
                   <div id="custom-on-content" class="custom-content hidden" style="width:100%">
                     <div class="row advnce" style="padding: 60px 0px;">
                       <div class="advancebooking-calender">
@@ -844,7 +848,6 @@ selectedDateInput.addEventListener('change', function () {
   const selectedServicesList2 = document.getElementById('selected-services-list2');
 
   function updateTotalAmount() {
-    console.log('hello world')
     let totalAmount1 = 0;
     let totalAmount2 = 0;
 
@@ -861,7 +864,7 @@ selectedDateInput.addEventListener('change', function () {
       if (checkbox.checked) {
         totalAmount1 += price;
         const listItem1 = document.createElement('li');
-        listItem1.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em contenteditable='true'>${price.toFixed(2)}</em></span>`;
+        listItem1.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
         selectedServicesList1.appendChild(listItem1);
       }
 
@@ -1168,7 +1171,7 @@ submitDate.addEventListener('click', function () {
 
 </script>
 <script>
-  const selectedServicesList = document.getElementById('selected-services-list1');
+  const selectedServicesList = document.getElementById('selected-services-list');
   const totalAmountElement = document.getElementById('total-amount');
  
 
