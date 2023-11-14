@@ -422,17 +422,16 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                   <div class="select-service-booking">
                     <h4>Select Services you need</h4>
                     <div class="row">
-                    <?php
-foreach ($servicesArray as $individualService) {
-    $serviceInfo = $serviceData[$individualService];
-    $serviceId = $serviceInfo['id'];
-    // print_r($individualService);
-    echo "<div class='col-lg-3 mb-3 mb-lg-0'>";
-    echo "<label><input type='checkbox' name='selected_services[]' value='$individualService' data-service-id='$serviceId'>$individualService</label>";
-    echo "</div>";
-}
-?>
-
+                      <?php
+                        foreach ($servicesArray as $individualService) {
+                            $serviceInfo = $serviceData[$individualService];
+                            $serviceId = $serviceInfo['id'];
+                            // print_r($individualService);
+                            echo "<div class='col-lg-3 mb-3 mb-lg-0'>";
+                            echo "<label><input type='checkbox' name='selected_services[]' value='$individualService' data-service-id='$serviceId'>$individualService</label>";
+                            echo "</div>";
+                        }
+                      ?>
                     </div>
                   </div>
 
@@ -451,368 +450,120 @@ foreach ($servicesArray as $individualService) {
                     <div class="col-lg-9 mb-9 mb-lg-0">
                       <h2>Want Advance Booking for this Services</h2>
                     </div>
+                    
                     <div class="col-lg-3 mb-3 mb-lg-0">
-                      <div class="toggle-button-cover">
-                        <div class="button-cover">
-                          <div class="button r" id="button-1">
-                            <input type="checkbox" class="checkbox" id="toggle-switch" />
-                            <div class="knobs"></div>
-                            <div class="layer"></div>
-                          </div>
-                        </div>
+                      <div class="custom-toggle-container">
+                          <div id="custom-slider" class="custom-slider"></div>
                       </div>
                     </div>
                   </div>
 
 
 
-                  <div id='main'>
-                    <h3>Choose Your Time & Date</h3>
-                    <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
-                    <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
-                    <div id='app'></div>
-                  </div>
-                  <div id="content-on" style="display: none;width:100%">
+                  
+                  <div id="custom-on-content" class="custom-content hidden" style="width:100%">
                     <div class="row advnce" style="padding: 60px 0px;">
                       <div class="advancebooking-calender">
                         <h2>Set Your Advance Booking</h2>
+                        <div class="proposal-container">
+                          <div class="proposal advancedProposal">
+                            <div class="innerrow">
+                              <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
+                                <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="combine-date" type="date"></div>
+                              </div>
+                              <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
+                                <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
+                                  <div style="text-align: left;">
+                                    <p style="text-align:left; font-size:20px">From</p>
+                                    <li><input type="time" id="adv-from"></li>
+                                  </div>
+                                  <div style="text-align: left;">
+                                    <p style="text-align:left; font-size:20px">To</p>
+                                    <li><input type="time" id="adv-to"></li>
+                                  </div>
+                                </ul>
+                                <ul class="time-advance">
+                                  <p style="text-align:left; font-size:20px">Already Booked Timing</p>
+                                  <li><input type="time" /></li>
+                                  <li><input type="time" /></li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-lg-12 text-center py-3">
+                          <button id="addProposal" style="padding:10px;padding-left:50px;padding-right:50px;background-color:#70BE44;border-radius:30px; border:none;color:white;font-size:20px">
+                          Add more
+                          </button>
+                        </div>
+                      </div>
+                      <!-- <div class="shortmessage">
+                        <h4>Task Description</h4>
+                        <textarea id="task-description-adv" placeholder="Give your Note to the worker"></textarea>
+                      </div> -->
+                    </div>
+           
+                  </div>
+                  <div id="custom-off-content" class="custom-content" style="width:100%">
+                    <div class="proposal" style="backgroun-color:antiquewhite">
                         <div class="innerrow">
                           <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                            <h1> <img src="./images/calender.png" />29-June-2023 , MON</h1>
+                            <div style="display:flex; align-items:center"><h1> <img src="./images/calender.png" /></h1><input id="selected_date" type="date"></div>
                           </div>
                           <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                            <h5>Hours Require <span>02</span></h5>
-                            <ul class="time-advance">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
+                            <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
+                              <div style="text-align: left;">
+                                <p style="text-align:left; font-size:20px">From</p>
+                                <li><input type="time" id="from"></li>
+                              </div>
+                              <div style="text-align: left;">
+                                <p style="text-align:left; font-size:20px">To</p>
+                                <li><input type="time" id="to"></li>
+                              </div>
                             </ul>
-                            <ul class="time-advance1">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
+                            <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
+                            <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
+                            
                           </div>
-
                         </div>
-                        <div class="innerrow" style="margin-top: 30px; background-color: #E7212121;">
-                          <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                            <h1> <img src="./images/calender.png" />29-June-2023 , MON</h1>
-                          </div>
-                          <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                            <h5>Hours Require <span>02</span></h5>
-                            <ul class="time-advance">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                            <ul class="time-advance1">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                          </div>
-
-                        </div>
-
-                        <div class="innerrow"
-                          style="margin-top: 30px; background-color: #ffc4006e                                          ;">
-                          <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
-                            <h1> <img src="./images/calender.png" />29-June-2023 , MON</h1>
-                          </div>
-                          <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
-                            <h5>Hours Require <span>02</span></h5>
-                            <ul class="time-advance">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                            <ul class="time-advance1">
-                              <li>10 am -12 am</li>
-                              <li>10 am -12 am</li>
-                            </ul>
-                          </div>
-
-                        </div>
-                      </div>
-                    </div>
-                    <div class="shortmessage">
-                      <h4 style="text-align: center;">Describe your task</h4>
-                      <textarea placeholder="Give your Note to the worker"></textarea>
-                    </div>
-                  </div>
-                  <div id="content-off" style="display: block;width:100%">
-                      <div class="booked-hours">
+                      <div style="marging-top:20px">
                         <h4>Already Booked hours</h4>
-                        <div class="row">
-                          <div class="col-lg-4 mb-4 mb-lg-0">
-                            <button type="button" class="green">6PM -9 PM</button>
-                          </div>
-                          <div class="col-lg-4 mb-4 mb-lg-0">
-                            <button type="button" class="orange">10 AM -12 PM</button>
-                          </div>
-                          <div class="col-lg-4 mb-4 mb-lg-0">
-                            <button type="button" class="blue">2PM-4PM</button>
-
+                        <div class="booked-hours">
+                          <div class="row">
+                            
                           </div>
                         </div>
-                      </div>
-                      <div class="text-header">
-                        <h4>Set Time</h4>
-                      </div>
-                      <div class="time-selection">
-                        <div class="hours-slots">
-                          <ul id="custom-timeslot">
-                            <li>
-                              <p>01</p>
-                            </li>
-                            <li>
-                              <p oncha>02</p>
-                            </li>
-                            <li>
-                              <p>03</p>
-                            </li>
-                            <li>
-                              <p>04</p>
-                            </li>
-                            <li>
-                              <p>05</p>
-                            </li>
-                            <li>
-                              <p>06</p>
-                            </li>
-                            <li>
-                              <p>07</p>
-                            </li>
-                            <li>
-                              <p>08</p>
-                            </li>
-                            <li>
-                              <p>09</p>
-                            </li>
-                            <li>
-                              <p>10</p>
-                            </li>
-                            <li>
-                              <p>11</p>
-                            </li>
-                            <li>
-                              <p>12</p>
-                            </li>
-                          </ul>
-                        </div>
+                      </div> 
+                    </div>
 
-                        <div class="ratio-time">:</div>
-                        <div class="hours-slots">
-
-                          <ul id="custom-timeslot1">
-                            <li>
-                              <p>00</p>
-                            </li>
-                            <li>
-                              <p>01</p>
-                            </li>
-                            <li>
-                              <p>02</p>
-                            </li>
-                            <li>
-                              <p>03</p>
-                            </li>
-                            <li>
-                              <p>04</p>
-                            </li>
-                            <li>
-                              <p>05</p>
-                            </li>
-                            <li>
-                              <p>06</p>
-                            </li>
-                            <li>
-                              <p>07</p>
-                            </li>
-                            <li>
-                              <p>08</p>
-                            </li>
-                            <li>
-                              <p>09</p>
-                            </li>
-                            <li>
-                              <p>10</p>
-                            </li>
-                            <li>
-                              <p>11</p>
-                            </li>
-                            <li>
-                              <p>12</p>
-                            </li>
-                            <li>
-                              <p>13</p>
-                            </li>
-                            <li>
-                              <p>14</p>
-                            </li>
-                            <li>
-                              <p>15</p>
-                            </li>
-                            <li>
-                              <p>16</p>
-                            </li>
-                            <li>
-                              <p>17</p>
-                            </li>
-                            <li>
-                              <p>18</p>
-                            </li>
-                            <li>
-                              <p>19</p>
-                            </li>
-                            <li>
-                              <p>20</p>
-                            </li>
-                            <li>
-                              <p>21</p>
-                            </li>
-                            <li>
-                              <p>22</p>
-                            </li>
-                            <li>
-                              <p>23</p>
-                            </li>
-                            <li>
-                              <p>24</p>
-                            </li>
-                            <li>
-                              <p>25</p>
-                            </li>
-                            <li>
-                              <p>26</p>
-                            </li>
-                            <li>
-                              <p>27</p>
-                            </li>
-                            <li>
-                              <p>28</p>
-                            </li>
-                            <li>
-                              <p>29</p>
-                            </li>
-                            <li>
-                              <p>30</p>
-                            </li>
-                            <li>
-                              <p>31</p>
-                            </li>
-                            <li>
-                              <p>32</p>
-                            </li>
-                            <li>
-                              <p>33</p>
-                            </li>
-                            <li>
-                              <p>34</p>
-                            </li>
-                            <li>
-                              <p>35</p>
-                            </li>
-                            <li>
-                              <p>36</p>
-                            </li>
-                            <li>
-                              <p>37</p>
-                            </li>
-                            <li>
-                              <p>38</p>
-                            </li>
-                            <li>
-                              <p>39</p>
-                            </li>
-                            <li>
-                              <p>40</p>
-                            </li>
-                            <li>
-                              <p>41</p>
-                            </li>
-                            <li>
-                              <p>42</p>
-                            </li>
-                            <li>
-                              <p>43</p>
-                            </li>
-                            <li>
-                              <p>44</p>
-                            </li>
-                            <li>
-                              <p>45</p>
-                            </li>
-                            <li>
-                              <p>46</p>
-                            </li>
-                            <li>
-                              <p>47</p>
-                            </li>
-                            <li>
-                              <p>48</p>
-                            </li>
-                            <li>
-                              <p>49</p>
-                            </li>
-                            <li>
-                              <p>50</p>
-                            </li>
-                            <li>
-                              <p>51</p>
-                            </li>
-                            <li>
-                              <p>52</p>
-                            </li>
-                            <li>
-                              <p>53</p>
-                            </li>
-                            <li>
-                              <p>54</p>
-                            </li>
-                            <li>
-                              <p>55</p>
-                            </li>
-                            <li>
-                              <p>56</p>
-                            </li>
-                            <li>
-                              <p>57</p>
-                            </li>
-                            <li>
-                              <p>58</p>
-                            </li>
-                            <li>
-                              <p>59</p>
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div class="hours-slots">
-                          <ul id="custom-timeslot2">
-                            <li>
-                              <p>AM</p>
-                            </li>
-                            <li>
-                              <p>PM</p>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div class="shortmessage">
-                        <h4>Task Description</h4>
-                        <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
-                      </div>
                   </div>
+                  <div class="shortmessage">
+                  <h4>Task Description</h4>
+                  <textarea id="task-description" placeholder="Give your Note to the worker"></textarea>
                 </div>
-                <input type="button" name="next" class="next action-button" value="Continue" />
+                 
+                </div>
+                <input type="button" name="next" class="next action-button" id="continueButton" value="Continue" />
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
               </fieldset>
               <!-- THIRD FEILD END -->
 
               <fieldset>
-                <div class="your-offer-selected">
-                  <div class="row">
-                  <div class="col-lg-6 mb-3 mb-lg-0">
-                      <h2>Your offers for services selected</h2>
-                      <div class="unorderlist-selected" id="selected-services-list">
-                          <?php
+                <div class="your-offer-selected advanceoffer hidden" id="recure-on">
+                  <h2>Your offers for Advance booking Service</h2>
+                  <div class="row advance-offer-new">
+                    <div class="text-order-image">
+                    <img style="object-fit:cover;width:7%" src="../provider/<?php echo $profile_picture ?>" />
+                            <h2>
+                              <?php echo $provider_name; ?><br> <span>Lawn Mower</span>
+                            </h2>
+
+                    </div>
+                    <div class="col-lg-6 col-sm-12">
+                      <div class="unorderlist-selected">
+                        <h2>Service Cost Offer</h2>
+                        <?php
                           foreach ($servicesArray as $individualService) {
                             $serviceInfo = $serviceData[$individualService];
                             $price = $serviceInfo['price'];
@@ -823,12 +574,45 @@ foreach ($servicesArray as $individualService) {
                             </li>";
                           }
                           ?>
+                      </div>
+                      <div class="totalselected">
+                          <li>
+                            <em><img src="./images/providerselected/total.png" />Total Charges</em>
+                            <span id="total-amount">$0</span>
+                          </li>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-sm-12">
+                      <h2>Advance Booking Timings</h2>
+                      <div class="advancebookedtimings">
+                        <ul>
+                          <li style="background-color: #70BE4442;"><em>29-June-2023 , MON</em> <span>10 am -12 am</span>
+                          </li>
+                          <li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em> <span>10 am -12 am</span>
+                          </li>
+                          <li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em> <span>10 am -12 am</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="description-advance">
+                      <h2>Task Description</h2>
+                      <p id="display-task-description1"></p>
+                    </div>
+                  </div>
+                </div>
+                <div class="your-offer-selected" id="recure-off">
+                  <div class="row">
+                  <div class="col-lg-6 mb-3 mb-lg-0">
+                      <h2>Your offers for services selected</h2>
+                      <div class="unorderlist-selected" id="selected-services-list1">
+                          
                         </div>
 
                         <div class="totalselected">
                           <li>
                             <em><img src="./images/providerselected/total.png" />Total Charges</em>
-                            <span id="total-amount">$0</span>
+                            <span id="total-amount1">$0</span>
                           </li>
                         </div>
                       </div>
@@ -848,7 +632,7 @@ foreach ($servicesArray as $individualService) {
                             <h4>Booking Timing</h4>
                             <li>
                                 <i style="color: #70BE44;" class="fa fa-clock" aria-hidden="true"></i>
-                                <span id="selected-booking-time"></span>
+                                <span id="date_display_from"></span>
                             </li>
                         </ul>
 
@@ -874,23 +658,32 @@ foreach ($servicesArray as $individualService) {
                     </div>
                   </div>
                 </div>
-
-                <input type="button" id="submit-date" name="next" class="submit next action-button"
-                  value="Proceed & Send Request to Provider" />
+                <div style="display:contents">
+                <div id="on-content-button" class="hidden">
+                  <input type="button" id="submit-advance" data-toggle="modal" class="action-button-previous" data-target="#popupMessage" value="submit-advance" />
+                </div>
+                <div id="off-content-button">
+                  <input type="button" id="submit-date" class="action-button-previous" data-toggle="modal" data-target="#successMessage" value="Proceed & Send Request to Provider" />
+                </div>
+                </div>
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
               </fieldset>
-              <fieldset>
-                <div class="your-offer-selected popup-selected" id="popupMessage">
+              <div class="modal your-offer-selected popup-selected"  id="popupMessage" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="popup-selected-modal">
+                    <div class="popupsucessfully">
+                      <img src="./images/checktick.png" />
+                      <p>Your Offer Has been successfully sent to service provider</p>
+                    </div>
+                  </div>
+              </div>
+              <div class="modal your-offer-selected popup-selected"  id="successMessage" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="popup-selected-modal">
                     <div class="popupsucessfully">
                       <img src="./images/checktick.png" />
                       <p>Your Offer Has been successfully sent to service provider</p>
                     </div>
                   </div>
-
-                </div>
-
-              </fieldset>
+              </div>
             </form>
           </div>
         </div>
@@ -963,135 +756,147 @@ foreach ($servicesArray as $individualService) {
   </footer>
 
   <!-- footer end -->
- 
-<script>
-  const totalAmountElement = document.getElementById('total-amount');
+ <script>
+  // Add this code to your existing JavaScript
 
+// Function to fetch and display already booked hours for the selected date
+function fetchBookedHours(providerId, selectedDate) {
+    const bookedHoursElement = document.querySelector('.booked-hours');
+
+    // Use AJAX to fetch booked hours
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'get_booked_hours.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const bookedHours = JSON.parse(xhr.responseText);
+
+            // Clear the current booked hours
+            bookedHoursElement.innerHTML = '';
+
+            // Add booked hours to the page
+            for (const bookedHour of bookedHours) {
+                const bookedHourButton = document.createElement('button');
+                bookedHourButton.textContent = `${bookedHour.from} - ${bookedHour.to}`;
+                bookedHourButton.setAttribute('type', 'button');
+                // Add a class or style based on your color code (e.g., green, orange, blue)
+                // Example: bookedHourButton.classList.add('green');
+                bookedHoursElement.appendChild(bookedHourButton);
+            }
+        }
+    };
+
+    // Send the provider ID and selected date to the PHP script
+    const requestData = {
+        providerId: providerId,
+        selectedDate: selectedDate,
+    };
+    xhr.send(JSON.stringify(requestData));
+}
+
+// Example usage:
+// Replace '123' and '2023-11-15' with the actual provider ID and selected date
+fetchBookedHours('123', '2023-11-15');
+
+// Add an event listener to the date input
+const selectedDateInput = document.getElementById('selected_date');
+selectedDateInput.addEventListener('change', function () {
+    const providerId = document.getElementById('provider-id').value;
+    const selectedDate = selectedDateInput.value;
+    fetchBookedHours(providerId, selectedDate);
+});
+
+ </script>
+  <script>
+      document.addEventListener('DOMContentLoaded', function () {
+      const slider = document.getElementById('custom-slider');
+      const onContent = document.getElementById('custom-on-content');
+      const recureOn = document.getElementById('recure-on');
+      const onContentButton = document.getElementById('on-content-button');
+      const offContent = document.getElementById('custom-off-content');
+      const recureOff = document.getElementById('recure-off');
+      const offContentButton = document.getElementById('off-content-button');
+      let isToggled = false;
+      slider.addEventListener('click', function () {
+          isToggled = !isToggled;
+
+          if (isToggled) {
+              slider.style.left = '30px';
+              onContent.classList.remove('hidden');
+              recureOn.classList.remove('hidden');
+              offContent.classList.add('hidden');
+              recureOff.classList.add('hidden');
+              onContentButton.classList.remove('hidden');
+              offContentButton.classList.add('hidden');
+          } else {
+              slider.style.left = '0';
+              onContent.classList.add('hidden');
+              recureOn.classList.add('hidden');
+              offContent.classList.remove('hidden');
+              recureOff.classList.remove('hidden');
+              onContentButton.classList.add('hidden');
+              offContentButton.classList.remove('hidden');
+          }
+      });
+        });
+  </script>
+<script>
+  const totalAmountElement1 = document.getElementById('total-amount1');
+  const totalAmountElement2 = document.getElementById('total-amount2');
   const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  const selectedServicesList1 = document.getElementById('selected-services-list1');
   const selectedServicesList2 = document.getElementById('selected-services-list2');
 
   function updateTotalAmount() {
-    let totalAmount = 0;
+    let totalAmount1 = 0;
+    let totalAmount2 = 0;
 
-    // Clear the existing list
+    // Clear the existing lists
+    selectedServicesList1.innerHTML = '';
     selectedServicesList2.innerHTML = '';
 
     checkboxes.forEach((checkbox, index) => {
-      if (checkbox.checked) {
-        const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
-        const price = parseFloat(priceElement.textContent) || 0;
-        totalAmount += price;
+      const serviceName = checkbox.value;
+      const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+      const price = parseFloat(priceElement.textContent) || 0;
 
-        // Display the edited price in the selected services list
-        const serviceName = checkbox.value;
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
-        selectedServicesList2.appendChild(listItem);
+      // Display the selected services and prices in both lists
+      if (checkbox.checked) {
+        totalAmount1 += price;
+        const listItem1 = document.createElement('li');
+        listItem1.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
+        selectedServicesList1.appendChild(listItem1);
+      }
+
+      // Display the selected services and prices only in the second list
+      if (checkbox.checked) {
+        totalAmount2 += price;
+        const listItem2 = document.createElement('li');
+        listItem2.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
+        selectedServicesList2.appendChild(listItem2);
       }
     });
 
-    totalAmountElement.textContent = `$${totalAmount.toFixed(2)}`;
+    totalAmountElement1.textContent = `$${totalAmount1.toFixed(2)}`;
+    totalAmountElement2.textContent = `$${totalAmount2.toFixed(2)}`;
   }
 
-  checkboxes.forEach((checkbox, index) => {
-    checkbox.addEventListener('change', function () {
-      updateTotalAmount();
-    });
+  checkboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', updateTotalAmount);
   });
-</script>
-<script>
-    // Get all the time slot elements
-    const timeSlots = document.querySelectorAll('#custom-timeslot li');
-    const timeSlotMinutes = document.querySelectorAll('#custom-timeslot1 li');
-    const amPmElements = document.querySelectorAll('#custom-timeslot2 li');
 
-    // Initialize selected time variables
-    let selectedHour = '01'; // Default selected hour
-    let selectedMinute = '00'; // Default selected minute
-    let selectedAmPm = 'AM'; // Default selected AM/PM
+  const contentEditableElements = document.querySelectorAll('em[contenteditable="true"]');
 
-    // Function to update the selected time
-    function updateSelectedTime() {
-        // Find the selected hour and minute
-        timeSlots.forEach((slot, index) => {
-            if (slot.classList.contains('selected')) {
-                selectedHour = ('0' + (index + 1)).slice(-2); // Format to two digits
-            }
-        });
-
-        timeSlotMinutes.forEach((minuteSlot, index) => {
-            if (minuteSlot.classList.contains('selected')) {
-                selectedMinute = ('0' + index).slice(-2); // Format to two digits
-            }
-        });
-
-        // Find the selected AM/PM
-        amPmElements.forEach((element) => {
-            if (element.classList.contains('selected')) {
-                selectedAmPm = element.textContent;
-            }
-        });
-
-        // Update the <span> with the selected time
-        const selectedTimeElement = document.getElementById('selected-booking-time');
-        selectedTimeElement.textContent = `${selectedHour}:${selectedMinute} ${selectedAmPm}`;
-    }
-
-      // Add event listeners to time slots for click events
-      timeSlots.forEach((slot) => {
-          slot.addEventListener('click', () => {
-              // Toggle the 'selected' class on click
-              timeSlots.forEach((s) => s.classList.remove('selected'));
-              slot.classList.add('selected');
-
-              // Update the selected time
-              updateSelectedTime();
-          });
-      });
-
-      // Add event listeners to time slot minutes for click events
-      timeSlotMinutes.forEach((minuteSlot) => {
-          minuteSlot.addEventListener('click', () => {
-              // Toggle the 'selected' class on click
-              timeSlotMinutes.forEach((s) => s.classList.remove('selected'));
-              minuteSlot.classList.add('selected');
-
-              // Update the selected time
-              updateSelectedTime();
-          });
-      });
-
-      // Add event listeners to AM/PM elements for click events
-      amPmElements.forEach((element) => {
-          element.addEventListener('click', () => {
-              // Toggle the 'selected' class on click
-              amPmElements.forEach((el) => el.classList.remove('selected'));
-              element.classList.add('selected');
-
-              // Update the selected time
-              updateSelectedTime();
-          });
-      });
-
-      // Initial update when the page loads
-      updateSelectedTime();
-
-  </script>
-  <script>
-  const toggleSwitch = document.getElementById("toggle-switch");
-  const contentOn = document.getElementById("content-on");
-  const contentOff = document.getElementById("content-off");
-
-  toggleSwitch.addEventListener("change", function () {
-    if (toggleSwitch.checked) {
-      contentOn.style.display = "block"; // Show the "on" content
-      contentOff.style.display = "none"; // Hide the "off" content
-    } else {
-      contentOn.style.display = "none"; // Hide the "on" content
-      contentOff.style.display = "block"; // Show the "off" content
-    }
+  contentEditableElements.forEach((element) => {
+    element.addEventListener('blur', updateTotalAmount);
   });
+
+  // ... (rest of your existing script)
+
 </script>
+
+
+ 
 <script>
    // JavaScript
    document.getElementById('task-description').addEventListener('input', function () {
@@ -1100,14 +905,42 @@ foreach ($servicesArray as $individualService) {
 
         // Display the input in the <p> element
         document.getElementById('display-task-description').textContent = userContent;
+        document.getElementById('display-task-description1').textContent = userContent;
     });
+    // selectedTime: document.getElementById('from').value,
+    document.getElementById('from').addEventListener('input', function () {
+    // Get the input from the textarea
+    const selectedTime = this.value;
+
+    // Parse the input as a time and create a Date object
+    const timeParts = selectedTime.split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = parseInt(timeParts[1], 10);
+    const isPM = hours >= 12;
+
+    // Format the time in 12-hour AM/PM format
+    let formattedTime;
+    if (hours === 0) {
+        formattedTime = `12:${minutes} AM`;
+    } else if (hours === 12) {
+        formattedTime = `12:${minutes} PM`;
+    } else if (isPM) {
+        formattedTime = `${hours - 12}:${minutes} PM`;
+    } else {
+        formattedTime = `${hours}:${minutes} AM`;
+    }
+
+    // Display the formatted time in the <p> element
+    document.getElementById('date_display_from').textContent = formattedTime;
+});
+
   function preview_images() {
     var preview = document.getElementById("image_preview");
     var files = document.getElementById("images").files;
 
     if (files.length !== 5) {
         alert("Please select exactly 5 images.");
-        return;
+        // return;
     }
 
     preview.innerHTML = ""; // Clear previous preview
@@ -1129,38 +962,8 @@ foreach ($servicesArray as $individualService) {
         reader.readAsDataURL(file);
     }
   }
-  // function uploadImages(customerId, providerId) {
-  //   const files = document.getElementById("images").files;
-
-  //   if (files.length !== 5) {
-  //       alert("Please select exactly 5 images.");
-  //       return;
-  //   }
-
-  //   const formData = new FormData();
-
-  //   for (let i = 0; i < files.length; i++) {
-  //       formData.append("images[]", files[i]);
-  //   }
-
-  //   // Include both customerId and providerId in the form data
-  //   formData.append("customerId", customerId);
-  //   formData.append("providerId", providerId);
-
-  //   // Send the image data to the server using a new AJAX request
-  //   const xhr = new XMLHttpRequest();
-  //   xhr.open('POST', 'add.php'); // Create a new PHP file to handle image uploads
-  //   xhr.send(formData);
-
-  //   xhr.onreadystatechange = function () {
-  //       if (xhr.readyState === 4 && xhr.status === 200) {
-  //           // Handle the server's response here, if needed
-  //           console.log(xhr.responseText);
-  //       }
-  //   };
-  // }
   function getSelectedServicesWithPrices() {
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+   
     const selectedServices = [];
 
     checkboxes.forEach((checkbox, index) => {
@@ -1199,18 +1002,6 @@ function uploadImages(customerId, providerId, files) {
 }
 
 document.getElementById('submit-date').addEventListener('click', function () {
-
-    // Find the selected date from the calendar
-    const selectedDateElement = document.querySelector('.calendar-day.active');
-    if (selectedDateElement) {
-
-        const dateYear = selectedDateElement.getAttribute('date-year');
-        const dateMonth = selectedDateElement.getAttribute('date-month');
-        const dateDay = selectedDateElement.getAttribute('date-day');
-
-        // Get the selected time
-        const selectedTime = getSelectedTime();
-
         // Get the customer ID from the input field
         const customerId = document.getElementById('customer-id').value;
         const providerId = document.getElementById('provider-id').value;
@@ -1218,7 +1009,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
     // return;
     const customerFullName = document.getElementById('customerFullName').value;
         // const serviceId = document.getElementById('service-id').value;
-        const messageContent = `You recive a new order from ${customerFullName}`;
+        const messageContent = `You recive a new Advanced Booking from ${customerFullName}`;
         // Get the task description from the <p> element
         const userContent = document.getElementById('display-task-description').textContent;
 
@@ -1230,19 +1021,24 @@ document.getElementById('submit-date').addEventListener('click', function () {
         
         // Create an array to store the selected image files
         const imageFiles = document.getElementById('images').files;
+        // Parse and format the selectedTime and selectedTimeTo
+        const selectedTime = document.getElementById('from').value;
+        const selectedTimeTo = document.getElementById('to').value;
 
+        const formattedTime = formatTime(selectedTime);
+        const formattedTimeTo = formatTime(selectedTimeTo);
         // Create a JavaScript object with all the non-image data
         const data = {
+            selectedDate: document.getElementById('selected_date').value,
+            selectedTime: formattedTime, // Use the formatted time
+            selectedTimeTo: formattedTimeTo, // Use the formatted time
+            customerId: document.getElementById('customer-id').value,
+            // providerId: document.getElementById('provider-id').value,
             customerId: customerId,
             providerId: providerId,
+            proposal_status: 'OneTime',
             statusFrom: 'customer_send',
             messageContent: messageContent,
-            selectedDate: {
-                year: dateYear,
-                month: dateMonth,
-                day: dateDay,
-            },
-            selectedTime: selectedTime,
             userContent: userContent,
             selectedServices: getSelectedServicesWithPrices(),
             totalAmount: totalAmount,
@@ -1264,12 +1060,25 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
         // After sending non-image data, upload images separately
         uploadImages(customerId, providerId, imageFiles);
-    } else {
-        alert('Please select a date from the calendar.');
-    }
+    
 });
+// Function to format time from 24-hour to 12-hour format
+function formatTime(time) {
+    const timeParts = time.split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = timeParts[1];
+    const isPM = hours >= 12;
 
-
+    if (hours === 0) {
+        return `12:${minutes} AM`;
+    } else if (hours === 12) {
+        return `12:${minutes} PM`;
+    } else if (isPM) {
+        return `${hours - 12}:${minutes} PM`;
+    } else {
+        return `${hours}:${minutes} AM`;
+    }
+}
     // Implement a function to get the selected time from your time selection elements
     function getSelectedTime() {
         const amPmElement = document.querySelector('#custom-timeslot2 li.selected p');
@@ -1285,7 +1094,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
     // Function to get the selected services
     function getSelectedServices() {
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+     
       const selectedServices = [];
 
       checkboxes.forEach((checkbox) => {
@@ -1302,7 +1111,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
     // Function to calculate the total amount based on selected services
     function calculateTotalAmount() {
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+       
         let totalAmount = 0;
 
         checkboxes.forEach((checkbox) => {
@@ -1317,7 +1126,7 @@ document.getElementById('submit-date').addEventListener('click', function () {
     }
     // After preview_images() is called, you can add the base64-encoded images to the data array
 // Get the submit button
-const submitButton = document.getElementById('submit-date');
+const submitButton = document.getElementById('submit-advance');
 
 // Get the popup message element
 const popupMessage = document.getElementById('popupMessage');
@@ -1334,15 +1143,37 @@ submitButton.addEventListener('click', function () {
         // Redirect to the service page after 5 seconds
         setTimeout(function () {
             window.location.href = 'services.php'; // Replace with the actual URL
-        }, 100); // 5000 milliseconds (5 seconds)
-    }, 4000); // 5000 milliseconds (5 seconds)
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
+});
+
+
+const submitDate = document.getElementById('submit-date');
+
+// Get the popup message element
+const successMessage = document.getElementById('successMessage');
+
+// Add a click event listener to the submit button
+submitDate.addEventListener('click', function () {
+    // Show the popup message
+    successMessage.style.display = 'block';
+
+    // Automatically hide the popup message after 5 seconds
+    setTimeout(function () {
+      successMessage.style.display = 'none';
+
+        // Redirect to the service page after 5 seconds
+        setTimeout(function () {
+            window.location.href = 'services.php'; // Replace with the actual URL
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
 });
 
 </script>
 <script>
   const selectedServicesList = document.getElementById('selected-services-list');
   const totalAmountElement = document.getElementById('total-amount');
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+ 
 
   function updateSelectedServices() {
     selectedServicesList.innerHTML = ''; // Clear the selected services list
@@ -1377,6 +1208,172 @@ submitButton.addEventListener('click', function () {
 </script>
 
 
+  <script>
+    
+    let proposalCount = '';
+
+    document.addEventListener('DOMContentLoaded', function () {
+    const addProposalButton = document.getElementById('addProposal');
+    const continueButton = document.getElementById('continueButton');
+    const proposalContainer = document.querySelector('.proposal-container');
+    const proposalTemplate = document.querySelector('.proposal');
+    const maxProposals = 9;
+    let proposalCount = 0;
+
+    function getRandomPastelColor() {
+        const letters = '89ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * letters.length)];
+        }
+        return color;
+    }
+
+    function updateProposalDisplay() {
+        const displayContainer = document.querySelector('.advancebookedtimings ul');
+        displayContainer.innerHTML = '';
+
+        for (let i = 0; i <= proposalCount; i++) {
+            const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+            const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+            const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+
+            if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+                const formattedTimeAdv = formatTime(selectedTimeAdv);
+                const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+
+                const listItem = document.createElement('li');
+                listItem.style.backgroundColor = getRandomPastelColor();
+                listItem.innerHTML = `
+                    <em>${selectedDateAdv}, ${formattedTimeAdv} - ${formattedTimeToAdv}</em>
+                    <span>${formattedTimeAdv} - ${formattedTimeToAdv}</span>
+                `;
+
+                displayContainer.appendChild(listItem);
+            }
+        }
+    }
+    function addProposal() {
+            if (proposalCount < maxProposals) {
+                const newProposal = proposalTemplate.cloneNode(true);
+                proposalContainer.appendChild(newProposal);
+
+
+                    // Change the background color of the newly added proposal to a random pastel color
+                    newProposal.style.backgroundColor = getRandomPastelColor();
+                    newProposal.style.marginTop = '20px';
+                    newProposal.style.borderRadius = '20px';
+                // Increment the proposal counter
+                proposalCount++;
+
+                // Update IDs of cloned elements with a counter
+                updateElementIds(newProposal, proposalCount);
+
+                // Update the display when a new proposal is added
+                updateProposalDisplay(proposalCount);
+
+                if (proposalCount === maxProposals) {
+                    addProposalButton.disabled = true;
+                }
+            }
+        }
+
+    document.addEventListener('input', function (e) {
+        const targetId = e.target.id;
+
+        if (targetId && (targetId.startsWith('combine-date') || targetId.startsWith('adv-from') || targetId.startsWith('adv-to'))) {
+            updateProposalDisplay();
+        }
+    });
+
+    addProposalButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        addProposal();
+    });
+
+    continueButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        addProposal();
+    });
+
+    // Initialize the advanceProposals array outside the functions
+    const advanceProposals = [];
+
+    document.getElementById('submit-advance').addEventListener('click', function () {
+        advanceProposals.length = 0;
+
+        for (let i = 0; i <= proposalCount; i++) {
+            const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+            const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+            const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+
+            if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+                const formattedTimeAdv = formatTime(selectedTimeAdv);
+                const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+
+                const proposalData = {
+                    selectedDateAdv: selectedDateAdv,
+                    selectedTimeAdv: formattedTimeAdv,
+                    selectedTimeToAdv: formattedTimeToAdv,
+                };
+
+                advanceProposals.push(proposalData);
+            } else {
+                console.error(`Error: Proposal data for proposal ${i} is missing.`);
+            }
+        }
+
+        updateProposalDisplay();
+
+        const customerId = document.getElementById('customer-id')?.value;
+        const providerId = document.getElementById('provider-id')?.value;
+        const customerFullName = document.getElementById('customerFullName')?.value;
+        const userContent = document.getElementById('display-task-description').textContent;
+        const totalAmount = totalAmountElement.textContent.replace('$', '');
+        const imageFiles = document.getElementById('images').files;
+
+        const data = {
+            advanceProposals: advanceProposals,
+            customerId: customerId,
+            providerId: providerId,
+            proposal_status: 'AdvancedProposal',
+            statusFrom: 'customer_send',
+            messageContent: `You receive a new order from ${customerFullName}`,
+            userContent: userContent,
+            selectedServices: getSelectedServicesWithPrices(),
+            totalAmount: totalAmount,
+        };
+
+        console.log(data);
+        return;
+ // Send the non-image data to the server using AJAX
+      const xhr = new XMLHttpRequest();
+          xhr.open('POST', 'advance_proposal.php');
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.send(JSON.stringify(data));
+
+          xhr.onreadystatechange = function () {
+              if (xhr.readyState === 4 && xhr.status === 200) {
+                  // Handle the server's response here, if needed
+                  console.log(xhr.responseText);
+              }
+          };
+
+        // After sending non-image data, upload images separately
+        uploadImages(customerId, providerId, imageFiles);
+    });
+});
+
+function updateElementIds(container, counter) {
+    container.querySelectorAll('[id]').forEach(element => {
+        element.id = element.id + counter;
+    });
+}
+
+
+
+
+  </script>
 
   <!-- jQuery -->
   <script src="plugins/jQuery/jquery.min.js"></script>

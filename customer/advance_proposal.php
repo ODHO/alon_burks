@@ -12,30 +12,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (
         isset($postData->customerId) &&
         isset($postData->providerId) &&
-        isset($postData->selectedDate) &&
-        isset($postData->selectedTime) &&
+        isset($postData->advanceProposals) &&
         isset($postData->userContent) &&
         isset($postData->selectedServices) &&
         isset($postData->totalAmount) &&
         isset($postData->statusFrom) &&
-        isset($postData->selectedTimeTo) &&
         isset($postData->proposal_status) &&
         !empty($postData->messageContent) 
     ) {
-        // Extract customer ID, provider ID, selected date, selected time, user content, selected services, and total amount
         $customerId = $postData->customerId;
         $providerId = $postData->providerId;
-        $selectedDate = $postData->selectedDate;
-        $selectedTime = $postData->selectedTime;
+        $advanceProposals = $postData->advanceProposals;
         $userContent = $postData->userContent;
-        $selectedServices = $postData->selectedServices;//implode(', ',$postData->selectedServices);
+        $selectedServices = $postData->selectedServices; //implode(', ',$postData->selectedServices);
         $totalAmount = $postData->totalAmount;
         $statusFrom = $postData->statusFrom;
-        $selectedTimeTo = $postData->selectedTimeTo;
         $proposal_status = $postData->proposal_status;
         $messageContent = $postData->messageContent;
-        // echo $selectedTimeTo;
-        // die();
+
         // Start a database transaction
         $conn->begin_transaction();
 
@@ -43,16 +37,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql = "INSERT INTO customer_proposal (customer_id, provider_id, selected_date, selected_time, user_content, selected_services, total_amount, selected_time_to, proposal_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $servicename = array();
-        foreach($selectedServices as $val) {
+        foreach ($selectedServices as $val) {
             $servicename[] = $val->serviceName;
         }
-        $serviceNames  = implode(', ',$servicename);
+        $selectedDateAdv = array();
+        $selectedTimeAdv = array();
+        $selectedTimeToAdv = array();
+        foreach ($advanceProposals as $val) {
+            $selectedDateAdv[] = $val->selectedDateAdv;
+            $selectedTimeAdv[] = $val->selectedTimeAdv;
+            $selectedTimeToAdv[] = $val->selectedTimeToAdv;
+        }
+        $selectedDate  = implode(', ', $selectedDateAdv);
+        $selectedTime  = implode(', ', $selectedTimeAdv);
+        $selectedTimeTo  = implode(', ', $selectedTimeToAdv);
+        $serviceNames  = implode(', ', $servicename);
         $stmt->bind_param('ssssssdss', $customerId, $providerId, $selectedDate, $selectedTime, $userContent, $serviceNames, $totalAmount, $selectedTimeTo, $proposal_status);
-        // $abc = $sql = "INSERT INTO customer_proposal (customer_id, provider_id, selected_date, selected_time, user_content, selected_services, total_amount, selected_time_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        // print_r($selectedTimeTo);
-        // die();
+
         if ($stmt->execute()) {
             $proposalId = $stmt->insert_id; // Get the generated proposal_id
+
+            // Insert data into advance_proposal table
+            foreach ($advanceProposals as $val) {
+                $selectedDateAdv = $val->selectedDateAdv;
+                $selectedTimeAdv = $val->selectedTimeAdv;
+                $selectedTimeToAdv = $val->selectedTimeToAdv;
+
+                $sql = "INSERT INTO advance_proposal (proposal_id, provider_id, customer_id, selected_date, selected_time, selected_time_to) VALUES (?, ?, ?, ?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param('dsssss', $proposalId, $providerId, $customerId, $selectedDateAdv, $selectedTimeAdv, $selectedTimeToAdv);
+
+                if ($stmt->execute()) {
+                    echo "Advance proposal record created successfully";
+                } else {
+                    echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+                }
+            }
 
             // Now, you can insert data into customer_services using the generated proposalId
             foreach ($selectedServices as $service) {

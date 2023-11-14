@@ -323,49 +323,52 @@ function getServiceImages($service) {
                   <li><a href="order-in-process-advancebooking.php"><button style="color: #fff; background-color: #70BE44;">Advance Bookings</button></a></li>
                 </ul>
             </div>
-    <?php
-      include 'connection.php';
+          <?php
+            include 'connection.php';
 
-      $userId = $_SESSION['user_id'];
+            $userId = $_SESSION['user_id'];
+            $providerName = $_SESSION['providerName'];
 
-      $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'order_in_progress'";
-      $stmt = $conn->prepare($sql);
-      $stmt->bind_param('s', $userId);
+            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'working' OR status = 'order_in_progress') ORDER BY status = 'completed-pending' DESC, status = 'working' DESC, status = 'order_in_progress' DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $userId);
 
-      if ($stmt->execute()) {
-          $result = $stmt->get_result();
-          if ($result->num_rows == 0) {
-            // No orders found for the provider
-            echo '<h2 class="text-center texter">No new orders available.</h2>';
-        } else {
-    while ($row = $result->fetch_assoc()) {
-        $proposalId = $row['id'];
-        $customerId = $row['customer_id'];
-        $providerId = $row['provider_id'];
-        $selectedDate = $row['year'] . '-' . $row['month'] . '-' . $row['day'];
-        $selectedTime = $row['selected_time'];
-        $userContent = $row['user_content'];
-        $selectedServices = explode(', ', $row['selected_services']);
-        $totalAmount = $row['total_amount'];
-        $current_time = $row['current_time'];
-        $counterTotall = $row['counter_totall'];
+            if ($stmt->execute()) {
+                $result = $stmt->get_result();
+                if ($result->num_rows == 0) {
+                  // No orders found for the provider
+                  echo '<h2 class="text-center texter">No new orders available.</h2>';
+              } else {
+          while ($row = $result->fetch_assoc()) {
+              $proposalId = $row['id'];
+              $customerId = $row['customer_id'];
+              $providerId = $row['provider_id'];
+              $selectedDate = $row['selected_date'];
+              $selectedTime = $row['selected_time'];
+              $userContent = $row['user_content'];
+              $selectedServices = explode(', ', $row['selected_services']);
+              $totalAmount = $row['total_amount'];
+              $current_time = $row['current_time'];
+              $counterTotall = $row['counter_totall'];
 
-        // Retrieve customer name and address based on customerId
-        $customerInfo = getCustomerInfo($customerId);
+              // Retrieve customer name and address based on customerId
+              $customerInfo = getCustomerInfo($customerId);
 
-        $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
-        $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
-        $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
-        
-        
-        // Now you have an array containing the selected services and their prices for the customer
-        
-        // Output the retrieved customer name and address
-        $customerName = $customerInfo['fullname'];
-        $customerAddress = $customerInfo['address'];
-        $profile_picture = $customerInfo['profile_picture'];
-      ?>
+              $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+              $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+              $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+              
+              
+              // Now you have an array containing the selected services and their prices for the customer
+              
+              // Output the retrieved customer name and address
+              $customerName = $customerInfo['fullname'];
+              $customerAddress = $customerInfo['address'];
+              $profile_picture = $customerInfo['profile_picture'];
+            ?>
             <!-- FIRST PROGRESS PROFILE -->
+           
+
             <div class="progress-profile">
            
               <div class="row">
@@ -375,7 +378,7 @@ function getServiceImages($service) {
                     <ul>
                       <li class="profile-name"><h5><img src="./images/homee.png"/><b><?php echo $customerName?> </b><br>userID# <?php echo $customerId?></h5></li>
                       <li><h5><img src="./images/mappin.png"/><?php echo $customerAddress?></h5></li>
-                        <li><h5><img src="./images/time.png"/><?php echo $selectedDate?> <br><?php echo $selectedTime?></h5></li>
+                        <li><h5><img src="./images/time.png"/> <?php echo $selectedDate , str_repeat('&nbsp;', 5), $selectedTime?></h5></li>
                     </ul>
                   </div>
 
@@ -401,15 +404,164 @@ function getServiceImages($service) {
                   
                   <div class="service-status" style="width: 100%;">
                     <h3>Service Status</h3>
-                    <select id='gMonth2' onchange="show_month()">
-                      <option value=''>--Select Status--</option>
-                      <option selected value='1'>Working</option>
-                      <option value='2'>Not-Working</option>
-                      </select> 
+                    
+                    <select id='gMonth2' onchange="showStatusPopup(this.value)">
+                          <option value=''>--Select Status--</option>
+                          <?php if ($row['status'] === 'order_in_progress') { ?>
+                              <option selected value='1'>Not-Working</option>
+                          <?php } elseif ($row['status'] === 'working') { ?>
+                              <option selected value='2'>Working</option>
+                              <!-- <option value='2'>Completed</option> -->
+                          <?php } elseif ($row['status'] === 'completed-pending') { ?>
+                              <option selected value='5'>Working</option>
+                              <option value='3'>Completed</option>
+                          <?php } ?>
+                    </select>
+
+              <script>
+              function showStatusPopup(selectedStatus) {
+                  // Hide all popups first
+                  document.getElementById('notWorkingPopup<?php echo $proposalId?>').style.display = 'hide';
+                  document.getElementById('workingPopup<?php echo $proposalId?>').style.display = 'hide';
+                  document.getElementById('completedPopup<?php echo $proposalId?>').style.display = 'hide';
+
+                  if (selectedStatus === '1') {
+                      // Display the "Not-Working" popup
+                      document.getElementById('notWorkingPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else if (selectedStatus === '2') {
+                      // Display the "Working" popup
+                      document.getElementById('workingPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else if (selectedStatus === '3') {
+                      // Display the "Completed" popup
+                      document.getElementById('completedPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else {
+                      // Handle any other status or no selection
+                  }
+              }
+              
+              </script>
+
+
+
                   </div>
                 </div>
 
-                
+                          <div class="modal your-offer-selected popup-selected" id="notWorkingPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">You cannot change status until customer verifies the previous status ?</h2>
+                                    
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" onclick="closePopup2('<?php echo $proposalId; ?>')">Close</button>
+                                          </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                          </div>
+
+                          <div class="modal" id="workingPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">You cannot change status until customer verifies the previous status </h2>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <button type="button" onclick="closePopup1('<?php echo $proposalId; ?>')" class="bg-danger">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal" id="completedPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                    <h2>Please move your proposal to the completed portion.</h2>
+                                          <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" onclick="closePopup('<?php echo $proposalId; ?>')">Close</button>
+                                            <button type="button" class="btn btn-primary" class="move-button" onclick="moveToCompleted(<?php echo $proposalId; ?>)">Move</button>
+                                            <input type="hidden" name="providerId" value="<?php echo $userId ?>" id="providerId" />
+                                              <input type="hidden" name="customerId" value="<?php echo $customerId ?>" id="customerId" />
+                                              <input type="hidden" name="providerName" value="<?php echo $providerName ?>" id="providerName" />
+                                          </div>
+                                          <script>
+                                        function moveToCompleted(proposalId) {
+                                            const providerId = document.getElementById('providerId').value;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const providerName = document.getElementById('providerName').value;
+                                            const messageContent = `Did you like the ${providerName} services? Rate your service provider`;
+
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                statusFrom: 'provider_send',
+                                                status: 'completed',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                providerName: providerName,
+                                                messageContent: messageContent,
+                                            }));
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
+
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                        function closePopup(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#completedPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("completedPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                        function closePopup2(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#notWorkingPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("notWorkingPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                        function closePopup1(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#workingPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("workingPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                    </script>
+                                    </div>
+                                    
+                                    
+                                   
+                                </div>
+                            </div>
+                        </div>
+
+
+
                 <div class="viewgallery">
                     <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
                     <div class="progress-gallery">
@@ -461,9 +613,9 @@ function getServiceImages($service) {
                 </div>
               </div>
               
-  </div>
-  <?php
-    }
+            </div>
+          <?php
+            }
   }
 } else {
   echo 'Error executing the query.';

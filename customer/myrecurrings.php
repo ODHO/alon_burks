@@ -51,48 +51,21 @@ session_start();
 <body class="services-page">
   
 
-    <header class="navigation fixed-top">
-        <nav class="navbar navbar-expand-lg navbar-dark">
-          <a class="navbar-brand" href="index.php"><img src="images/signup/sitelogo-singup.png" alt="Egen"></a>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
-            aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-      
-          <div class="collapse navbar-collapse text-center" id="navigation">
-            <ul class="navbar-nav ml-auto">
-              <li class="nav-item active">
-                <a class="nav-link" href="index.php">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="services.php">Services</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="notifications.php">Notifications</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="myhirings.php">My Hirings</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="provider.php">Provider</a>
-              </li> 
-            </ul>
-          </div>
-        </nav>
-      </header>
+<?php
+include 'Black_logo_header.php'
+?>
+
 
 <!-- Section start -->
 <section id="my-offers-main">
 <div class="container">
     <div class="row">
-        <div class="main-text">
-            <h1 style="color: black;">My Offers</h1>
-            <p style="color: #70BE44;">Here are your past services you availed and hired!</p>
-        </div>
+    <h2 style="color: #000; font-weight: bold;">My Hirings</h2>
+        <p style="color: #70BE44;">Here are your past services you availed and hired!</p>
     </div>
     <div class="myoffer-button-serv">
         <ul>
-            <li><a href="myoffers.php"><button style="background-color: #E6E6E6; font-family: Cairo;
+            <li><a href="myhirings.php"><button style="background-color: #E6E6E6; font-family: Cairo;
                 font-size: 30px;
                 font-weight: 600;
                 line-height: 56px;

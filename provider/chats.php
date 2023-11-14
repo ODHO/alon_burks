@@ -1,5 +1,129 @@
 <?php
 session_start();
+// Function to get customer information from the provider_registration table
+function getCustomerInfo($customerId) {
+  global $conn;
+  $sql = "SELECT fullname, profile_picture, address FROM provider_registration WHERE id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('s', $customerId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          return $row;
+      }
+  }
+  return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
+}
+// Function to get the price of a service from the categories table
+function getCustomerServicesAndPrices($customerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT service_name, price, counter_price FROM customer_services WHERE customer_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('ss', $customerId, $proposalId);
+
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $servicesAndPrices = array();
+
+      while ($row = $result->fetch_assoc()) {
+          $serviceCustomers = $row['service_name'];
+          $priceService = $row['price'];
+          $counterPrice = $row['counter_price'];
+          $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService, 'counter_price' => $counterPrice);
+          // print_r($servicesAndPrices);
+      }
+
+      return $servicesAndPrices;
+  }
+
+  return array();
+}
+function getServicePrice($service) {
+    global $conn;
+    $sql = "SELECT price FROM customer_services WHERE service_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $service);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['price'];
+        }
+    }
+    return 'N/A'; // Provide a default value if service price not found
+  }
+  function getCustomerImagesForProvider($customerId, $providerId, $proposalId) {
+    global $conn;
+    $sql = "SELECT image_path FROM customer_images WHERE customer_id = ? AND provider_id = ? AND proposal_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('sss', $customerId, $providerId, $proposalId);
+    if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $images = array();
+      while ($row = $result->fetch_assoc()) {
+        $images[] = $row['image_path'];
+      }
+      return $images;
+    }
+    return array();
+  }
+
+
+function getServiceImages($service) {
+  global $conn;
+  $servicesImages = array();
+
+  // Create a prepared statement to select servicesImages based on service names
+  $sql = "SELECT image FROM categories WHERE heading IN (?)";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+      $categories = implode("', '", $service); // Assuming service names are in an array
+      $stmt->bind_param('s', $categories);
+
+      if ($stmt->execute()) {
+          $result = $stmt->get_result();
+
+          while ($row = $result->fetch_assoc()) {
+              $servicesImages[] = $row['image'];
+          }
+      }
+  }
+
+  return $servicesImages;
+}
+// Define the getChatMessages function
+// function getChatMessages($customerId, $proposalId) {
+//     global $conn;
+
+//     // Prepare a SQL query to fetch chat messages
+//     $sql = "SELECT * FROM chat WHERE customer_id = ? AND proposal_id = ? ORDER BY created_at ASC";
+//     $stmt = $conn->prepare($sql);
+//     $stmt->bind_param('ss', $customerId, $proposalId);
+
+//     // Execute the query
+//     if ($stmt->execute()) {
+//         $result = $stmt->get_result();
+
+//         // Create an array to store the chat messages
+//         $chatMessages = array();
+
+//         // Fetch chat messages and add them to the array
+//         while ($row = $result->fetch_assoc()) {
+//             $chatMessages[] = array(
+//                 'message' => $row['message'],
+//                 'created_at' => $row['created_at']
+//             );
+//         }
+
+//         // Return the array of chat messages
+//         return $chatMessages;
+//     } else {
+//         // Handle any errors in executing the query
+//         return array(); // Return an empty array on error
+//     }
+// }
 
 ?>
 <!DOCTYPE html>
@@ -54,157 +178,6 @@ session_start();
     ?>
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">
-      
-      <div id="right-sidebar" class="settings-panel">
-        <i class="settings-close ti-close"></i>
-        <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="todo-tab" data-bs-toggle="tab" href="#todo-section" role="tab"n" aria-expanded="true">TO DO LIST</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="chats-tab" data-bs-toggle="tab" href="#chats-section" role="tab"n">CHATS</a>
-          </li>
-        </ul>
-        <div class="tab-content" id="setting-content">
-          <div class="tab-pane fade show active scroll-wrapper" id="todo-section" role="tabpanel" aria-labelledby="todo-section">
-            <div class="add-items d-flex px-3 mb-0">
-              <form class="form w-100">
-                <div class="form-group d-flex">
-                  <input type="text" class="form-control todo-list-input" placeholder="Add To-do">
-                  <button type="submit" class="add btn btn-primary todo-list-add-btn" id="add-task">Add</button>
-                </div>
-              </form>
-            </div>
-            <div class="list-wrapper px-3">
-              <ul class="d-flex flex-column-reverse todo-list">
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Team review meeting at 3.00 PM
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Prepare for presentation
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Resolve all the low priority tickets due today
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Schedule meeting for next week
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Project review
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-              </ul>
-            </div>
-            <h4 class="px-3 text-muted mt-5 fw-light mb-0">Events</h4>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 11 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Creating component page build a js</p>
-              <p class="text-gray mb-0">The total number of sessions</p>
-            </div>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 7 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Meeting with Alisa</p>
-              <p class="text-gray mb-0 ">Call Sarah Graves</p>
-            </div>
-          </div>
-          <!-- To do section tab ends -->
-          <div class="tab-pane fade" id="chats-section" role="tabpanel" aria-labelledby="chats-section">
-            <div class="d-flex align-items-center justify-content-between border-bottom">
-              <p class="settings-heading border-top-0 mb-3 pl-3 pt-0 border-bottom-0 pb-0">Friends</p>
-              <small class="settings-heading border-top-0 mb-3 pt-0 border-bottom-0 pb-0 pr-3 fw-normal">See All</small>
-            </div>
-            <ul class="chat-list">
-              <li class="list active">
-                <div class="profile"><img src="images/faces/face1.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Thomas Douglas</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">19 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face2.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <div class="wrapper d-flex">
-                    <p>Catherine</p>
-                  </div>
-                  <p>Away</p>
-                </div>
-                <div class="badge badge-success badge-pill my-auto mx-2">4</div>
-                <small class="text-muted my-auto">23 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face3.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Daniel Russell</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">14 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face4.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <p>James Richardson</p>
-                  <p>Away</p>
-                </div>
-                <small class="text-muted my-auto">2 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face5.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Madeline Kennedy</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">5 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face6.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Sarah Graves</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">47 min</small>
-              </li>
-            </ul>
-          </div>
-          <!-- chat tab ends -->
-        </div>
-      </div>
       <!-- partial -->
       <!-- partial:partials/_sidebar.php -->
       <?php
@@ -215,12 +188,288 @@ session_start();
         <!-- START ROW MAIN-PANEL -->
         <!-- MESSAGE BOX START  -->
       <!-- char-area -->
+      <style>
+.chat-container {
+    display: flex;
+}
+
+.sidebar {
+    width: 20%;
+    background: #f0f0f0;
+    padding: 20px;
+}
+
+.chat-tabs {
+    list-style: none;
+    padding: 0;
+}
+
+.chat-tabs li {
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #fff;
+}
+
+.chat-tabs li.active {
+    background: #007BFF;
+    color: #fff;
+}
+
+.chat-area {
+    flex: 1;
+    padding: 20px;
+}
+
+.chat-header {
+    background: #007BFF;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+}
+
+.chat-messages {
+    min-height: 300px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    overflow-y: scroll;
+}
+
+.chat-input {
+  display: flex;
+    align-items: center;
+    padding: 10px;
+    justify-content: center;
+    width: 100%;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.chat-input button {
+    background: #007BFF;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+      </style>
 <section class="message-area">
-    <div class="container">
-        <h2 style="color: #000; font-weight: bold;">Messages</h2>
-        <p style="color: #70BE44; padding-bottom: 20px;">Here are your Service Providers Chats </p>
-      <div class="row">
-        <div class="col-12">
+<?php
+// Include your connection and functions here
+include 'connection.php'; // Include your database connection file
+
+// Function to get chat messages for a specific customer and proposal
+function getChatMessages($customerId, $proposalId) {
+    global $conn;
+
+    // Prepare a SQL query to fetch chat messages
+    $sql = "SELECT * FROM chat WHERE customer_id = ? AND proposal_id = ? ORDER BY created_at ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ss', $customerId, $proposalId);
+
+    // Execute the query
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+
+        // Create an array to store the chat messages
+        $chatMessages = array();
+
+        // Fetch chat messages and add them to the array
+        while ($row = $result->fetch_assoc()) {
+            $chatMessages[] = array(
+                'message' => $row['message'],
+                'created_at' => $row['created_at']
+            );
+        }
+
+        // Return the array of chat messages
+        return $chatMessages;
+    } else {
+        // Handle any errors in executing the query
+        return array(); // Return an empty array on error
+    }
+}
+
+// Check if a message is submitted
+if (isset($_POST['message']) && isset($_POST['customerId']) && isset($_POST['proposalId'])) {
+    // Get the message content, customer ID, proposal ID, and provider ID
+    $message = $_POST['message'];
+    $customerId = $_POST['customerId'];
+    $proposalId = $_POST['proposalId'];
+    $userId = $_SESSION['user_id']; // Provider's ID
+
+    // Insert the message into the chat table
+    $sql = "INSERT INTO chat (customer_id, provider_id, proposal_id, message, created_at) VALUES (?, ?, ?, ?, NOW())";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ssss', $customerId, $userId, $proposalId, $message);
+
+    if ($stmt->execute()) {
+        // Message inserted successfully
+        // You can provide a success message or redirect back to the chat page
+    } else {
+        // Handle the case where the message insertion fails
+        echo 'Error inserting the message.';
+    }
+}
+
+// Assuming you have a session with the provider's user_id
+$userId = $_SESSION['user_id'];
+
+// Query to fetch the list of customers for the provider
+$sql = "SELECT DISTINCT customer_id FROM customer_proposal WHERE provider_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $userId);
+
+if ($stmt->execute()) {
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        echo '<div class="container">';
+        echo '<h2 style="color: #000; font-weight: bold;">Messages</h2>';
+        echo '<p style="color: #70BE44; padding-bottom: 20px;">Here are your Customers Chats</p>';
+        echo '<div class="row">';
+        echo '<div class="col-12">';
+        echo '<div class="chat-container">';
+        echo '<div class="sidebar">';
+        echo '<h2>Chats</h2>';
+        echo '<ul class="chat-tabs">';
+
+        while ($row = $result->fetch_assoc()) {
+            $customerId = $row['customer_id'];
+
+            // Retrieve customer information
+            $customerInfo = getCustomerInfo($customerId);
+            $customerName = $customerInfo['fullname'];
+            $profile_picture = $customerInfo['profile_picture'];
+
+            // Generate a chat tab for each customer
+            echo '<li data-customer-id="' . $customerId . '">';
+            echo '<div class="img-box"><img src="../customer/' . $profile_picture . '"/>';
+            echo '<h3>' . $customerName . '</h3>';
+            echo '</div>';
+            echo '</li>';
+        }
+
+        echo '</ul>';
+        echo '</div>';
+        echo '<div class="chat-area">';
+        echo '<div class="chat-header">';
+        echo '<h2>Customer Name</h2>';
+        echo '</div>';
+        ?>
+
+        <div class="modal-body">
+            <div class="msg-body">
+                <ul>
+                    <!-- Display chat messages here -->
+                    <?php
+                    if (isset($_POST['customerId'])) {
+                        // Get the selected customer and proposal IDs
+                        $customerId = $_POST['customerId'];
+                        $proposalId = $_POST['proposalId']; // Retrieve the proposal ID
+
+                        // Fetch chat messages for the selected customer and proposal
+                        $chatMessages = getChatMessages($customerId, $proposalId);
+
+                        // Loop through and display the messages
+                        foreach ($chatMessages as $message) {
+                            $messageContent = $message['message'];
+                            $messageTime = $message['created_at'];
+
+                            // You can format the message time as needed
+                            echo '<li class="sender">';
+                            echo '<p>' . $messageContent . '</p>';
+                            echo '<span class="time">' . $messageTime . '</span>';
+                            echo '</li>';
+                        }
+                    }
+                    ?>
+                </ul>
+            </div>
+        </div>
+
+        <?php
+        echo '<div class="chat-input">';
+        echo '<form style="width: 100%;display: contents;" method="POST" action="">'; // Add the action to submit the form
+        echo '<input type="text" name="message" placeholder="Type your message">';
+        echo '<input type="hidden" name="customerId" id="customer-id-input">';
+        echo '<input type="hidden" name="proposalId" id="proposal-id-input">';
+        echo '<button type="submit">Send</button>';
+        echo '</form>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+    } else {
+        echo '<p>No customers available.</p>';
+    }
+} else {
+    echo 'Error executing the query.';
+}
+?>
+
+
+<script>
+    const chatTabs = document.querySelectorAll('.chat-tabs li');
+    const chatMessages = document.querySelector('.msg-body');
+    const chatHeader = document.querySelector('.chat-header h2');
+    const customerIdInput = document.querySelector('#customer-id-input');
+    const proposalIdInput = document.querySelector('#proposal-id-input');
+
+    chatTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove the 'active' class from all tabs
+            chatTabs.forEach(tab => tab.classList.remove('active'));
+
+            // Add the 'active' class to the clicked tab
+            tab.classList.add('active');
+
+            // Update the chat header with the customer's name
+            chatHeader.textContent = tab.querySelector('h3').textContent;
+
+            // Update the hidden input fields with customer and proposal IDs
+            customerIdInput.value = tab.dataset.customerId;
+            proposalIdInput.value = proposalId; // You should set the proposal ID accordingly
+
+            // Submit the form to load chat messages for the selected customer
+            document.querySelector('.chat-input form').submit();
+        });
+    });
+</script>
+
+
+        <!-- <script>
+          const chatTabs = document.querySelectorAll('.chat-tabs li');
+          const chatMessages = document.querySelector('.chat-messages');
+          const chatHeader = document.querySelector('.chat-header h2');
+
+          chatTabs.forEach(tab => {
+              tab.addEventListener('click', () => {
+                  // Remove the 'active' class from all tabs
+                  chatTabs.forEach(tab => tab.classList.remove('active'));
+
+                  // Add the 'active' class to the clicked tab
+                  tab.classList.add('active');
+
+                  // Update the chat header with the customer's name
+                  chatHeader.textContent = tab.textContent;
+
+                  // Clear the chat messages
+                  chatMessages.innerHTML = '';
+
+                  // You can load chat history for the selected customer here
+                  // For this example, we're just clearing the messages
+              });
+          });
+
+        </script> -->
           <div class="chat-area">
             <!-- chatlist -->
             <div class="chatlist">
@@ -234,451 +483,402 @@ session_start();
   
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                       <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="Open-tab" data-bs-toggle="tab" data-bs-target="#Open" type="button" role="tab"" aria-selected="true">Open</button>
+                        <button class="nav-link active" id="Open-tab" data-bs-toggle="tab" data-bs-target="#Open" type="button" role="tab" aria-selected="true">Open</button>
                       </li>
                       <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="Closed-tab" data-bs-toggle="tab" data-bs-target="#Closed" type="button" role="tab"" aria-selected="false">Closed</button>
+                        <button class="nav-link" id="Closed-tab" data-bs-toggle="tab" data-bs-target="#Closed" type="button" role="tab" aria-selected="false">Closed</button>
                       </li>
                     </ul>
                   </div>
   
                   <div class="modal-body">
                     <!-- chat-list -->
-                    <div class="chat-lists">
-                      <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active" id="Open" role="tabpanel" aria-labelledby="Open-tab">
-                          <!-- chat-list -->
-                          <div class="chat-list">
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                                <span class="active"></span>
+                   
+                      <div class="chat-lists">
+                          <div class="tab-content active" id="myTabContent">
+                              <div class="tab-pane<?php echo $customerId?> fade show active" id="Open" role="tabpanel" aria-labelledby="Open-tab">
+                                  <?php
+                                  include 'connection.php';
+
+                                  $userId = $_SESSION['user_id'];
+                                  $providerName = $_SESSION['providerName'];
+                      
+                                  $sql = "SELECT * FROM customer_proposal WHERE provider_id = ?";
+                                  $stmt = $conn->prepare($sql);
+                                  $stmt->bind_param('s', $userId);
+                      
+                                  if ($stmt->execute()) {
+                                      $result = $stmt->get_result();
+                                      if ($result->num_rows == 0) {
+                                        // No orders found for the provider
+                                        echo '<h2 class="text-center texter">No new orders available.</h2>';
+                                    } else {
+                                while ($row = $result->fetch_assoc()) {
+                                    $proposalId = $row['id'];
+                                    $_SESSION['proposalId'] = $row['id'];
+                                    $customerId = $row['customer_id'];
+                                    $providerId = $row['provider_id'];
+                                    $selectedDate = $row['selected_date'];
+                                    $selectedTime = $row['selected_time'];
+                                    $userContent = $row['user_content'];
+                                    $selectedServices = explode(', ', $row['selected_services']);
+                                    $totalAmount = $row['total_amount'];
+                                    $current_time = $row['current_time'];
+                                    $counterTotall = $row['counter_totall'];
+                      
+                                    // Retrieve customer name and address based on customerId
+                                    $customerInfo = getCustomerInfo($customerId);
+                      
+                                    $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+                                    $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+                                    $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+                                    
+                                    
+                                    // Now you have an array containing the selected services and their prices for the customer
+                                    
+                                    // Output the retrieved customer name and address
+                                    $customerName = $customerInfo['fullname'];
+                                    $customerAddress = $customerInfo['address'];
+                                    $profile_picture = $customerInfo['profile_picture'];
+
+                                         ?>
+                                          <div class="chat-list">
+                                          
+                                          <a class="chat-tab-link" data-customer-id="<?php echo $customerId?>" data-customer-name="<?php echo $customerName?>" id="home-tab" data-toggle="tab" href="#home-tab<?php echo $customerId?>">
+                                          <div class="d-flex align-items-center">
+                                          <div class="flex-shrink-0">
+                                          <img class="img-fluid" style="border-radius: 136px;object-fit: fill;width: 60px;height: 60px;" src="../customer/<?php echo $profile_picture?>" alt="user img">
+                                          </div>
+                                          <div class="flex-grow-1 ms-3">
+                                          <h3><?php echo $customerName?></h3>
+                                          <p>front end developer</p>
+                                          </div>
+                                          </div>
+                                          </a>
+                                          </div>
+                                          <?php
+                                        }
+                                      }
+                                    } else {
+                                      echo 'Error executing the query.';
+                                    }
+                                  ?>
                               </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Mehedi Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Ryhan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Malek Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Sadik Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Bulu </h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Maria SK</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Dipa Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Jhon Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Tumpa Moni</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Payel Akter</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Baby Akter</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Zuwel Rana</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Habib </h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Jalal Ahmed</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Hasan Ali</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Mehedi Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-  
                           </div>
-                          <!-- chat-list -->
-                        </div>
-                        <div class="tab-pane fade" id="Closed" role="tabpanel" aria-labelledby="Closed-tab">
-  
-                          <!-- chat-list -->
-                          <div class="chat-list">
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                                <span class="active"></span>
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Mehedi Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Ryhan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Malek Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Sadik Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Bulu </h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Maria SK</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Dipa Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Jhon Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Tumpa Moni</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Payel Akter</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Baby Akter</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Zuwel Rana</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Habib </h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Jalal Ahmed</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Hasan Ali</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-                            <a href="#" class="d-flex align-items-center">
-                              <div class="flex-shrink-0">
-                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <h3>Mehedi Hasan</h3>
-                                <p>front end developer</p>
-                              </div>
-                            </a>
-  
-                          </div>
-                          <!-- chat-list -->
-                        </div>
                       </div>
-  
-                    </div>
+
+                  
                     <!-- chat-list -->
                   </div>
                 </div>
               </div>
             </div>
             <!-- chatlist -->
-  
+            
             <!-- chatbox -->
             <div class="chatbox showbox">
+
               <div class="modal-dialog-scrollable">
-                <div class="modal-content">
-                  <div class="msg-head">
-                    <div class="row">
-                      <div class="col-8">
-                        <div class="d-flex align-items-center">
-                          <span class="chat-icon"><img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/arroleftt.svg" alt="image title"></span>
-                          <div class="flex-shrink-0">
-                            <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
+                <div class="tab-content" id="myTabContent active">
+                  <div class="tab-pane<?php echo $customerId?> fade show active in" id="home-tab<?php echo $customerId?>" role="tabpanel">
+                    <div class="modal-content">
+                      <div class="msg-head">
+                        <div class="row">
+                          <div class="col-8">
+                            <div class="d-flex align-items-center">
+                              <span class="chat-icon"><img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/arroleftt.svg" alt="image title"></span>
+                              <div class="flex-shrink-0">
+                                <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/user.png" alt="user img">
+                              </div>
+                              <div class="flex-grow-1 ms-3">
+                                <h3 id="customerNameDisplay"><?php echo $customerName?></h3>
+                                <p>front end developer</p>
+                              </div>
+                            </div>
                           </div>
-                          <div class="flex-grow-1 ms-3">
-                            <h3>Mehedi Hasan</h3>
-                            <p>front end developer</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-4">
-                        <ul class="moreoption">
-                          <li class="navbar nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v" aria-hidden="true"></i></a>
-                            <ul class="dropdown-menu">
-                              <li><a class="dropdown-item" href="#">Action</a></li>
-                              <li><a class="dropdown-item" href="#">Another action</a></li>
-                              <li>
-                                <hr class="dropdown-divider">
+                          <div class="col-4">
+                            <ul class="moreoption">
+                              <li class="navbar nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v" aria-hidden="true"></i></a>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item" href="#">Action</a></li>
+                                  <li><a class="dropdown-item" href="#">Another action</a></li>
+                                  <li>
+                                    <hr class="dropdown-divider">
+                                  </li>
+                                  <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                </ul>
                               </li>
-                              <li><a class="dropdown-item" href="#">Something else here</a></li>
                             </ul>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-  
-                  <div class="modal-body">
-                    <div class="msg-body">
-                      <ul>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:06 am</span>
-                        </li>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:16 am</span>
-                        </li>
-                        <li class="repaly">
-                          <p>yes!</p>
-                          <span class="time">10:20 am</span>
-                        </li>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:26 am</span>
-                        </li>
-                        <li class="sender">
-                          <p> Hey, Are you there? </p>
-                          <span class="time">10:32 am</span>
-                        </li>
-                        <li class="repaly">
-                          <p>How are you?</p>
-                          <span class="time">10:35 am</span>
-                        </li>
-                        <li>
-                          <div class="divider">
-                            <h6>Today</h6>
                           </div>
-                        </li>
-  
-                        <li class="repaly">
-                          <p> yes, tell me</p>
-                          <span class="time">10:36 am</span>
-                        </li>
-                        <li class="repaly">
-                          <p>yes... on it</p>
-                          <span class="time">junt now</span>
-                        </li>
-  
-                      </ul>
-                    </div>
-                  </div>
-  
-                  <div class="send-box">
-                    <form action="">
-                      <input type="text" class="form-control" aria-label="message…" placeholder="Write message…">
-  
-                      <button type="button"><i class="fa fa-paper-plane" aria-hidden="true"></i> Send</button>
-                    </form>
-  
-                    <div class="send-btns">
-                      <div class="attach">
-                        <div class="button-wrapper">
-                          <span class="label">
-                            <img class="img-fluid" src="https://mehedihtml.com/chatbox/assets/img/upload.svg" alt="image title"> attached file
-                          </span><input type="file" name="upload" id="upload" class="upload-box" placeholder="Upload File" aria-label="Upload File">
-                        </div>
-  
-                        <select class="form-control" id="exampleFormControlSelect1">
-                          <option>Select template</option>
-                          <option>Template 1</option>
-                          <option>Template 2</option>
-                        </select>
-  
-                        <div class="add-apoint">
-                          <a href="#" data-toggle="modal" data-target="#exampleModal4"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewbox="0 0 16 16" fill="none">
-                              <path d="M8 16C3.58862 16 0 12.4114 0 8C0 3.58862 3.58862 0 8 0C12.4114 0 16 3.58862 16 8C16 12.4114 12.4114 16 8 16ZM8 1C4.14001 1 1 4.14001 1 8C1 11.86 4.14001 15 8 15C11.86 15 15 11.86 15 8C15 4.14001 11.86 1 8 1Z" fill="#7D7D7D" />
-                              <path d="M11.5 8.5H4.5C4.224 8.5 4 8.276 4 8C4 7.724 4.224 7.5 4.5 7.5H11.5C11.776 7.5 12 7.724 12 8C12 8.276 11.776 8.5 11.5 8.5Z" fill="#7D7D7D" />
-                              <path d="M8 12C7.724 12 7.5 11.776 7.5 11.5V4.5C7.5 4.224 7.724 4 8 4C8.276 4 8.5 4.224 8.5 4.5V11.5C8.5 11.776 8.276 12 8 12Z" fill="#7D7D7D" />
-                            </svg> Appoinment</a>
                         </div>
                       </div>
+      
+                      <div class="modal-body">
+                        <div class="msg-body">
+                          <ul>
+                            <li class="sender">
+                            <h3 id="customerNameDisplay"><?php echo $customerName?></h3>
+                              <p> Hey, Are you there?</p>
+                              <span class="time">10:06 am</span>
+                            </li>
+                            <li class="sender">
+                              <p> Hey, Are you there? </p>
+                              <span class="time">10:16 am</span>
+                            </li>
+                            <li class="repaly">
+                              <p>yes!</p>
+                              <span class="time">10:20 am</span>
+                            </li>
+                            <li class="sender">
+                              <p> Hey, Are you there? </p>
+                              <span class="time">10:26 am</span>
+                            </li>
+                            <li class="sender">
+                              <p> Hey, Are you there? </p>
+                              <span class="time">10:32 am</span>
+                            </li>
+                            <li class="repaly">
+                              <p>How are you?</p>
+                              <span class="time">10:35 am</span>
+                            </li>
+                            <li>
+                              <div class="divider">
+                                <h6>Today</h6>
+                              </div>
+                            </li>
+      
+                            <li class="repaly">
+                              <p> yes, tell me</p>
+                              <span class="time">10:36 am</span>
+                            </li>
+                            <li class="repaly">
+                              <p>yes... on it</p>
+                              <span class="time">junt now</span>
+                            </li>
+      
+                          </ul>
+                        </div>
+                      </div>
+      
+                      <div class="send-box">
+                        <form action="">
+                          <input type="text" class="form-control" aria-label="message…" placeholder="Write message…">
+      
+                          <button type="button"><i class="fa fa-paper-plane" aria-hidden="true"></i> Send</button>
+                        </form>
+      
+                       
+      
+                      </div>
                     </div>
-  
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          <div class="wrapper">
+    <div class="container">
+        <div class="left">
+            <div class="top">
+                <input type="text" />
+                <a href="javascript:;" class="search"></a>
+            </div>
+            <ul class="people">
+                <li class="person" data-chat="person1">
+                    <img src="https://s13.postimg.org/ih41k9tqr/img1.jpg" alt="" />
+                    <span class="name">Thomas Bangalter</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">I was wondering...</span>
+                </li>
+                <li class="person" data-chat="person2">
+                    <img src="https://s3.postimg.org/yf86x7z1r/img2.jpg" alt="" />
+                    <span class="name">Dog Woofson</span>
+                    <span class="time">1:44 PM</span>
+                    <span class="preview">I've forgotten how it felt before</span>
+                </li>
+                <li class="person" data-chat="person3">
+                    <img src="https://s3.postimg.org/h9q4sm433/img3.jpg" alt="" />
+                    <span class="name">Louis CK</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">But we’re probably gonna need a new carpet.</span>
+                </li>
+                <li class="person" data-chat="person4">
+                    <img src="https://s3.postimg.org/quect8isv/img4.jpg" alt="" />
+                    <span class="name">Bo Jackson</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">It’s not that bad...</span>
+                </li>
+                <li class="person" data-chat="person5">
+                    <img src="https://s16.postimg.org/ete1l89z5/img5.jpg" alt="" />
+                    <span class="name">Michael Jordan</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">Wasup for the third time like is 
+you bling bitch</span>
+                </li>
+                <li class="person" data-chat="person6">
+                    <img src="https://s30.postimg.org/kwi7e42rh/img6.jpg" alt="" />
+                    <span class="name">Drake</span>
+                    <span class="time">2:09 PM</span>
+                    <span class="preview">howdoyoudoaspace</span>
+                </li>
+            </ul>
+        </div>
+        <div class="right">
+            <div class="top"><span>To: <span class="name">Dog Woofson</span></span></div>
+            <div class="chat" data-chat="person1">
+                <div class="conversation-start">
+                    <span>Today, 6:48 AM</span>
+                </div>
+                <div class="bubble you">
+                    Hello,
+                </div>
+                <div class="bubble you">
+                    it's me.
+                </div>
+                <div class="bubble you">
+                    I was wondering...
+                </div>
+                                <div class="bubble you">
+                    Hello,
+                </div>
+                <div class="bubble you">
+                    it's me.
+                </div>
+                <div class="bubble you">
+                    I was wondering...
+                </div>
+                                <div class="bubble you">
+                    Hello,
+                </div>
+           <div class="bubble me">
+                    it's me.
+                </div>
+                <div class="bubble me">
+                    I was wondering...
+                </div>
+                <div class="bubble me">
+                    Hello,
+                </div>            
+                               
+                
+            </div>
+            <div class="chat" data-chat="person2">
+                <div class="conversation-start">
+                    <span>Today, 5:38 PM</span>
+                </div>
+                <div class="bubble you">
+                    Hello, can you hear me?
+                </div>
+                <div class="bubble you">
+                    I'm in California dreaming
+                </div>
+                <div class="bubble me">
+                    ... about who we used to be.
+                </div>
+                <div class="bubble me">
+                    Are you serious?
+                </div>
+                <div class="bubble you">
+                    When we were younger and free...
+                </div>
+                <div class="bubble you">
+                    I've forgotten how it felt before
+                </div>
+            </div>
+            <div class="chat" data-chat="person3">
+                <div class="conversation-start">
+                    <span>Today, 3:38 AM</span>
+                </div>
+                <div class="bubble you">
+                    Hey human!
+                </div>
+                <div class="bubble you">
+                    Umm... Someone took a shit in the hallway.
+                </div>
+                <div class="bubble me">
+                    ... what.
+                </div>
+                <div class="bubble me">
+                    Are you serious?
+                </div>
+                <div class="bubble you">
+                    I mean...
+                </div>
+                <div class="bubble you">
+                    It’s not that bad...
+                </div>
+                <div class="bubble you">
+                    But we’re probably gonna need a new carpet.
+                </div>
+            </div>
+            <div class="chat" data-chat="person4">
+                <div class="conversation-start">
+                    <span>Yesterday, 4:20 PM</span>
+                </div>
+                <div class="bubble me">
+                    Hey human!
+                </div>
+                <div class="bubble me">
+                    Umm... Someone took a shit in the hallway.
+                </div>
+                <div class="bubble you">
+                    ... what.
+                </div>
+                <div class="bubble you">
+                    Are you serious?
+                </div>
+                <div class="bubble me">
+                    I mean...
+                </div>
+                <div class="bubble me">
+                    It’s not that bad...
+                </div>
+            </div>
+            <div class="chat" data-chat="person5">
+                <div class="conversation-start">
+                    <span>Today, 6:28 AM</span>
+                </div>
+                <div class="bubble you">
+                    Wasup
+                </div>
+                <div class="bubble you">
+                    Wasup
+                </div>
+                <div class="bubble you">
+                    Wasup for the third time like is <br />you blind bitch
+                </div>
+
+            </div>
+            <div class="chat" data-chat="person6">
+                <div class="conversation-start">
+                    <span>Monday, 1:27 PM</span>
+                </div>
+                <div class="bubble you">
+                    So, how's your new phone?
+                </div>
+                <div class="bubble you">
+                    You finally have a smartphone :D
+                </div>
+                <div class="bubble me">
+                    Drake?
+                </div>
+                <div class="bubble me">
+                    Why aren't you answering?
+                </div>
+                <div class="bubble you">
+                    howdoyoudoaspace
+                </div>
+            </div>
+            <div class="write">
+                <a href="javascript:;" class="write-link attach"></a>
+                <input type="text" />
+                <a href="javascript:;" class="write-link send"></a>
+                <a href="javascript:;" class="write-link smiley"></a>
+            </div>
+        </div>
+    </div>
+</div>
           <!-- chatbox -->
   
         </div>
@@ -694,7 +894,26 @@ session_start();
     <!-- page-body-wrapper ends -->
   </div>
   <!-- container-scroller -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get all chat tab links
+        const chatTabLinks = document.querySelectorAll(".chat-tab-link");
 
+        // Get the chat box element
+        const customerNameDisplay = document.getElementById("customerNameDisplay");
+
+        // Iterate through each chat tab link and add a click event listener
+        chatTabLinks.forEach((chatTabLink) => {
+            chatTabLink.addEventListener("click", function() {
+                // Get the customer's name from the data-customer-name attribute
+                const customerName = this.dataset.customerName;
+
+                // Update the chat box content with the selected customer's name
+                customerNameDisplay.textContent = customerName;
+            });
+        });
+    });
+</script>
   <!-- plugins:js -->
   <script src="vendors/js/vendor.bundle.base.js"></script>
   <!-- endinject -->
@@ -722,705 +941,7 @@ session_start();
 </body>
 
 </html>
-<style>
-
-
-
-    /* HTML5 display-role reset for older browsers */
-    
-    article,
-    aside,
-    details,
-    figcaption,
-    figure,
-    footer,
-    header,
-    hgroup,
-    menu,
-    nav,
-    section {
-        display: block;
-    }
-    
-    body {
-        line-height: 1.5;
-    }
-    
-    ol,
-    ul {
-        list-style: none;
-    }
-    
-    blockquote,
-    q {
-        quotes: none;
-    }
-    
-    blockquote:before,
-    blockquote:after,
-    q:before,
-    q:after {
-        content: '';
-        content: none;
-    }
-    
-    table {
-        border-collapse: collapse;
-        border-spacing: 0;
-    }
-    
-    
-    /********************************
-     Typography Style
-    ******************************** */
-    
-    body {
-        margin: 0;
-        font-family: 'Open Sans', sans-serif;
-        line-height: 1.5;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-    
-    html {
-        min-height: 100%;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-    
-    h1 {
-        font-size: 36px;
-    }
-    
-    h2 {
-        font-size: 30px;
-    }
-    
-    h3 {
-        font-size: 26px;
-    }
-    
-    h4 {
-        font-size: 22px;
-    }
-    
-    h5 {
-        font-size: 18px;
-    }
-    
-    h6 {
-        font-size: 16px;
-    }
-    
-    p {
-        font-size: 15px;
-    }
-    
-    a {
-        text-decoration: none;
-        font-size: 15px;
-    }
-    
-    * {
-      margin-bottom: 0;
-    }
-    
-    
-    /* *******************************
-    message-area
-    ******************************** */
-    
-    .message-area {
-        height: 100vh;
-        overflow: hidden;
-        padding: 30px 0;
-    }
-    
-    .chat-area {
-        position: relative;
-        width: 100%;
-        background-color: #fff;
-        border-radius: 0.3rem;
-        height: 84vh;
-        overflow: hidden;
-        min-height: calc(100% - 1rem);
-        border: 2px solid #72b763;
-    }
-    
-    .chatlist {
-        outline: 0;
-        height: 100%;
-        overflow: hidden;
-        width: 300px;
-        float: left;
-        padding: 15px;
-    }
-    
-    .chat-area .modal-content {
-        border: none;
-        border-radius: 0;
-        outline: 0;
-        height: 100%;
-    }
-    ::-webkit-scrollbar {
-    width: 5px;
-}
-::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-}
-::-webkit-scrollbar-thumb {
-    background: #72b763!important;
-}
-::selection {
-    background: #70BE44;
-    color: #fff;
-}
-#Closed {
-    opacity: 1;
-}
-.modal-content {
-    background: #fff;
-    box-shadow: unset;
-    padding: 0 0;
-}
-    .chat-area .modal-dialog-scrollable {
-        height: 100% !important;
-    }
-    
-    .chatbox {
-        width: auto;
-        overflow: hidden;
-        height: 100%;
-        border-left: 1px solid #ccc;
-    }
-    
-    .chatbox .modal-dialog,
-    .chatlist .modal-dialog {
-        max-width: 100%;
-        margin: 0;
-    }
-    
-    .msg-search {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .chat-area .form-control {
-        display: block;
-        width: 80%;
-        padding: 2.375rem 0.75rem;
-        font-size: 14px;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #222;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #ccc;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        border-radius: 0.25rem;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    }
-    
-    .chat-area .form-control:focus {
-        outline: 0;
-        box-shadow: inherit;
-    }
-    
-    a.add img {
-        height: 36px;
-    }
-    
-    .chat-area .nav-tabs {
-        border-bottom: 1px solid #dee2e6;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: inherit;
-    }
-    
-    .chat-area .nav-tabs .nav-item {
-        width: 100%;
-    }
-    
-    .chat-area .nav-tabs .nav-link {
-        width: 100%;
-        color: #180660;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.5;
-        text-transform: capitalize;
-        margin-top: 5px;
-        margin-bottom: -1px;
-        background: 0 0;
-        border: 1px solid transparent;
-        border-top-left-radius: 0.25rem;
-        border-top-right-radius: 0.25rem;
-    }
-    
-    .chat-area .nav-tabs .nav-item.show .nav-link,
-    .chat-area .nav-tabs .nav-link.active {
-        color: #222;
-        background-color: #fff;
-        border-color: transparent transparent #000;
-    }
-    
-    .chat-area .nav-tabs .nav-link:focus,
-    .chat-area .nav-tabs .nav-link:hover {
-        border-color: transparent transparent #000;
-        isolation: isolate;
-    }
-    
-    .chat-list h3 {
-        color: #222;
-        font-size: 16px;
-        font-weight: 500;
-        line-height: 1.5;
-        text-transform: capitalize;
-        margin-bottom: 0;
-    }
-    
-    .chat-list p {
-        color: #343434;
-        font-size: 14px;
-        font-weight: 400;
-        line-height: 1.5;
-        text-transform: capitalize;
-        margin-bottom: 0;
-    }
-    
-    .chat-list a.d-flex {
-        margin-bottom: 15px;
-        position: relative;
-        text-decoration: none;
-    }
-    
-    .chat-list .active {
-        display: block;
-        content: '';
-        clear: both;
-        position: absolute;
-        bottom: 3px;
-        left: 34px;
-        height: 12px;
-        width: 12px;
-        background: #00DB75;
-        border-radius: 50%;
-        border: 2px solid #fff;
-    }
-    
-    .msg-head h3 {
-        color: #222;
-        font-size: 18px;
-        font-weight: 600;
-        line-height: 1.5;
-        margin-bottom: 0;
-    }
-    
-    .msg-head p {
-        color: #343434;
-        font-size: 14px;
-        font-weight: 400;
-        line-height: 1.5;
-        text-transform: capitalize;
-        margin-bottom: 0;
-    }
-    
-    .msg-head {
-        padding: 15px;
-        border-bottom: 1px solid #ccc;
-    }
-    
-    .moreoption {
-        display: flex;
-        align-items: center;
-        justify-content: end;
-    }
-    
-    .moreoption .navbar {
-        padding: 0;
-    }
-    
-    .moreoption li .nav-link {
-        color: #222;
-        font-size: 16px;
-    }
-    
-    .moreoption .dropdown-toggle::after {
-        display: none;
-    }
-    
-    .moreoption .dropdown-menu[data-bs-popper] {
-        top: 100%;
-        left: auto;
-        right: 0;
-        margin-top: 0.125rem;
-    }
-    
-    .msg-body ul {
-        overflow: hidden;
-    }
-    
-    .msg-body ul li {
-        list-style: none;
-        margin: 15px 0;
-    }
-    
-    .msg-body ul li.sender {
-        display: block;
-        width: 100%;
-        position: relative;
-    }
-    
-    .msg-body ul li.sender:before {
-        display: block;
-        clear: both;
-        content: '';
-        position: absolute;
-        top: -6px;
-        left: -7px;
-        width: 0;
-        height: 0;
-        border-style: solid;
-        border-width: 0 12px 15px 12px;
-        border-color: transparent transparent #f5f5f5 transparent;
-        -webkit-transform: rotate(-37deg);
-        -ms-transform: rotate(-37deg);
-        transform: rotate(-37deg);
-    }
-    
-    .msg-body ul li.sender p {
-        color: #000;
-        font-size: 14px;
-        line-height: 1.5;
-        font-weight: 400;
-        padding: 15px;
-        background: #f5f5f5;
-        display: inline-block;
-        border-bottom-left-radius: 10px;
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
-        margin-bottom: 0;
-    }
-    
-    .msg-body ul li.sender p b {
-        display: block;
-        color: #180660;
-        font-size: 14px;
-        line-height: 1.5;
-        font-weight: 500;
-    }
-    
-    .msg-body ul li.repaly {
-        display: block;
-        width: 100%;
-        text-align: right;
-        position: relative;
-    }
-    
-    .msg-body ul li.repaly:before {
-        display: block;
-        clear: both;
-        content: '';
-        position: absolute;
-        bottom: 15px;
-        right: -7px;
-        width: 0;
-        height: 0;
-        border-style: solid;
-        border-width: 0 12px 15px 12px;
-        border-color: transparent transparent #72b763 transparent;
-        -webkit-transform: rotate(37deg);
-        -ms-transform: rotate(37deg);
-        transform: rotate(37deg);
-    }
-    
-    .msg-body ul li.repaly p {
-        color: #fff;
-        font-size: 14px;
-        line-height: 1.5;
-        font-weight: 400;
-        padding: 15px;
-        background: #72b763;
-        display: inline-block;
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-        border-bottom-left-radius: 10px;
-        margin-bottom: 0;
-    }
-    
-    .msg-body ul li.repaly p b {
-        display: block;
-        color: #061061;
-        font-size: 14px;
-        line-height: 1.5;
-        font-weight: 500;
-    }
-    
-    .msg-body ul li.repaly:after {
-        display: block;
-        content: '';
-        clear: both;
-    }
-    
-    .time {
-        display: block;
-        color: #000;
-        font-size: 12px;
-        line-height: 1.5;
-        font-weight: 400;
-    }
-    
-    li.repaly .time {
-        margin-right: 20px;
-    }
-    
-    .divider {
-        position: relative;
-        z-index: 1;
-        text-align: center;
-    }
-    
-    .msg-body h6 {
-        text-align: center;
-        font-weight: normal;
-        font-size: 14px;
-        line-height: 1.5;
-        color: #222;
-        background: #fff;
-        display: inline-block;
-        padding: 0 5px;
-        margin-bottom: 0;
-    }
-    
-    .divider:after {
-        display: block;
-        content: '';
-        clear: both;
-        position: absolute;
-        top: 12px;
-        left: 0;
-        border-top: 1px solid #EBEBEB;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-    }
-    
-    .send-box {
-        padding: 15px;
-        border-top: 1px solid #ccc;
-    }
-    
-    .send-box form {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 15px;
-    }
-    
-    .send-box .form-control {
-        display: block;
-        width: 85%;
-        padding: 0.375rem 0.75rem;
-        font-size: 14px;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #222;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #ccc;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        border-radius: 0.25rem;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    }
-    
-    .send-box button {
-        border: none;
-        background: #72b763;
-        padding: 0.375rem 5px;
-        color: #fff;
-        border-radius: 0.25rem;
-        font-size: 14px;
-        font-weight: 400;
-        width: 24%;
-        margin-left: 1%;
-    }
-    
-    .send-box button i {
-        margin-right: 5px;
-    }
-    
-    .send-btns .button-wrapper {
-        position: relative;
-        width: 125px;
-        height: auto;
-        text-align: left;
-        margin: 0 auto;
-        display: block;
-        background: #F6F7FA;
-        border-radius: 3px;
-        padding: 5px 15px;
-        float: left;
-        margin-right: 5px;
-        margin-bottom: 5px;
-        overflow: hidden;
-    }
-    section.message-area div#Open {
-    opacity: 1;
-}
-    .send-btns .button-wrapper span.label {
-        position: relative;
-        z-index: 1;
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -webkit-box-align: center;
-        -ms-flex-align: center;
-        align-items: center;
-        width: 100%;
-        cursor: pointer;
-        color: #343945;
-        font-weight: 400;
-        text-transform: capitalize;
-        font-size: 13px;
-    }
-    
-    #upload {
-        display: inline-block;
-        position: absolute;
-        z-index: 1;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        opacity: 0;
-        cursor: pointer;
-    }
-    
-    .send-btns .attach .form-control {
-        display: inline-block;
-        width: 120px;
-        height: auto;
-        padding: 5px 8px;
-        font-size: 13px;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #343945;
-        background-color: #F6F7FA;
-        background-clip: padding-box;
-        border: 1px solid #F6F7FA;
-        border-radius: 3px;
-        margin-bottom: 5px;
-    }
-    
-    .send-btns .button-wrapper span.label img {
-        margin-right: 5px;
-    }
-    
-    .button-wrapper {
-        position: relative;
-        width: 100px;
-        height: 100px;
-        text-align: center;
-        margin: 0 auto;
-    }
-    
-    button:focus {
-        outline: 0;
-    }
-    
-    .add-apoint {
-        display: inline-block;
-        margin-left: 5px;
-    }
-    
-    .add-apoint a {
-        text-decoration: none;
-        background: #F6F7FA;
-        border-radius: 8px;
-        padding: 8px 8px;
-        font-size: 13px;
-        font-weight: 400;
-        line-height: 1.2;
-        color: #343945;
-    }
-    
-    .add-apoint a svg {
-        margin-right: 5px;
-    }
-    
-    .chat-icon {
-        display: none;
-    }
-    
-    .closess i {
-        display: none;
-    }
-    
-    
-    
-    @media (max-width: 767px) {
-        .chat-icon {
-            display: block;
-            margin-right: 5px;
-        }
-        .chatlist {
-            width: 100%;
-        }
-        .chatbox {
-            width: 100%;
-            position: absolute;
-            left: 1000px;
-            right: 0;
-            background: #fff;
-            transition: all 0.5s ease;
-            border-left: none;
-        }
-        .showbox {
-            left: 0 !important;
-            transition: all 0.5s ease;
-        }
-        .msg-head h3 {
-            font-size: 14px;
-        }
-        .msg-head p {
-            font-size: 12px;
-        }
-        .msg-head .flex-shrink-0 img {
-            height: 30px;
-        }
-        .send-box button {
-            width: 28%;
-        }
-        .send-box .form-control {
-            width: 70%;
-        }
-        .chat-list h3 {
-            font-size: 14px;
-        }
-        .chat-list p {
-            font-size: 12px;
-        }
-        .msg-body ul li.sender p {
-            font-size: 13px;
-            padding: 8px;
-            border-bottom-left-radius: 6px;
-            border-top-right-radius: 6px;
-            border-bottom-right-radius: 6px;
-        }
-        .msg-body ul li.repaly p {
-            font-size: 13px;
-            padding: 8px;
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-            border-bottom-left-radius: 6px;
-        }
-    }
-    </style>
-    <script>
+    <!-- <script>
     jQuery(document).ready(function() {
     
         $(".chat-list a").click(function() {
@@ -1434,4 +955,4 @@ session_start();
         });
     
     
-    });</script>
+    });</script> -->

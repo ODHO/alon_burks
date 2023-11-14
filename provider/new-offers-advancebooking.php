@@ -1,5 +1,127 @@
 <?php
 session_start();
+// Function to get customer information from the provider_registration table
+function getCustomerInfo($customerId) {
+  global $conn;
+  $sql = "SELECT fullname, profile_picture, address FROM provider_registration WHERE id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('s', $customerId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          return $row;
+      }
+  }
+  return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
+}
+// Function to get the price of a service from the categories table
+function getCustomerServicesAndPrices($customerId, $proposalId) {
+    global $conn;
+    $sql = "SELECT service_name, price FROM customer_services WHERE customer_id = ? AND proposal_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ss', $customerId, $proposalId);
+
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $servicesAndPrices = array();
+
+        while ($row = $result->fetch_assoc()) {
+            $serviceCustomers = $row['service_name'];
+            $priceService = $row['price'];
+            $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService);
+            
+        }
+
+        return $servicesAndPrices;
+    }
+
+    return array();
+}
+function getServicePrice($service) {
+    global $conn;
+    $sql = "SELECT price FROM customer_services WHERE service_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $service);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['price'];
+        }
+    }
+    return 'N/A'; // Provide a default value if service price not found
+  }
+function getCustomerImagesForProvider($customerId, $providerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT image_path FROM customer_images WHERE customer_id = ? AND provider_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('sss', $customerId, $providerId, $proposalId);
+  if ($stmt->execute()) {
+    $result = $stmt->get_result();
+    $images = array();
+    while ($row = $result->fetch_assoc()) {
+      $images[] = $row['image_path'];
+    }
+    return $images;
+  }
+  return array();
+}
+
+
+function getServiceImages($services) {
+  global $conn;
+  $servicesImages = array();
+
+  // Create a prepared statement to select service images based on service names
+  $sql = "SELECT image FROM categories WHERE heading IN (";
+
+  // Create placeholders for each service
+  $placeholders = implode(',', array_fill(0, count($services), '?'));
+
+  $sql .= $placeholders . ")";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+      // Bind each service name to its corresponding placeholder
+      foreach ($services as $index => $service) {
+          $stmt->bind_param('s', $services[$index]);
+
+          if ($stmt->execute()) {
+              $result = $stmt->get_result();
+
+              while ($row = $result->fetch_assoc()) {
+                  $servicesImages[] = $row['image'];
+              }
+          }
+      }
+  }
+
+  return $servicesImages;
+}
+// Assuming you have a function to retrieve advance proposals from the database
+// Assuming you have a function to retrieve advance proposals from the database
+function getAdvanceProposals($providerId, $proposalId, $customerId) {
+  global $conn;
+  
+  $proposals = array();
+
+  $sql = "SELECT * FROM advance_proposal WHERE provider_id = ? AND proposal_id = ? AND customer_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('sss', $providerId, $proposalId, $customerId);
+
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+
+      while ($row = $result->fetch_assoc()) {
+          $proposals[] = $row;
+      }
+  }
+
+  return $proposals;
+}
+
+
 
 ?>
 <!DOCTYPE html>
@@ -47,526 +169,420 @@ session_start();
     ?>
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">
-      <!-- partial:partials/_settings-panel.php -->
-      <!-- <div class="theme-setting-wrapper">
-        <div id="settings-trigger"><i class="ti-settings"></i></div>
-        <div id="theme-settings" class="settings-panel">
-          <i class="settings-close ti-close"></i>
-          <p class="settings-heading">SIDEBAR SKINS</p>
-          <div class="sidebar-bg-options selected" id="sidebar-light-theme"><div class="img-ss rounded-circle bg-light border me-3"></div>Light</div>
-          <div class="sidebar-bg-options" id="sidebar-dark-theme"><div class="img-ss rounded-circle bg-dark border me-3"></div>Dark</div>
-          <p class="settings-heading mt-2">HEADER SKINS</p>
-           <div class="color-tiles mx-0 px-4">
-            <div class="tiles success"></div>
-            <div class="tiles warning"></div>
-            <div class="tiles danger"></div>
-            <div class="tiles info"></div>
-            <div class="tiles dark"></div>
-            <div class="tiles default"></div>
-          </div> 
-        </div>
-      </div> -->
-      <div id="right-sidebar" class="settings-panel">
-        <i class="settings-close ti-close"></i>
-        <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="todo-tab" data-bs-toggle="tab" href="#todo-section" role="tab" aria-controls="todo-section" aria-expanded="true">TO DO LIST</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="chats-tab" data-bs-toggle="tab" href="#chats-section" role="tab" aria-controls="chats-section">CHATS</a>
-          </li>
-        </ul>
-        <div class="tab-content" id="setting-content">
-          <div class="tab-pane fade show active scroll-wrapper" id="todo-section" role="tabpanel" aria-labelledby="todo-section">
-            <div class="add-items d-flex px-3 mb-0">
-              <form class="form w-100">
-                <div class="form-group d-flex">
-                  <input type="text" class="form-control todo-list-input" placeholder="Add To-do">
-                  <button type="submit" class="add btn btn-primary todo-list-add-btn" id="add-task">Add</button>
-                </div>
-              </form>
-            </div>
-            <div class="list-wrapper px-3">
-              <ul class="d-flex flex-column-reverse todo-list">
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Team review meeting at 3.00 PM
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Prepare for presentation
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Resolve all the low priority tickets due today
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Schedule meeting for next week
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Project review
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-              </ul>
-            </div>
-            <h4 class="px-3 text-muted mt-5 fw-light mb-0">Events</h4>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 11 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Creating component page build a js</p>
-              <p class="text-gray mb-0">The total number of sessions</p>
-            </div>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 7 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Meeting with Alisa</p>
-              <p class="text-gray mb-0 ">Call Sarah Graves</p>
-            </div>
-          </div>
-          <!-- To do section tab ends -->
-          <div class="tab-pane fade" id="chats-section" role="tabpanel" aria-labelledby="chats-section">
-            <div class="d-flex align-items-center justify-content-between border-bottom">
-              <p class="settings-heading border-top-0 mb-3 pl-3 pt-0 border-bottom-0 pb-0">Friends</p>
-              <small class="settings-heading border-top-0 mb-3 pt-0 border-bottom-0 pb-0 pr-3 fw-normal">See All</small>
-            </div>
-            <ul class="chat-list">
-              <li class="list active">
-                <div class="profile"><img src="images/faces/face1.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Thomas Douglas</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">19 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face2.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <div class="wrapper d-flex">
-                    <p>Catherine</p>
-                  </div>
-                  <p>Away</p>
-                </div>
-                <div class="badge badge-success badge-pill my-auto mx-2">4</div>
-                <small class="text-muted my-auto">23 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face3.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Daniel Russell</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">14 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face4.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <p>James Richardson</p>
-                  <p>Away</p>
-                </div>
-                <small class="text-muted my-auto">2 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face5.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Madeline Kennedy</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">5 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face6.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Sarah Graves</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">47 min</small>
-              </li>
-            </ul>
-          </div>
-          <!-- chat tab ends -->
-        </div>
-      </div>
-      <!-- partial -->
-      <!-- partial:partials/_sidebar.php -->
+    
       <?php
       include 'SideMenu.php'
       ?>
       <!-- partial -->
       <div class="main-panel">
         <!-- Modal -->
-  <div class="modal fade" id="myModal" role="dialog">
-    <div class="modal-dialog">
-    
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-
-          <h4 class="modal-title">Your Counter Offer For the services</h4>
-        </div>
-        <div class="modal-body">
-            <h1 style="color: #000; font-weight: bold; font-family: 'Cairo';">Customer Offer</h1>
-            <div class="service-selectedsection">
-                <div class="row">
-                    <div class="col-md-7">
-                        <div class="order-details-progress">
-                            <h2>Service Cost Offer</h2>
-                            <ul class="orderdetails-lists">
-                              <li><em><img src="./images/Snow Plow.png"> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                              <li><em><img src="./images/Cover Up.png"> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                              <li><em><img src="./images/Grass.png"> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                              <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                            </ul>
-                          </div>
-                    </div>
-                    <div class="col-md-5">
-                        <h2>Advance Booking Timings</h2>
-                        <table style="padding: 20px;">
-                            <tbody><tr style="margin-bottom:10px;">
-                              <th width="100%"></th>
-                            </tr>
-                            <tr style="margin-bottom:10px;"> 
-                              <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                              </tr>
-                            <tr style="margin-bottom:10px;">
-                              <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                              </tr>
-                            <tr>
-                              <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                              </tr>
-                           
-                          </tbody></table>
-                    </div>
-                   
-    
-                
-                </div>
-                <!-- second row start -->
-                <div class="row">
-                    <h1 style="color: #000; font-weight: bold; font-family: 'Cairo';">Your Counter</h1>
-                    <div class="col-md-7">
-                        <div class="order-details-progress">
-                            <h2>Service Cost Offer</h2>
-                            <ul class="orderdetails-lists">
-                              <li><em><img src="./images/Snow Plow.png"> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                              <li><em><img src="./images/Cover Up.png"> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                              <li><em><img src="./images/Grass.png"> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                              <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                            </ul>
-                          </div>
-                    </div>
-                    <div class="col-md-5">
-                        <h2>Counter Booking Timings</h2>
-                        <table style="padding: 20px;">
-                            <tbody><tr style="margin-bottom:10px;">
-                              <th width="100%"></th>
-                            </tr>
-                            <tr style="margin-bottom:10px;"> 
-                              <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                              </tr>
-                            <tr style="margin-bottom:10px;">
-                              <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                              </tr>
-                            <tr>
-                              <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                              </tr>
-                           
-                          </tbody></table>
-                    </div>
-                    <div class="task-description">
-                    <h2>Counter Reasoning </h2>
-                    <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                         Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-                          when an unknown printer took a galley of type and scrambled it to make a type 
-                          specimen book. It has survived not only five centuries, but also the leap into 
-                          electronic typesetting, remaining essentially unchanged. It was popularised in 
-                          the 1960s with the release of Letraset</p>
-                </div>
-                </div>
-                <!-- second row end your counter offer -->
-            </div>
-        </div>
-        <div class="modal-footer">
-         <a href="success-popup.php"> <button>Send Counter</button></a>
-        </div>
-      </div>
-      
-    </div>
-  </div>
+  
         <!-- START ROW MAIN-PANEL -->
         <div class="row">
           <div class="order-in-progress">
             <h1><b style="color: #70BE44;">New </b>Offers</h1>
             <div class="onetime-advancebokingbutton">
             <ul>
-                <li><a href="new-offers.php"><button style="color: #fff; background-color: #70BE44;">One Time Service</button></a></li>
-                <li><a href="new-offers-advancebooking.php"><button style="color: #959595; background-color: #E6E6E6;">Advance Bookings</button></a></li>
+                <li><a href="new-offers.php"><button style="color: #959595; background-color: #E6E6E6;">One Time Service</button></a></li>
+                <li><a href="new-offers-advancebooking.php"><button style="color: #fff; background-color: #70BE44;">Advance Bookings</button></a></li>
               </ul>
             </div>
             <!-- FIRST NEW OFFER -->
-        <div class="first-offer">
-            <div class="profileheadsection">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="offerprofile-name">
-                        <img src="./images/profileman.png"/>
-                        <h3>David Johnson<br><b>User ID # 4ISK4DH</b></h3>
+            <?php
+                include 'connection.php';
+
+                $userId = $_SESSION['user_id'];
+                $providerName = $_SESSION['providerName'];
+
+                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'new_offer' AND proposal_status = 'AdvancedProposal' ";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param('s', $userId);
+
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+                    if ($result->num_rows == 0) {
+                      // No orders found for the provider
+                      echo '<h2 class="text-center texter">No new orders available.</h2>';
+                  } else {
+              while ($row = $result->fetch_assoc()) {
+                  $proposalId = $row['id'];
+                  $customerId = $row['customer_id'];
+                  $providerId = $row['provider_id'];
+                  $selectedDate = explode(', ', $row['selected_date']);
+                  $selectedTime = explode(', ', $row['selected_time']);
+                  $userContent = $row['user_content'];
+                  $selectedServices = explode(', ', $row['selected_services']);
+                  $totalAmount = $row['total_amount'];
+                  $current_time = $row['current_time'];
+                  $customerInfo = getCustomerInfo($customerId);
+                  $advanceProposals = getAdvanceProposals($providerId, $proposalId, $customerId);
+                  $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+                  $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+                  $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+                  $customerName = $customerInfo['fullname'];
+                  $customerAddress = $customerInfo['address'];
+                  $profile_picture = $customerInfo['profile_picture'];
+                ?>
+                <div class="modal" id="confirmationModal<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">Are you sure you want to accept this offer?</h2>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                                        <button type="button" class="btn btn-primary" data-dismiss="modal"
+                                            onclick="acceptOffer(<?php echo $proposalId; ?>)">Accept</button>
+                                    </div>
+                                    <script>
+                                        function acceptOffer(proposalId) {
+                                            const counterNote = document.getElementById('counterNote').value;
+                                            const providerId = document.getElementById('providerId').value;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const providerName = document.getElementById('providerName').value;
+                                            const messageContent = `${providerName} has accepted your offer.`;
+
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                statusFrom: 'provider_send',
+                                                status: 'scheduled_offer',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                providerName: providerName,
+                                                messageContent: messageContent,
+                                            }));
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
+
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal" id="reject<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                   
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">Are you sure you want to reject this offer?</h2>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                                        <button type="button" class="btn btn-primary" data-dismiss="modal"
+                                            onclick="rejectOffer(<?php echo $proposalId; ?>)">yes</button>
+                                    </div>
+                                    <script>
+                                        function rejectOffer(proposalId) {
+                                            const counterNote = document.getElementById('counterNote').value;
+                                            const providerId = document.getElementById('providerId').value;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const providerName = document.getElementById('providerName').value;
+                                            const messageContent = `${providerName} has rejected your offer.`;
+
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                status: 'reject_offer',
+                                                statusFrom: 'provider_send',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                providerName: providerName,
+                                                messageContent: messageContent,
+                                            }));
+
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
+
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal" id="new<?php echo $proposalId?>" role="dialog" data-proposal-id="<?php echo $proposalId ?>" data-total-amount="<?php echo $totalAmount ?>">
+                        <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+
+                                        <h4 class="modal-title">Your Counter Offer For the services</h4>
+                                    </div>
+                                     
+                                    <div class="modal-body" data-proposal="<?php echo $proposalId ?>">
+                                        <div class="row service-selectedsection" style="background:none">
+                                          <div class="col-lg-7">
+                                            <h2>Your Counter</h2>
+                                              <ul class="services-selected-counteroffer">
+                                                <?php
+                                                $platformChargesPercentage = 10; // 10% platform charges
+
+                                                // Calculate platform charges
+                                                $platformCharges = ($totalAmount * $platformChargesPercentage) / 100;
+
+                                                // Calculate the amount you'll earn
+                                                $amountYouWillEarn = $totalAmount - $platformCharges;
+
+                                                // Initialize an index variable for serviceCustomers1
+                                                $serviceCustomers1Index = 0;
+
+                                                // Iterate through selected services
+                                                $counter = 1;
+                                                foreach ($selectedServices as $service) {
+                                                    // Retrieve the price of the service from the categories table
+                                                    $serviceImages = getServiceImages([$service]);
+                                                    $serviceCustomers1Item = $serviceCustomers1[$serviceCustomers1Index];
+
+                                                    // Get service name and price
+                                                    $servicesNew = $serviceCustomers1Item['service_name'];
+                                                    $servicePrice = $serviceCustomers1Item['price'];
+
+                                                    // Increment the index for serviceCustomers1
+                                                    $serviceCustomers1Index++;
+
+                                                    // Display service images and details
+                                                    ?>
+                                                    <li>
+                                                        
+                                                        <em>
+                                                            <?php 
+                                                            
+                                                            foreach ($serviceImages as $imagePath) { 
+                                                                
+                                                                ?>
+                                                                <img src="../admin/uploads/<?php echo $imagePath ?>" alt="Service Image" /><?php echo $servicesNew ?>
+                                                            <?php $counter++; } ?>
+                                                            <span>$<em style="font-size: 19px;" data-id="<?php echo $servicesNew;?>" data-service-id="<?php echo $counter; ?>" onblur="updateServicePrice(this);" id="<?php echo $counter; ?>_id" contenteditable="true"><?php echo $servicePrice; ?></em></span>
+                                                        </em>
+                                                    </li>
+                                                <?php  //$counter++;
+                                                $counter++; } ?>
+
+                                                <li class="totalcharges">
+                                                    <em>
+                                                        <img src="./images/counteroffer/4.png" /> Total Charges
+                                                    </em>
+                                                    <span>$<?php echo $totalAmount ?></span>
+                                                </li>
+                                              </ul>
+
+
+                                            <ul class="percent-counter">
+                                                <li>
+                                                    <em>Platform Charges (<?php echo $platformChargesPercentage ?>%)</em>
+                                                    <!-- <span>$<?php //echo $platformCharges ?></span> -->
+                                                </li>
+                                                <li>
+                                                    <em>Your will Earn</em>
+                                                    <span>$<?php echo $amountYouWillEarn ?></span>
+                                                </li>
+                                            </ul>
+                                          </div>
+                                          <div class="col-md-5 service-selectedsection">
+                                <h2>Advance Booking Timings</h2>
+                                <table style="padding: 20px;">
+                                    <tbody><tr style="margin-bottom:10px;">
+                                      <th width="100%"></th>
+                                    </tr>
+                                    <tr style="margin-bottom:10px;"> 
+                                      <td width="100%" class="date-inner">
+                                        
+                                      <?php foreach ($selectedDate as $key => $date): ?>
+                                        <li><em><?php echo date('d-M-Y , D', strtotime($date)); ?></em><span><?php echo $selectedTime[$key]; ?></span></li>
+                
+                                      <?php endforeach; ?>
+                                      </td>
+                                      </tr>
+                                    
+                                  
+                                  </tbody></table>
+                            </div>
+                                        </div>
+
+                                          <div class="text-area-counter">
+                                              <h2>Note To Support Your Counter Offer</h2>
+                                              <textarea name="counter_note" id="counterNote"></textarea>
+                                              <input type="hidden" name="providerId" value="<?php echo $userId ?>" id="providerId" />
+                                              <input type="hidden" name="customerId" value="<?php echo $customerId ?>" id="customerId" />
+                                              <input type="hidden" name="providerName" value="<?php echo $providerName ?>" id="providerName" />
+                                          </div>
+                                    </div>
+                                   
+
+
+
+                                    <div class="modal-footer">
+                                        <a href="javascript:void(0);">
+                                            <button id="sendButton_<?php echo $proposalId; ?>">Send</button>
+                                        </a>
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+  </div> 
+                      
+                <div class="first-offer">
+                    <div class="profileheadsection">
+                      <div class="row">
+                        <div class="col-md-3">
+                          <div style="display:flex; gap:10px; align-items:center">
+                            <div>
+                              <img style="width: 60px;object-fit: fill;height: 60px;border-radius: 118px;" src="../customer/<?php echo $profile_picture; ?>"/>
+                            </div>
+                            <div class="offerprofile-name">
+                              <h3><?php echo $customerName?><br><b>User ID # <?php echo $customerId?></b></h3>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
+                                House No- B-242</h3> -->
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <h4 style="color: #000;font-size:14px;font-weight:700">Offered On <?php echo $current_time?></h4>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="service-selectedsection">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <div class="order-details-progress">
+                                    <h2>Service Cost Offer</h2>
+                                    <ul class="orderdetails-lists">
+                                    <?php foreach ($serviceCustomers as $servicenew) {
+                                        $services = $servicenew['service_name'];
+                                        $servicePrice = $servicenew['price'];
+                                        $serviceImages = getServiceImages([$services]);
+                                        // print_r($serviceImages); echo "<br/>";
+                                        // echo $servicePrice;echo "<br/>";
+                                        ?>
+                                        <li><em><img src="../admin/uploads/<?php echo $serviceImages[0]?>"/> <?php echo $services ?></em><span style="color: #70BE44;">$ <?php echo $servicePrice; ?></span></li>
+
+                                    <?php
+                                    }?>
+                                      <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ <?php echo $totalAmount?></b></span></li>
+                                    </ul>
+                                  </div>
+                            </div>
+                            <div class="col-md-5">
+                                <h2>Advance Booking Timings</h2>
+                                <table style="padding: 20px;">
+                                    <tbody><tr style="margin-bottom:10px;">
+                                      <th width="100%"></th>
+                                    </tr>
+                                    <tr style="margin-bottom:10px;"> 
+                                      <td width="100%" class="date-inner">
+                                      <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li>
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
+
+                                      </td>
+                                      </tr>
+                                    
+                                  
+                                  </tbody></table>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                <div class="task-description">
+                              <h2>Task Description</h2>
+                              <p><?php echo $userContent?></p>
+                            </div>
+                                </div>
+                                <div class="col-md-6">
+                            <div class="location-images">
+                              <h5 style="font-size:20px; font-weight:700">Location Images </h5>
+                              <ul class="gallery-images">
+                                <?php
+                                foreach (array_slice($customerImages, 0, 5) as $imagePath) {
+                                ?>
+                                    <li>
+                                        <img src="../customer/<?php echo $imagePath; ?>" alt="Customer Image" />
+                                    </li>
+                                <?php
+                                }
+                                ?>
+                              </ul>
+                            </div>
+                          </div>
+                            </div>
+                            
+                            
+                        <div class="content1<?php echo $proposalId?> hidden progress-gallery">
+                        <div class="row">
+                          
+                        
+                        </div>
+                    </div>
+                          <div class="newoffer-button-advancebooking">
+                              <ul>
+                              <li>
+                                        <a href="javascript:void(0);">
+                                            <button type="button" data-toggle="modal" data-target="#confirmationModal<?php echo $proposalId;?>"
+                                                data-proposal-id="<?php echo $proposalId; ?>" style="background: #70BE44;color: white;">Accept Offer</button>
+                                        </a>
+                                    </li>
+
+
+
+                                    <li>
+                                    <a href="javascript:void(0);" data-toggle="modal" data-target="#new<?php echo $proposalId?>"
+                                        data-total-amount="<?php echo $totalAmount; ?>" 
+                                        data-selected-services="<?php echo json_encode($selectedServices); ?>" 
+                                        data-service-customers="<?php echo json_encode($serviceCustomers1); ?>"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">Counter Offer</button>
+                                    </a>
+
+                                    </li>
+                                    <li>
+                                        <a class="ignore1" href="javascript:void(0);"><button type="button" data-toggle="modal" data-target="#reject<?php echo $proposalId;?>"
+                                                data-proposal-id="<?php echo $proposalId; ?>" style="border-color: #E72121;background: #fff;color: #E72121;font-weight: bold;">Ignore</button></a>
+                                    </li>
+                              </ul>
+                          </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3 d-flex align-items-center">
-                    <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
-                        House No- B-242</h3> -->
-                </div>
-                <div class="col-md-3 d-flex align-items-center">
-                    <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
-                </div>
-                <div class="col-md-3 d-flex align-items-center">
-                    <h4 style="color: #000;">Offered On 22,August,2022</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="service-selectedsection">
-            <div class="row">
-                <div class="col-md-7">
-                    <div class="order-details-progress">
-                        <h2>Service Cost Offer</h2>
-                        <ul class="orderdetails-lists">
-                          <li><em><img src="./images/Snow Plow.png"/> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                          <li><em><img src="./images/Cover Up.png"/> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                          <li><em><img src="./images/Grass.png"/> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                          <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                        </ul>
-                      </div>
-                </div>
-                <div class="col-md-5">
-                    <h2>Advance Booking Timings</h2>
-                    <table style="padding: 20px;">
-                        <tbody><tr style="margin-bottom:10px;">
-                          <th width="100%"></th>
-                        </tr>
-                        <tr style="margin-bottom:10px;"> 
-                          <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                          </tr>
-                        <tr style="margin-bottom:10px;">
-                          <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                          </tr>
-                        <tr>
-                          <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                          </tr>
-                       
-                      </tbody></table>
-                </div>
-                <div class="task-description">
-                <h2>Task Description</h2>
-                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                     Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-                      when an unknown printer took a galley of type and scrambled it to make a type 
-                      specimen book. It has survived not only five centuries, but also the leap into 
-                      electronic typesetting, remaining essentially unchanged. It was popularised in 
-                      the 1960s with the release of Letraset</p>
-            </div>
-
-            <div class="newoffer-button-advancebooking">
-                <ul>
-                    <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
-                    </button></a></li>
-                    <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
-                    </button></a></li>
-                    <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
-                    </button></a></li>
-                </ul>
-            </div>
-            </div>
-        </div>
-</div>
+                
+        <?php
+              }
+            }
+        } else {
+            echo 'Error executing the query.';
+        }
+        ?>
  <!-- FIRST ROW END -->
 
- <!-- SECOND ROW START -->
- <div class="first-offer" style="margin-top: 100px;">
-    <div class="profileheadsection">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="offerprofile-name">
-                <img src="./images/profileman.png">
-                <h3>David Johnson<br><b>User ID # 4ISK4DH</b></h3>
-            </div>
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
-                House No- B-242</h3> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <h4 style="color: #000;">Offered On 22,August,2022</h4>
-        </div>
-    </div>
-</div>
-
-<div class="service-selectedsection">
-    <div class="row">
-        <div class="col-md-7">
-            <div class="order-details-progress">
-                <h2>Service Cost Offer</h2>
-                <ul class="orderdetails-lists">
-                  <li><em><img src="./images/Snow Plow.png"> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Cover Up.png"> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Grass.png"> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                </ul>
-              </div>
-        </div>
-        <div class="col-md-5">
-            <h2>Advance Booking Timings</h2>
-            <table style="padding: 20px;">
-                <tbody><tr style="margin-bottom:10px;">
-                  <th width="100%"></th>
-                </tr>
-                <tr style="margin-bottom:10px;"> 
-                  <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr style="margin-bottom:10px;">
-                  <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr>
-                  <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-               
-              </tbody></table>
-        </div>
-        <div class="task-description">
-        <h2>Task Description</h2>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-             Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-              when an unknown printer took a galley of type and scrambled it to make a type 
-              specimen book. It has survived not only five centuries, but also the leap into 
-              electronic typesetting, remaining essentially unchanged. It was popularised in 
-              the 1960s with the release of Letraset</p>
-    </div>
-
-    <div class="newoffer-button-advancebooking">
-        <ul>
-            <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
-            </button></a></li>
-        </ul>
-    </div>
-    </div>
-</div>
-</div>
- <!-- SECOND ROW END -->
-
- <!-- THIRD ROW START -->
- <div class="first-offer" style="margin-top: 100px;">
-    <div class="profileheadsection">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="offerprofile-name">
-                <img src="./images/profileman.png">
-                <h3>David Johnson<br><b>User ID # 4ISK4DH</b></h3>
-            </div>
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h3 class="address"><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd Street,
-                House No- B-242</h3> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
-        </div>
-        <div class="col-md-3 d-flex align-items-center">
-            <h4 style="color: #000;">Offered On 22,August,2022</h4>
-        </div>
-    </div>
-</div>
-
-<div class="service-selectedsection">
-    <div class="row">
-        <div class="col-md-7">
-            <div class="order-details-progress">
-                <h2>Service Cost Offer</h2>
-                <ul class="orderdetails-lists">
-                  <li><em><img src="./images/Snow Plow.png"> Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Cover Up.png"> Spring Cleanup</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li><em><img src="./images/Grass.png"> Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                  <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                </ul>
-              </div>
-        </div>
-        <div class="col-md-5">
-            <h2>Advance Booking Timings</h2>
-            <table style="padding: 20px;">
-                <tbody><tr style="margin-bottom:10px;">
-                  <th width="100%"></th>
-                </tr>
-                <tr style="margin-bottom:10px;"> 
-                  <td width="100%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr style="margin-bottom:10px;">
-                  <td width="100%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-                <tr>
-                  <td width="100%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-                  </tr>
-               
-              </tbody></table>
-        </div>
-        <div class="task-description">
-        <h2>Task Description</h2>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-             Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-              when an unknown printer took a galley of type and scrambled it to make a type 
-              specimen book. It has survived not only five centuries, but also the leap into 
-              electronic typesetting, remaining essentially unchanged. It was popularised in 
-              the 1960s with the release of Letraset</p>
-    </div>
-
-    <div class="newoffer-button-advancebooking">
-        <ul>
-            <li><a href="#"><button type="button" data-toggle="modal" data-target="#myModal" style="background-color: #70BE44; border-color: #70BE44; color: #fff;">Counter offer
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #E72121; color: #E72121;">Decline
-            </button></a></li>
-            <li><a href="#"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">View Images
-            </button></a></li>
-        </ul>
-    </div>
-    </div>
-</div>
-</div>
  <!-- THIRD ROW END -->
 </div>
             <!-- END ROW MAIN-PANEL -->
@@ -576,7 +592,128 @@ session_start();
     <!-- page-body-wrapper ends -->
   </div>
   <!-- container-scroller -->
+  <script>
+  // Function to calculate the updated total amount based on edited service prices
+  function updateTotalAmount(modal) {
+    const editablePrices = modal.querySelectorAll('[contenteditable="true"]');
+    let updatedTotalAmount = 0;
 
+    editablePrices.forEach((priceElement) => {
+      // Parse the edited price (default to 0 if not a valid number)
+      const editedPrice = parseFloat(priceElement.textContent) || 0;
+      updatedTotalAmount += editedPrice;
+    });
+
+    // Calculate platform charges (10%)
+    const platformChargesPercentage = 10;
+    const platformCharges = (updatedTotalAmount * platformChargesPercentage) / 100;
+
+    // Calculate the amount you'll earn
+    const amountYouWillEarn = updatedTotalAmount - platformCharges;
+
+    // Display the updated total amount and "Your will Earn"
+    const totalAmountElement = modal.querySelector('.totalcharges span');
+    const amountYouWillEarnElement = modal.querySelector('.percent-counter li:last-child span');
+
+    if (totalAmountElement) {
+      totalAmountElement.textContent = '$' + updatedTotalAmount.toFixed(2);
+    }
+
+    if (amountYouWillEarnElement) {
+      amountYouWillEarnElement.textContent = '$' + amountYouWillEarn.toFixed(2);
+    }
+  }
+
+  // Add input and blur event listeners to each editable price element for all modals
+  const modals = document.querySelectorAll('.modal');
+  modals.forEach((modal) => {
+    const editablePrices = modal.querySelectorAll('[contenteditable="true"]');
+    editablePrices.forEach((priceElement) => {
+      priceElement.addEventListener('input', () => updateTotalAmount(modal));
+      priceElement.addEventListener('blur', () => updateTotalAmount(modal));
+    });
+
+    // Initialize total amount and "Your will Earn" when the page loads
+    updateTotalAmount(modal);
+  });
+</script>
+<script>
+function updateServicePrice(proposalId) {
+    // Get the modal element
+    const modal = document.getElementById(`new${proposalId}`);
+    
+    // Get the total amount from the modal
+   // Calculate the total amount
+   const totalAmountElement = modal.querySelector('.totalcharges span');
+    const totalAmount = parseFloat(totalAmountElement.textContent.replace('$', '')) || 0;
+    const counterNote = document.getElementById('counterNote').value;
+    const providerId = document.getElementById('providerId').value;
+    const customerId = document.getElementById('customerId').value;
+    const providerName = document.getElementById('providerName').value;
+
+
+    // Collect the updated service prices and their names
+    const updatedServicePrices = [];
+    const editablePrices = modal.querySelectorAll('[contenteditable="true"]');
+    
+    editablePrices.forEach((priceElement) => {
+        const editedPrice = parseFloat(priceElement.textContent) || 0;
+        const serviceName = priceElement.dataset.id; // Service name
+        updatedServicePrices.push({ name: serviceName, price: editedPrice });
+    });
+
+    // Calculate the platform charges
+    const platformChargesPercentage = 10;
+    const platformCharges = (totalAmount * platformChargesPercentage) / 100;
+
+    // Calculate the amount the user will earn
+    const amountYouWillEarn = totalAmount - platformCharges;
+
+    // Create an object with the updated service prices and the total amount
+    const data = {
+        proposalId: proposalId,
+        providerId: providerId,
+        customerId: customerId,
+        providerName: providerName,
+        servicePrices: updatedServicePrices,
+        totalAmount: totalAmount,
+        platformCharges: platformCharges,
+        amountYouWillEarn: amountYouWillEarn,
+        counterNote: counterNote,
+
+    };
+
+    console.log('data', data);
+    // return;
+    // Send the data to the server using AJAX
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'update-service-price.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            // Handle the response from the server (e.g., display a success message).
+            const response = JSON.parse(xhr.responseText);
+            
+            if (response.success) {
+                location.reload(); // This will refresh the current page    
+                // Optionally, close the modal or redirect to another page.
+            } else {
+                alert('Counter offer could not be sent. Please try again.');
+            }
+        }
+    };
+
+    xhr.send(JSON.stringify(data));
+}
+
+// Add a click event listener to each "Send" button
+const modalFooterButtons = document.querySelectorAll('[id^="sendButton_"]');
+modalFooterButtons.forEach((button) => {
+    const proposalId = button.id.split('_')[1];
+    button.addEventListener('click', () => updateServicePrice(proposalId));
+});
+</script>
   <!-- plugins:js -->
   <script src="vendors/js/vendor.bundle.base.js"></script>
   <!-- endinject -->

@@ -169,7 +169,7 @@ function getServiceImages($service) {
                 $userId = $_SESSION['user_id'];
                 $providerName = $_SESSION['providerName'];
 
-                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'new_offer'";
+                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime' ";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param('s', $userId);
 
@@ -183,8 +183,8 @@ function getServiceImages($service) {
                   $proposalId = $row['id'];
                   $customerId = $row['customer_id'];
                   $providerId = $row['provider_id'];
-                  $selectedDate = $row['year'] . '-' . $row['month'] . '-' . $row['day'];
-                  $selectedTime = $row['selected_time'];
+                  $selectedDate = explode(', ', $row['selected_date']);
+                  $selectedTime = explode(', ', $row['selected_time']);
                   $userContent = $row['user_content'];
                   $selectedServices = explode(', ', $row['selected_services']);
                   $totalAmount = $row['total_amount'];
@@ -259,9 +259,7 @@ function getServiceImages($service) {
                         <div class="modal" id="reject<?php echo $proposalId?>" role="dialog">
                             <div class="modal-dialog">
                                 <div class="modal-content">
-                                    <div class="modal-header">
-                                        
-                                    </div>
+                                   
                                     <div class="modal-body h-auto">
                                         <h2 class="pb-4">Are you sure you want to reject this offer?</h2>
                                     </div>
@@ -430,10 +428,11 @@ function getServiceImages($service) {
                                         </h3>
                                     </div>
                                     <div class="col-md-3 d-flex align-items-center">
+                                    <?php foreach ($selectedDate as $key => $date): ?>
                                         <h6 style="color: #4492BE;"><img src="./images/scheduled.png" />
-                                            <?php echo $selectedDate?> /
-                                            <?php echo $selectedTime?>
+                                        <?php echo date('d-M-Y , D', strtotime($date)); ?><?php echo $selectedTime[$key]; ?>
                                         </h6>
+                                        <?php endforeach; ?>
                                     </div>
                                     <div class="col-md-3 d-flex align-items-center">
                                         <h4 style="color: #70BE44;font-size: 14px;">Offered On
@@ -513,7 +512,7 @@ function getServiceImages($service) {
                                     <a href="javascript:void(0);" data-toggle="modal" data-target="#new<?php echo $proposalId?>" 
                                         data-total-amount="<?php echo $totalAmount; ?>" 
                                         data-selected-services="<?php echo json_encode($selectedServices); ?>" 
-                                        data-service-customers="<?php echo json_encode($serviceCustomers1); ?>"><button>Counter Offer</button>
+                                        data-service-customers="<?php echo json_encode($serviceCustomers1); ?>"><button style="background-color: #fff; border-color: #70BE44; color: #70BE44;">Counter Offer</button>
                                     </a>
 
                                     </div>

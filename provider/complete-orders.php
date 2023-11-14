@@ -1,6 +1,98 @@
 <?php
 session_start();
+// Function to get customer information from the provider_registration table
+function getCustomerInfo($customerId) {
+  global $conn;
+  $sql = "SELECT fullname, profile_picture, address FROM provider_registration WHERE id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('s', $customerId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          return $row;
+      }
+  }
+  return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
+}
+// Function to get the price of a service from the categories table
+function getCustomerServicesAndPrices($customerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT service_name, price, counter_price FROM customer_services WHERE customer_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('ss', $customerId, $proposalId);
 
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $servicesAndPrices = array();
+
+      while ($row = $result->fetch_assoc()) {
+          $serviceCustomers = $row['service_name'];
+          $priceService = $row['price'];
+          $counterPrice = $row['counter_price'];
+          $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService, 'counter_price' => $counterPrice);
+          // print_r($servicesAndPrices);
+      }
+
+      return $servicesAndPrices;
+  }
+
+  return array();
+}
+function getServicePrice($service) {
+    global $conn;
+    $sql = "SELECT price FROM customer_services WHERE service_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $service);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['price'];
+        }
+    }
+    return 'N/A'; // Provide a default value if service price not found
+  }
+  function getCustomerImagesForProvider($customerId, $providerId, $proposalId) {
+    global $conn;
+    $sql = "SELECT image_path FROM customer_images WHERE customer_id = ? AND provider_id = ? AND proposal_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('sss', $customerId, $providerId, $proposalId);
+    if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $images = array();
+      while ($row = $result->fetch_assoc()) {
+        $images[] = $row['image_path'];
+      }
+      return $images;
+    }
+    return array();
+  }
+
+
+function getServiceImages($service) {
+  global $conn;
+  $servicesImages = array();
+
+  // Create a prepared statement to select servicesImages based on service names
+  $sql = "SELECT image FROM categories WHERE heading IN (?)";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+      $categories = implode("', '", $service); // Assuming service names are in an array
+      $stmt->bind_param('s', $categories);
+
+      if ($stmt->execute()) {
+          $result = $stmt->get_result();
+
+          while ($row = $result->fetch_assoc()) {
+              $servicesImages[] = $row['image'];
+          }
+      }
+  }
+
+  return $servicesImages;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,156 +153,7 @@ session_start();
           </div> 
         </div>
       </div> -->
-      <div id="right-sidebar" class="settings-panel">
-        <i class="settings-close ti-close"></i>
-        <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="todo-tab" data-bs-toggle="tab" href="#todo-section" role="tab" aria-controls="todo-section" aria-expanded="true">TO DO LIST</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="chats-tab" data-bs-toggle="tab" href="#chats-section" role="tab" aria-controls="chats-section">CHATS</a>
-          </li>
-        </ul>
-        <div class="tab-content" id="setting-content">
-          <div class="tab-pane fade show active scroll-wrapper" id="todo-section" role="tabpanel" aria-labelledby="todo-section">
-            <div class="add-items d-flex px-3 mb-0">
-              <form class="form w-100">
-                <div class="form-group d-flex">
-                  <input type="text" class="form-control todo-list-input" placeholder="Add To-do">
-                  <button type="submit" class="add btn btn-primary todo-list-add-btn" id="add-task">Add</button>
-                </div>
-              </form>
-            </div>
-            <div class="list-wrapper px-3">
-              <ul class="d-flex flex-column-reverse todo-list">
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Team review meeting at 3.00 PM
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Prepare for presentation
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Resolve all the low priority tickets due today
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Schedule meeting for next week
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Project review
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-              </ul>
-            </div>
-            <h4 class="px-3 text-muted mt-5 fw-light mb-0">Events</h4>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 11 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Creating component page build a js</p>
-              <p class="text-gray mb-0">The total number of sessions</p>
-            </div>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 7 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Meeting with Alisa</p>
-              <p class="text-gray mb-0 ">Call Sarah Graves</p>
-            </div>
-          </div>
-          <!-- To do section tab ends -->
-          <div class="tab-pane fade" id="chats-section" role="tabpanel" aria-labelledby="chats-section">
-            <div class="d-flex align-items-center justify-content-between border-bottom">
-              <p class="settings-heading border-top-0 mb-3 pl-3 pt-0 border-bottom-0 pb-0">Friends</p>
-              <small class="settings-heading border-top-0 mb-3 pt-0 border-bottom-0 pb-0 pr-3 fw-normal">See All</small>
-            </div>
-            <ul class="chat-list">
-              <li class="list active">
-                <div class="profile"><img src="images/faces/face1.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Thomas Douglas</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">19 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face2.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <div class="wrapper d-flex">
-                    <p>Catherine</p>
-                  </div>
-                  <p>Away</p>
-                </div>
-                <div class="badge badge-success badge-pill my-auto mx-2">4</div>
-                <small class="text-muted my-auto">23 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face3.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Daniel Russell</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">14 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face4.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <p>James Richardson</p>
-                  <p>Away</p>
-                </div>
-                <small class="text-muted my-auto">2 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face5.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Madeline Kennedy</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">5 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face6.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Sarah Graves</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">47 min</small>
-              </li>
-            </ul>
-          </div>
-          <!-- chat tab ends -->
-        </div>
-      </div>
+    
       <!-- partial -->
       <!-- partial:partials/_sidebar.php -->
       <?php
@@ -230,30 +173,75 @@ session_start();
                 <li><a href="#"><button style="color: #959595; background-color: #E6E6E6;">Advance Bookings</button></a></li>
               </ul>
             </div>
+            <?php
+            include 'connection.php';
+
+            $userId = $_SESSION['user_id'];
+            $providerName = $_SESSION['providerName'];
+
+            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'completed' ORDER BY current_time DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $userId);
+
+            if ($stmt->execute()) {
+                $result = $stmt->get_result();
+                if ($result->num_rows == 0) {
+                  // No orders found for the provider
+                  echo '<h2 class="text-center texter">No completed orders available.</h2>';
+              } else {
+          while ($row = $result->fetch_assoc()) {
+              $proposalId = $row['id'];
+              $customerId = $row['customer_id'];
+              $providerId = $row['provider_id'];
+              $selectedDate = $row['selected_date'];
+              $selectedTime = $row['selected_time'];
+              $userContent = $row['user_content'];
+              $selectedServices = explode(', ', $row['selected_services']);
+              $totalAmount = $row['total_amount'];
+              $current_time = $row['current_time'];
+              $counterTotall = $row['counter_totall'];
+
+              // Retrieve customer name and address based on customerId
+              $customerInfo = getCustomerInfo($customerId);
+
+              $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+              $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+              $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+              
+              
+              // Now you have an array containing the selected services and their prices for the customer
+              
+              // Output the retrieved customer name and address
+              $customerName = $customerInfo['fullname'];
+              $customerAddress = $customerInfo['address'];
+              $profile_picture = $customerInfo['profile_picture'];
+            ?>
+            <!-- FIRST PROGRESS PROFILE -->
+           
             <!-- FIRST PROGRESS PROFILE -->
             <div class="progress-profile">
               <div class="row">
                 <div class="col-md-9">
                   <div class="progress-profile-detail">
                     <ul class="paid">
-                      <li class="profile-name"><h5><img src="./images/homee.png"/><b>Danny </b><br>userID#321</h5></li>
-                      <li><h5><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd <br>Street,
-                        House No- B-242</h5></li>
-                        <li><h5><img src="./images/time.png"/> 21, August,4:00 AM, SUN</h5></li>
+                      <li class="profile-name"><h5><img src="./images/homee.png"/><b><?php echo $customerName?></b><br>userID#<?php echo $customerId?></h5></li>
+                      <li><h5><img src="./images/mappin.png"/><?php echo $customerAddress?></h5></li>
+                        <li><h5><img src="./images/time.png"/>  <?php echo $selectedDate , str_repeat('&nbsp;', 5), $selectedTime?></h5></li>
                     </ul>
                   </div>
 
                   <div class="services-needed">
                     <ul>
                       <li><h4>Services Needed</h4></li>
-                      <li>Snow removal <img src="./images/check.png"/></li>
-                      <li>Grass Cutting <img src="./images/check.png"/></li>
-                      <li class="number">2</li>
+                      < <?php foreach ($selectedServices as $service) { ?>
+                            <li><?php echo $service; ?> <img src="./images/check.png"/></li>
+                        <?php } ?>
+                        <li class="number"><?php echo count($selectedServices); ?></li>
                     </ul>
                   </div>
 
                   <div class="progress-notify">
-                    <h2>Hey! I want to remove all the snow from my garden and want a full service garden mainteniance.</h2>
+                    <h2><?php echo $userContent?></h2>
                   </div>
                 </div>
                 <div class="col-md-3">
@@ -274,18 +262,34 @@ session_start();
                     <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
                     <div class="progress-gallery">
                         <div class="row">
-                          <div class="col-md-6">
+                        
+                          <div class="col-md-7">
                             <div class="order-details-progress">
-                                <h2>Order details</h2>
-                                <ul class="orderdetails-lists">
-                                  <li><em>Lawn mowing</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                  <li><em>Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                  <li><em>Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                  <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                                </ul>
-                              </div>
+                              <h2>Order details</h2>
+                              <ul class="orderdetails-lists">
+                              <?php $displayTotal = isset($counterTotall) ? $counterTotall : $totalAmount;
+                          foreach ($serviceCustomers as $servicenew) {
+                              $services = $servicenew['service_name'];
+                              $servicePrice = $servicenew['price'];
+                              
+                              // Check if counter service price is available
+                              if (isset($servicenew['counter_price'])) {
+                                  $counterPrice = $servicenew['counter_price'];
+                              } else {
+                                  // If counter price is not available, use the original service price
+                                  $counterPrice = $servicePrice;
+                              }
+                        ?>
+                            <li>
+                                <em><?php echo $services ?></em>
+                                <span style="color: #70BE44;">$<?php echo $counterPrice ?></span>
+                            </li>
+                        <?php } ?>
+                                <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ <?php echo $displayTotal?></b></span></li>
+                              </ul>
+                            </div>
                           </div>
-                          <div class="col-md-6">
+                          <div class="col-md-5">
                             <div class="service-rated">
                                 <h2>Service Rated</h2>
                                 <img src="./images/starrating.png" width="100%"/>
@@ -297,150 +301,16 @@ session_start();
                           </div>
                         </div>
                     </div>
-                  </div>
+                </div>
               </div>
             </div>
-            <!-- SECOND ORDER PROGRESS -->
-            <div class="progress-profile">
-                <div class="row">
-                  <div class="col-md-9">
-                    <div class="progress-profile-detail">
-                      <ul class="paid">
-                        <li class="profile-name"><h5><img src="./images/homee.png"/><b>Danny </b><br>userID#321</h5></li>
-                        <li><h5><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd <br>Street,
-                          House No- B-242</h5></li>
-                          <li><h5><img src="./images/time.png"/> 21, August,4:00 AM, SUN</h5></li>
-                      </ul>
-                    </div>
-  
-                    <div class="services-needed">
-                      <ul>
-                        <li><h4>Services Needed</h4></li>
-                        <li>Snow removal <img src="./images/check.png"/></li>
-                        <li>Grass Cutting <img src="./images/check.png"/></li>
-                        <li class="number">2</li>
-                      </ul>
-                    </div>
-  
-                    <div class="progress-notify">
-                      <h2>Hey! I want to remove all the snow from my garden and want a full service garden mainteniance.</h2>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="verification" style="width: 100%;">
-                      <h3>Customer Verification </h3>
-                      <a href="#"><button>Paid</button></a>
-                    </div>
-                    <div class="verification" style="width: 100%;">
-                      <h3>Service Status </h3>
-                      <a href="#"><button>Completed</button></a>
-                    </div>
-                    
-                    
-                  </div>
-  
-                  
-                  <div class="viewgallery">
-                      <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
-                      <div class="progress-gallery">
-                          <div class="row">
-                            <div class="col-md-6">
-                              <div class="order-details-progress">
-                                  <h2>Order details</h2>
-                                  <ul class="orderdetails-lists">
-                                    <li><em>Lawn mowing</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                    <li><em>Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                    <li><em>Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                    <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                                  </ul>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                              <div class="service-rated">
-                                  <h2>Service Rated</h2>
-                                  <img src="./images/starrating.png" width="100%"/>
-                                  <h3>Your Feedback matter to us</h3>
-                                  <p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
-                                      and more recently with desktop publishing software like Aldus PageMaker
-                                       including versions of Lorem Ipsum.</p>
-                              </div>
-                            </div>
-                          </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-            <!-- THIRD ORDER PROGRESS -->
-            <div class="progress-profile">
-                <div class="row">
-                  <div class="col-md-9">
-                    <div class="progress-profile-detail">
-                      <ul class="paid">
-                        <li class="profile-name"><h5><img src="./images/homee.png"/><b>Danny </b><br>userID#321</h5></li>
-                        <li><h5><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd <br>Street,
-                          House No- B-242</h5></li>
-                          <li><h5><img src="./images/time.png"/> 21, August,4:00 AM, SUN</h5></li>
-                      </ul>
-                    </div>
-  
-                    <div class="services-needed">
-                      <ul>
-                        <li><h4>Services Needed</h4></li>
-                        <li>Snow removal <img src="./images/check.png"/></li>
-                        <li>Grass Cutting <img src="./images/check.png"/></li>
-                        <li class="number">2</li>
-                      </ul>
-                    </div>
-  
-                    <div class="progress-notify">
-                      <h2>Hey! I want to remove all the snow from my garden and want a full service garden mainteniance.</h2>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="verification" style="width: 100%;">
-                      <h3>Customer Verification </h3>
-                      <a href="#"><button>Paid</button></a>
-                    </div>
-                    <div class="verification" style="width: 100%;">
-                      <h3>Service Status </h3>
-                      <a href="#"><button>Completed</button></a>
-                    </div>
-                    
-                    
-                  </div>
-  
-                  
-                  <div class="viewgallery">
-                      <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
-                      <div class="progress-gallery">
-                          <div class="row">
-                            <div class="col-md-6">
-                              <div class="order-details-progress">
-                                  <h2>Order details</h2>
-                                  <ul class="orderdetails-lists">
-                                    <li><em>Lawn mowing</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                    <li><em>Snow Removal</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                    <li><em>Grass Cutting</em><span style="color: #70BE44;">$ 100.00</span></li>
-                                    <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ 300.00</b></span></li>
-                                  </ul>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                              <div class="service-rated">
-                                  <h2>Service Rated</h2>
-                                  <img src="./images/starrating.png" width="100%"/>
-                                  <h3>Your Feedback matter to us</h3>
-                                  <p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
-                                      and more recently with desktop publishing software like Aldus PageMaker
-                                       including versions of Lorem Ipsum.</p>
-                              </div>
-                            </div>
-                          </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-          </div>
+            <?php
+            }
+  }
+} else {
+  echo 'Error executing the query.';
+}
+?>
 
 
          

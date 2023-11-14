@@ -94,6 +94,25 @@ function getServiceImages($service) {
 
   return $servicesImages;
 }
+function getAdvanceProposals($providerId, $proposalId, $userId) {
+    global $conn;
+    
+    $proposals = array();
+  
+    $sql = "SELECT * FROM advance_proposal WHERE provider_id = ? AND proposal_id = ? AND customer_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('sss', $providerId, $proposalId, $userId);
+  
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+  
+        while ($row = $result->fetch_assoc()) {
+            $proposals[] = $row;
+        }
+    }
+  
+    return $proposals;
+  }
 ?>
 <!DOCTYPE html>
 <html lang="zxx" class="my-offer">
@@ -151,21 +170,21 @@ function getServiceImages($service) {
     </div>
     <div class="myoffer-button-serv">
         <ul>
-            <li><a href="myoffers.php"><button style="background-color: #70BE44; font-family: Cairo;
-                font-size: 30px;
-                font-weight: 600;
-                line-height: 56px;
-                letter-spacing: 0em;
-                text-align: left;
-                color: #FFFFFF;
-                ">One Time Service</button></a></li>
-            <li><a href="advance_my_offers.php"><button style="background-color: #E6E6E6; font-family: Cairo;
+            <li><a href="myoffers.php"><button style="background-color: #E6E6E6; font-family: Cairo;
                 font-size: 30px;
                 font-weight: 600;
                 line-height: 56px;
                 letter-spacing: 0em;
                 text-align: left;
                 color: #9D9D9D;
+                ">One Time Service</button></a></li>
+            <li><a href="advance_my_offers.php"><button style="background-color: #70BE44; font-family: Cairo;
+                font-size: 30px;
+                font-weight: 600;
+                line-height: 56px;
+                letter-spacing: 0em;
+                text-align: left;
+                color: #FFFFFF;
                 ">Advance Booking</button></a></li>
         </ul>
     </div>
@@ -194,7 +213,7 @@ function getServiceImages($service) {
               $userId = $_SESSION['user_id'];
               $customerFullName = $_SESSION['customerFullName'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'replied_offer' AND proposal_status = 'OneTime'";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'replied_offer' AND proposal_status = 'AdvancedProposal'";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -217,7 +236,9 @@ function getServiceImages($service) {
 
                 // Retrieve customer name and address based on customerId
                 $customerInfo = getCustomerInfo($providerId);
-
+                $advanceProposals = getAdvanceProposals($providerId, $proposalId, $userId);
+                // print_r($advanceProposals);
+                // die();
                 $customerImages = getCustomerImagesForProvider($providerId, $proposalId, $customerId);
                 $serviceCustomers = getCustomerServicesAndPrices($providerId, $proposalId, $userId);
                 $serviceCustomers1 = getCustomerServicesAndPrices($providerId, $proposalId, $userId);
@@ -394,7 +415,13 @@ function getServiceImages($service) {
                                 <div class="custom-bookingtime">
                                     <h4 style="padding-bottom: 10px;">Booking Timings</h4>
                                     <ul>
-                                        <li><em><?php echo $selectedDate ?></em><span><?php echo $selectedTime?></span></li>
+                                    <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li style="margin-top:10px">
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
                                     </ul>
                                 </div>
                                 <h4 style="padding-bottom: 30px;">Counter Reasoning </h4>
@@ -457,7 +484,13 @@ function getServiceImages($service) {
                                         <div class="custom-bookingtime">
                                             <h4 style="padding-bottom: 10px;">Booking Time</h4>
                                             <ul>
-                                                <li><em><?php echo $selectedDate?></em><span><?php echo $selectedTime?></span></li>
+                                            <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li style="margin-top:10px">
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
                                             </ul>
                                         </div>
                                         <h4 style="padding-bottom: 30px;">Task Description</h4>
@@ -511,7 +544,7 @@ function getServiceImages($service) {
               
               $userId = $_SESSION['user_id'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'new_offer' AND proposal_status = 'OneTime')";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'new_offer' AND proposal_status = 'AdvancedProposal')";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -532,6 +565,7 @@ function getServiceImages($service) {
                 $totalAmount = $row['total_amount'];
                 $counterTotall = $row['counter_totall'];
                 $current_time = $row['current_time'];
+                $advanceProposals = getAdvanceProposals($providerId, $proposalId, $userId);
 
                 // Retrieve customer name and address based on customerId
                 $customerInfo = getCustomerInfo($providerId);
@@ -622,7 +656,13 @@ function getServiceImages($service) {
                                 <div class="custom-bookingtime">
                                     <h4 style="padding-bottom: 10px;">Booking Time</h4>
                                     <ul>
-                                        <li><em><?php echo $selectedDate?></em><span><?php echo $selectedTime?></span></li>
+                                    <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li style="margin-top:10px">
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
                                     </ul>
                                 </div>
                                 <h4 style="padding-bottom: 30px;">Task Description</h4>
@@ -685,7 +725,7 @@ function getServiceImages($service) {
 
               $userId = $_SESSION['user_id'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime'";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' AND proposal_status = 'AdvancedProposal'";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -706,6 +746,7 @@ function getServiceImages($service) {
                 $totalAmount = $row['total_amount'];
                 $counterTotall = $row['counter_totall'];
                 $current_time = $row['current_time'];
+                $advanceProposals = getAdvanceProposals($providerId, $proposalId, $userId);
 
                 // Retrieve customer name and address based on customerId
                 $customerInfo = getCustomerInfo($providerId);
@@ -777,7 +818,13 @@ function getServiceImages($service) {
                             <div class="custom-bookingtime">
                                 <h4 style="padding-bottom: 10px;">Booking Time</h4>
                                 <ul>
-                                <li><em><?php echo $selectedDate?></em><span><?php echo $selectedTime?></span></li>
+                                <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li style="margin-top:10px">
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
                                 </ul>
                             </div>
                             <h4 style="padding-bottom: 30px;">Task Description</h4>
@@ -837,7 +884,7 @@ function getServiceImages($service) {
               $customerFullName = $_SESSION['customerFullName'];
               $userId = $_SESSION['user_id'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'replied_offer' AND proposal_status = 'OneTime'";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'replied_offer' AND proposal_status = 'AdvancedProposal'";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -861,6 +908,7 @@ function getServiceImages($service) {
 
                 // Retrieve customer name and address based on customerId
                 $customerInfo = getCustomerInfo($providerId);
+                $advanceProposals = getAdvanceProposals($providerId, $proposalId, $userId);
 
                 $customerImages = getCustomerImagesForProvider($providerId, $proposalId, $customerId);
                 $serviceCustomers = getCustomerServicesAndPrices($providerId, $proposalId, $userId);
@@ -1041,7 +1089,13 @@ function getServiceImages($service) {
                                 <div class="custom-bookingtime">
                                     <h4 style="padding-bottom: 10px;">Booking Timings</h4>
                                     <ul>
-                                        <li><em><?php echo $selectedDate ?></em><span><?php echo $selectedTime?></span></li>
+                                    <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li style="margin-top:10px">
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
                                     </ul>
                                 </div>
                                 <h4 style="padding-bottom: 30px;">Counter Reasoning </h4>
@@ -1104,7 +1158,13 @@ function getServiceImages($service) {
                                         <div class="custom-bookingtime">
                                             <h4 style="padding-bottom: 10px;">Booking Time</h4>
                                             <ul>
-                                                <li><em><?php echo $selectedDate?></em><span><?php echo $selectedTime?></span></li>
+                                            <?php foreach ($advanceProposals as $proposal): ?>
+                                    <li style="margin-top:10px">
+                                        <em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em>
+                                        <span><?php echo $proposal['selected_time']; ?></span>
+                                        
+                                    </li>
+                                <?php endforeach; ?>
                                             </ul>
                                         </div>
                                         <h4 style="padding-bottom: 30px;">Task Description</h4>
