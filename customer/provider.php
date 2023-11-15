@@ -1,8 +1,8 @@
 <?php
-include 'connection.php';
+include "connection.php";
 session_start();
 // Initialize $servicesArray
-$servicesArray = array();
+$servicesArray = [];
 
 function getProviderServices($conn, $provider_id)
 {
@@ -13,7 +13,7 @@ function getProviderServices($conn, $provider_id)
     $sql = "SELECT * FROM provider_services WHERE provider_id = '$provider_id'";
     $result = $conn->query($sql);
 
-    $services = array();
+    $services = [];
 
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
@@ -26,18 +26,18 @@ function getProviderServices($conn, $provider_id)
 
 $provider_id = ""; // You need to get the provider ID from somewhere (e.g., query parameter)
 
-
-function getProviderWorkingImages($conn, $provider_id) {
+function getProviderWorkingImages($conn, $provider_id)
+{
     $provider_id = mysqli_real_escape_string($conn, $provider_id);
     $sql = "SELECT pi.image_path FROM provider_images AS pi
             JOIN provider_services AS ps ON pi.provider_services_id = ps.id
             WHERE ps.provider_id = '$provider_id'";
     $result = $conn->query($sql);
-    $images = array();
+    $images = [];
 
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $images[] = $row['image_path'];
+            $images[] = $row["image_path"];
         }
     }
     return $images;
@@ -58,7 +58,23 @@ function getProviderDetails($conn, $provider_id)
         return null;
     }
 }
-
+function ratingcount($providerId)
+{
+    global $conn;
+    $sql =
+        "SELECT sum(rating) AS sumrating, count(rating) AS rating FROM ratings WHERE provider_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $providerId);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $rating = [];
+        while ($row = $result->fetch_assoc()) {
+            $rating[] = $row;
+        }
+        return $rating;
+    }
+    return "0";
+}
 $provider_name = "";
 $country = "";
 $city = "";
@@ -66,44 +82,44 @@ $providerAddress = "";
 $profile_picture = "";
 $working_timings_from = "";
 $additional_content = "";
-$workingImages = array();
-$customerFullName = $_SESSION['customerFullName'];
+$workingImages = [];
+$customerFullName = $_SESSION["customerFullName"];
 
-if (isset($_GET['id'])) {
-    $provider_id = $_GET['id'];
+if (isset($_GET["id"])) {
+    $provider_id = $_GET["id"];
     $providerServices = getProviderServices($conn, $provider_id);
 
     foreach ($providerServices as $service) {
-        $working_timings_from = $service['working_timings_from'];
-        $working_timings_to = $service['working_timings_to'];
-        $shop_working_day_to = $service['shop_working_day_to'];
-        $additional_content = $service['additional_content'];
+        $working_timings_from = $service["working_timings_from"];
+        $working_timings_to = $service["working_timings_to"];
+        $shop_working_day_to = $service["shop_working_day_to"];
+        $additional_content = $service["additional_content"];
 
-        $individualServices = explode(',', $service['services']);
-        $individualServices = array_map('trim', $individualServices);
+        $individualServices = explode(",", $service["services"]);
+        $individualServices = array_map("trim", $individualServices);
         $servicesArray = array_merge($servicesArray, $individualServices);
 
-        $commercial_services = $service['commercial_services'];
-        $workingImages = getProviderWorkingImages($conn, $service['id']);
+        $commercial_services = $service["commercial_services"];
+        $workingImages = getProviderWorkingImages($conn, $service["id"]);
     }
 }
 
-if (isset($_GET['id'])) {
-    $provider_id = $_GET['id'];
+if (isset($_GET["id"])) {
+    $provider_id = $_GET["id"];
     $providerDetails = getProviderDetails($conn, $provider_id);
 
     if ($providerDetails) {
-        $provider_name = $providerDetails['fullname'];
-        $country = $providerDetails['country'];
-        $city = $providerDetails['city'];
-        $providerAddress = $providerDetails['address'];
-        $profile_picture = $providerDetails['profile_picture'];
+        $provider_name = $providerDetails["fullname"];
+        $country = $providerDetails["country"];
+        $city = $providerDetails["city"];
+        $providerAddress = $providerDetails["address"];
+        $profile_picture = $providerDetails["profile_picture"];
         $workingImages = getProviderWorkingImages($conn, $provider_id);
     }
 }
 function getServicePricesAndImages($conn, $servicesArray)
 {
-    $data = array();
+    $data = [];
 
     foreach ($servicesArray as $individualService) {
         $serviceName = mysqli_real_escape_string($conn, $individualService);
@@ -116,20 +132,20 @@ function getServicePricesAndImages($conn, $servicesArray)
         }
 
         $row = $result->fetch_assoc();
-        $price = $row['price'];
-        $imagePath = $row['image'];
-        $Serviceid = $row['id'];
+        $price = $row["price"];
+        $imagePath = $row["image"];
+        $Serviceid = $row["id"];
 
         // If the price is 'N/A', set a default value
-        if ($price === 'N/A') {
-            $price = 'Price not available';
+        if ($price === "N/A") {
+            $price = "Price not available";
         }
 
         // Store the price and image path in the data array
         $data[$individualService] = [
-            'price' => $price,
-            'image' => $imagePath,
-            'id' => $Serviceid,
+            "price" => $price,
+            "image" => $imagePath,
+            "id" => $Serviceid,
         ];
     }
 
@@ -141,7 +157,7 @@ $serviceData = getServicePricesAndImages($conn, $servicesArray);
 // Function to get the service IDs for the given services
 function getServiceIds($conn, $servicesArray)
 {
-    $serviceIds = array();
+    $serviceIds = [];
 
     foreach ($servicesArray as $individualService) {
         $serviceName = mysqli_real_escape_string($conn, $individualService);
@@ -151,7 +167,7 @@ function getServiceIds($conn, $servicesArray)
 
         if ($result && $result->num_rows > 0) {
             $row = $result->fetch_assoc();
-            $serviceIds[$individualService] = $row['id'];
+            $serviceIds[$individualService] = $row["id"];
         }
     }
 
@@ -208,7 +224,7 @@ $serviceIds = getServiceIds($conn, $servicesArray);
 <body class="services-page">
 
 
-  <?php include('header.php'); ?>
+  <?php include "header.php"; ?>
 
   <!-- banner -->
   <section id="main-banner" class="banner bg-cover position-relative d-flex justify-content-center align-items-center"
@@ -251,7 +267,7 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                   <div class="row provider-gradedetails">
                     <div class="col-lg-3 col-sm-12 align-self-center">
                       <div class="provider-name">
-                        <img src="../provider/<?php echo $profile_picture ?>" />
+                        <img src="../provider/<?php echo $profile_picture; ?>" />
                         <h4>
                           <?php echo $provider_name; ?>
                         </h4>
@@ -259,7 +275,12 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                     </div>
                     <div class="col-lg-5 col-sm-12 align-self-center">
                       <ul class="grade" style="width: 100%;">
-                        <li><i style="color: #FFC400;" class="fa fa-star" aria-hidden="true"></i> 4.9</li>
+                        <li><i style="color: #FFC400;" class="fa fa-star" aria-hidden="true"></i>
+                          <?php
+                          $ratingCount = ratingcount($_GET["id"]);
+                          echo $ratingCount[0]["rating"];
+                          ?>
+                        </li>
                         <li>100%</li>
                         <li>Job Success</li>
                       </ul>
@@ -273,17 +294,17 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                     <ul class="detaillist" style="width: 100%;">
                       <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i> 50+ Completed task</li>
                       <li><i style="color: #70BE44" class="fa fa-map-marker" aria-hidden="true"></i>
-                        <?php echo $providerAddress ?>
+                        <?php echo $providerAddress; ?>
                       </li>
                       <li><i style="color: #70BE44;" class="fa fa-clock" aria-hidden="true"></i> Available hour
-                        <?php echo $working_timings_from ?> -
-                        <?php echo $working_timings_to ?>
+                        <?php echo $working_timings_from; ?> -
+                        <?php echo $working_timings_to; ?>
                       </li>
                     </ul>
                     <div class="about-provider">
                       <h4 style="width: 100%;">About me</h4>
                       <p style="width: 100%;">
-                        <?php echo $additional_content ?>
+                        <?php echo $additional_content; ?>
                       </p>
                       <h4 style="width: 100%;"><a href="#">Read More</a></h4>
                     </div>
@@ -294,12 +315,11 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       <div class="gallerinfo">
                         <h5>Work Done Gallery</h5>
                         <ul style="width: 100%;">
-                          <?php
-                          // $imageHtml = '';
-                              foreach ($workingImages as $imagePath) {
-                                  echo  "<li><a href='../provider/$imagePath'><img src='../provider/$imagePath' /></a></li>";
-                              }
-                          ?>
+                          <?php // $imageHtml = '';
+
+foreach ($workingImages as $imagePath) {
+                              echo "<li><a href='../provider/$imagePath'><img src='../provider/$imagePath' /></a></li>";
+                          } ?>
                         </ul>
                       </div>
                     </div>
@@ -314,16 +334,17 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                         <!-- <div class="row"> -->
                         <ul style='width: 100%;'>
                           <div class="row">
-                            <?php
-                              foreach ($servicesArray as $individualService) {
-                                  $serviceInfo = $serviceData[$individualService];
-                                  $price = $serviceInfo['price'];
-                                  $Serviceid = $serviceInfo['id'];
-                                  $imagePath = $serviceInfo['image'];
-                                  // $serviceId = isset($serviceIds[$individualService]) ? $serviceIds[$individualService] : 'N/A';
-                                  echo "<div class='col-lg-6'><li><img src='../admin/uploads/$imagePath' /> $individualService</li></div>";
-                              }
-                            ?>
+                            <?php foreach (
+                                $servicesArray
+                                as $individualService
+                            ) {
+                                $serviceInfo = $serviceData[$individualService];
+                                $price = $serviceInfo["price"];
+                                $Serviceid = $serviceInfo["id"];
+                                $imagePath = $serviceInfo["image"];
+                                // $serviceId = isset($serviceIds[$individualService]) ? $serviceIds[$individualService] : 'N/A';
+                                echo "<div class='col-lg-6'><li><img src='../admin/uploads/$imagePath' /> $individualService</li></div>";
+                            } ?>
                           </div>
                         </ul>
 
@@ -422,16 +443,14 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                   <div class="select-service-booking">
                     <h4>Select Services you need</h4>
                     <div class="row">
-                      <?php
-                        foreach ($servicesArray as $individualService) {
-                            $serviceInfo = $serviceData[$individualService];
-                            $serviceId = $serviceInfo['id'];
-                            // print_r($individualService);
-                            echo "<div class='col-lg-3 mb-3 mb-lg-0'>";
-                            echo "<label><input type='checkbox' name='selected_services[]' value='$individualService' data-service-id='$serviceId'>$individualService</label>";
-                            echo "</div>";
-                        }
-                      ?>
+                      <?php foreach ($servicesArray as $individualService) {
+                          $serviceInfo = $serviceData[$individualService];
+                          $serviceId = $serviceInfo["id"];
+                          // print_r($individualService);
+                          echo "<div class='col-lg-3 mb-3 mb-lg-0'>";
+                          echo "<label><input type='checkbox' class='services' data-name='".$individualService."' onchange='addingServices(this);' name='selected_services[]' value='$serviceId' data-service-id='$serviceId'>$individualService</label>";
+                          echo "</div>";
+                      } ?>
                     </div>
                   </div>
 
@@ -518,8 +537,8 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                                 <li><input type="time" id="to"></li>
                               </div>
                             </ul>
-                            <input type="hidden" value="<?php echo $userId?>" id="customer-id" placeholder="Enter Customer ID">
-                            <input type="hidden" value="<?php echo $provider_id?>" id="provider-id" placeholder="Enter Provider ID">
+                            <input type="hidden" value="<?php echo $userId; ?>" id="customer-id" placeholder="Enter Customer ID">
+                            <input type="hidden" value="<?php echo $provider_id; ?>" id="provider-id" placeholder="Enter Provider ID">
                             
                           </div>
                         </div>
@@ -540,7 +559,7 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                 </div>
                  
                 </div>
-                <input type="button" name="next" class="next action-button" id="continueButton" value="Continue" />
+                <input type="button" name="next" class="action-button next" id="continueButton" value="Continue" />
                 <input type="button" name="previous" class="previous action-button-previous" value="Previous" />
               </fieldset>
               <!-- THIRD FEILD END -->
@@ -550,26 +569,27 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                   <h2>Your offers for Advance booking Service</h2>
                   <div class="row advance-offer-new">
                     <div class="text-order-image">
-                    <img style="object-fit:cover;width:7%" src="../provider/<?php echo $profile_picture ?>" />
+                    <img style="object-fit:cover;width:7%" src="../provider/<?php echo $profile_picture; ?>" />
                             <h2>
                               <?php echo $provider_name; ?><br> <span>Lawn Mower</span>
                             </h2>
 
                     </div>
                     <div class="col-lg-6 col-sm-12">
-                      <div class="unorderlist-selected">
-                        <h2>Service Cost Offer</h2>
-                        <?php
-                          foreach ($servicesArray as $individualService) {
-                            $serviceInfo = $serviceData[$individualService];
-                            $price = $serviceInfo['price'];
-                            $imagePath = $serviceInfo['image'];
-                            echo "<li>
-                              <em><img src='../admin/uploads/$imagePath' />$individualService</em>
-                              <span>$<em contenteditable='true' onBlur='updateTotalAmount(this)'>$price</em></span>
-                            </li>";
-                          }
-                          ?>
+                      <h2>Service Cost Offer</h2>
+                      <div class="unorderlist-selected" id="selected-services-list-adv">
+                       
+                        <?php 
+                        // foreach ($servicesArray as $individualService) {
+                        //     $serviceInfo = $serviceData[$individualService];
+                        //     $price = $serviceInfo["price"];
+                        //     $imagePath = $serviceInfo["image"];
+                        //     echo "<li>
+                        //       <em><img src='../admin/uploads/$imagePath' />$individualService</em>
+                        //       <span>$<em contenteditable='true' onBlur='updateTotalAmount(this)'>$price</em></span>
+                        //     </li>";
+                        // } 
+                        ?>
                       </div>
                       <div class="totalselected">
                           <li>
@@ -618,7 +638,7 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       <div class="selected-prfle-detl">
                         <div class="order-details-checkout">
                           <div class="text-order-image">
-                            <img src="../provider/<?php echo $profile_picture ?>" />
+                            <img src="../provider/<?php echo $profile_picture; ?>" />
                             <h2>
                               <?php echo $provider_name; ?><br> <span>Lawn Mower</span>
                             </h2>
@@ -634,9 +654,9 @@ $serviceIds = getServiceIds($conn, $servicesArray);
 
                           <div class="pricedetails1">
                             <h4>Services Selected</h4>
-                            <ul id="selected-services-list2">
+                            <div id="selected-services-list2">
                               
-                            </ul>
+                            </div>
                             <!-- <ul >
                               <li><em>Lawn mowing</em> <span style="color: #70BE44;">$ 100.00</span></li>
                               <li><em>Snow Removal</em> <span style="color: #70BE44;">$ 100.00</span></li>
@@ -646,7 +666,7 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                           <div class="taskdes-checkout">
                             <h4>Task Description</h4>
                             <p id="display-task-description"></p>
-                            <input type="hidden" id="customerFullName" name="customerFullName" value="<?php echo $customerFullName?>" />
+                            <input type="hidden" id="customerFullName" name="customerFullName" value="<?php echo $customerFullName; ?>" />
 
                           </div>
                         </div>
@@ -753,7 +773,20 @@ $serviceIds = getServiceIds($conn, $servicesArray);
 
   <!-- footer end -->
  <script>
-  // Add this code to your existing JavaScript
+        const selectedServices = [];
+        const continueButton = document.getElementById('continueButton');  
+        const selectedServicesList1 = document.getElementById('selected-services-list1');
+        const selectedServicesList2 = document.getElementById('selected-services-list2');
+        const selectedServicesListAdv = document.getElementById('selected-services-list-adv');
+        const totalAmountElement = document.getElementById('total-amount');
+        const totalAmountElement1 = document.getElementById('total-amount1');
+        const addProposalButton = document.getElementById('addProposal');
+        const proposalContainer = document.querySelector('.proposal-container');
+        const proposalTemplate = document.querySelector('.proposal');
+        let totalAmount1 = 0;
+        let totalAmountadv = 0;
+        const maxProposals = 9;
+        let proposalCount = 0;
 
 // Function to fetch and display already booked hours for the selected date
 function fetchBookedHours(providerId, selectedDate) {
@@ -802,8 +835,6 @@ selectedDateInput.addEventListener('change', function () {
     fetchBookedHours(providerId, selectedDate);
 });
 
- </script>
-  <script>
       document.addEventListener('DOMContentLoaded', function () {
       const slider = document.getElementById('custom-slider');
       const onContent = document.getElementById('custom-on-content');
@@ -835,540 +866,650 @@ selectedDateInput.addEventListener('change', function () {
           }
       });
         });
-  </script>
-<script>
-  const totalAmountElement1 = document.getElementById('total-amount1');
-  const totalAmountElement2 = document.getElementById('total-amount2');
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-  const selectedServicesList1 = document.getElementById('selected-services-list1');
-  const selectedServicesList2 = document.getElementById('selected-services-list2');
-
-  function updateTotalAmount() {
-    console.log('hello world')
-    let totalAmount1 = 0;
-    let totalAmount2 = 0;
-
-    // Clear the existing lists
-    selectedServicesList1.innerHTML = '';
-    selectedServicesList2.innerHTML = '';
-
-    checkboxes.forEach((checkbox, index) => {
-      const serviceName = checkbox.value;
-      const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
-      const price = parseFloat(priceElement.textContent) || 0;
-
-      // Display the selected services and prices in both lists
-      if (checkbox.checked) {
-        totalAmount1 += price;
-        const listItem1 = document.createElement('li');
-        listItem1.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em contenteditable='true'>${price.toFixed(2)}</em></span>`;
-        selectedServicesList1.appendChild(listItem1);
-      }
-
-      // Display the selected services and prices only in the second list
-      if (checkbox.checked) {
-        totalAmount2 += price;
-        const listItem2 = document.createElement('li');
-        listItem2.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
-        selectedServicesList2.appendChild(listItem2);
-      }
-    });
-
-    totalAmountElement1.textContent = `$${totalAmount1.toFixed(2)}`;
-    totalAmountElement2.textContent = `$${totalAmount2.toFixed(2)}`;
-  }
-
-  checkboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', updateTotalAmount);
-  });
-
-  const contentEditableElements = document.querySelectorAll('em[contenteditable="true"]');
-
-  contentEditableElements.forEach((element) => {
-    element.addEventListener('blur', updateTotalAmount);
-  });
-
-  // ... (rest of your existing script)
-
-</script>
-
-
- 
-<script>
-   // JavaScript
-   document.getElementById('task-description').addEventListener('input', function () {
-        // Get the input from the textarea
-        const userContent = this.value;
-
-        // Display the input in the <p> element
-        document.getElementById('display-task-description').textContent = userContent;
-        document.getElementById('display-task-description1').textContent = userContent;
-    });
-    // selectedTime: document.getElementById('from').value,
-    document.getElementById('from').addEventListener('input', function () {
-    // Get the input from the textarea
-    const selectedTime = this.value;
-
-    // Parse the input as a time and create a Date object
-    const timeParts = selectedTime.split(':');
-    const hours = parseInt(timeParts[0], 10);
-    const minutes = parseInt(timeParts[1], 10);
-    const isPM = hours >= 12;
-
-    // Format the time in 12-hour AM/PM format
-    let formattedTime;
-    if (hours === 0) {
-        formattedTime = `12:${minutes} AM`;
-    } else if (hours === 12) {
-        formattedTime = `12:${minutes} PM`;
-    } else if (isPM) {
-        formattedTime = `${hours - 12}:${minutes} PM`;
-    } else {
-        formattedTime = `${hours}:${minutes} AM`;
-    }
-
-    // Display the formatted time in the <p> element
-    document.getElementById('date_display_from').textContent = formattedTime;
-});
-
-  function preview_images() {
-    var preview = document.getElementById("image_preview");
-    var files = document.getElementById("images").files;
-
-    if (files.length !== 5) {
-        alert("Please select exactly 5 images.");
-        // return;
-    }
-
-    preview.innerHTML = ""; // Clear previous preview
-
-    for (var i = 0; i < files.length; i++) {
-        var file = files[i];
-        var reader = new FileReader();
-
-        reader.onload = function (e) {
-            var image = document.createElement("img");
-            image.src = e.target.result;
-            image.className = "preview-image";
-            preview.appendChild(image);
-
-            // Add the base64-encoded image data to the data array
-            data.images.push(e.target.result);
-        };
-
-        reader.readAsDataURL(file);
-    }
-  }
-  function getSelectedServicesWithPrices() {
+        var element = {};
+  function addingServices(e){
+    const list1 = document.createElement('ul');
+    const list2 = document.createElement('ul');
+    const listadv = document.createElement('ul');
+    const listItem1 = document.createElement('li');
+    const listItem2 = document.createElement('li');
+    const listItemadv = document.createElement('li');
    
-    const selectedServices = [];
-
-    checkboxes.forEach((checkbox, index) => {
-        if (checkbox.checked) {
-            const serviceId = checkbox.getAttribute('data-service-id');
-            const serviceName = checkbox.value;
-            const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
-            const price = parseFloat(priceElement.textContent) || 0;
-            selectedServices.push({ serviceId, serviceName, price });
-        }
-    });
-
-    return selectedServices;
-}
-function uploadImages(customerId, providerId, files) {
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-        formData.append("images[]", files[i]);
+    element.id = e.value;
+    element.serviceName = e.dataset.name;
+    element.price = "0";
+    selectedServices.push(element);
+    // console.log('selectedServices', selectedServices);
+    let counter = 0;
+    for (var i = 0; i < selectedServices.length; i++) { 
+      counter++;
+      // console.log('selectedServices',selectedServices[i].id);
+      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone' onblur='updateTotalAmount(this,${selectedServices[i].id})' contenteditable='true'>0</em></span></div>`;
+      listItem2.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='servicetwo_${selectedServices[i].id}'>0</em></span></div>`; 
+      listItemadv.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceadv_${counter}' onblur='updateTotalAmountadv(this,${selectedServices[i].id})' contenteditable='true'>0</em></span></div>`;
+      list1.appendChild(listItem1);
+      list2.appendChild(listItem2);
+      listadv.appendChild(listItemadv);
     }
-
-    // Include both customerId and providerId in the form data
-    formData.append("customerId", customerId);
-    formData.append("providerId", providerId);
-    // Send the image data to the server using a new AJAX request
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'add.php'); // Create a new PHP file to handle image uploads
-    xhr.send(formData);
-
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            // Handle the server's response here, if needed
-            console.log(xhr.responseText);
-        }
-    };
-}
-
-document.getElementById('submit-date').addEventListener('click', function () {
-        // Get the customer ID from the input field
-        const customerId = document.getElementById('customer-id').value;
-        const providerId = document.getElementById('provider-id').value;
-    // console.log('check', selectedDateElement);
-    // return;
-    const customerFullName = document.getElementById('customerFullName').value;
-        // const serviceId = document.getElementById('service-id').value;
-        const messageContent = `You recive a new Advanced Booking from ${customerFullName}`;
-        // Get the task description from the <p> element
-        const userContent = document.getElementById('display-task-description').textContent;
-
-        // Get the selected services and total amount
-        const selectedServices = getSelectedServices();
-        const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
-
-        const totalAmount = totalAmountElement.textContent.replace('$', '');
+    selectedServicesList1.appendChild(list1);
+    selectedServicesList2.appendChild(list2);
+    selectedServicesListAdv.appendChild(listadv);
+  }
+  function updateTotalAmount(e, id) {
+    let price = 0;
+    price = parseFloat(e.textContent) || 0;
+    totalAmount1 += price;
+    const serviceVal = document.getElementById('servicetwo_'+id);    
+    serviceVal.textContent = price;
+    totalAmountElement1.textContent = `$${totalAmount1.toFixed(2)}`;
+    selectedServices.forEach(myFunction);
+    function myFunction(item) {
+      if(id === item.id){
         
-        // Create an array to store the selected image files
-        const imageFiles = document.getElementById('images').files;
-        // Parse and format the selectedTime and selectedTimeTo
-        const selectedTime = document.getElementById('from').value;
-        const selectedTimeTo = document.getElementById('to').value;
-
-        const formattedTime = formatTime(selectedTime);
-        const formattedTimeTo = formatTime(selectedTimeTo);
-        // Create a JavaScript object with all the non-image data
-        const data = {
-            selectedDate: document.getElementById('selected_date').value,
-            selectedTime: formattedTime, // Use the formatted time
-            selectedTimeTo: formattedTimeTo, // Use the formatted time
-            customerId: document.getElementById('customer-id').value,
-            // providerId: document.getElementById('provider-id').value,
-            customerId: customerId,
-            providerId: providerId,
-            proposal_status: 'OneTime',
-            statusFrom: 'customer_send',
-            messageContent: messageContent,
-            userContent: userContent,
-            selectedServices: getSelectedServicesWithPrices(),
-            totalAmount: totalAmount,
-        };
-        console.log(data);
-        // return;
-        // Send the non-image data to the server using AJAX
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'php.php');
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify(data));
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                // Handle the server's response here, if needed
-                console.log(xhr.responseText);
-            }
-        };
-
-        // After sending non-image data, upload images separately
-        uploadImages(customerId, providerId, imageFiles);
-    
-});
-// Function to format time from 24-hour to 12-hour format
-function formatTime(time) {
-    const timeParts = time.split(':');
-    const hours = parseInt(timeParts[0], 10);
-    const minutes = timeParts[1];
-    const isPM = hours >= 12;
-
-    if (hours === 0) {
-        return `12:${minutes} AM`;
-    } else if (hours === 12) {
-        return `12:${minutes} PM`;
-    } else if (isPM) {
-        return `${hours - 12}:${minutes} PM`;
-    } else {
-        return `${hours}:${minutes} AM`;
+      }
+      console.log(item.id); 
+      console.log(serviceVal.innerText);
     }
-}
-    // Implement a function to get the selected time from your time selection elements
-    function getSelectedTime() {
-        const amPmElement = document.querySelector('#custom-timeslot2 li.selected p');
-        const hourElement = document.querySelector('#custom-timeslot li.selected p');
-        const minuteElement = document.querySelector('#custom-timeslot1 li.selected p');
+    // for(let i=0; i<=selectedServices.length; i++){
+    //   console.log('s',selectedServices[i]);
+    // }
+  }
+  function updateTotalAmountadv(e, id) {
+    let price = 0;
+    price = parseFloat(e.textContent) || 0;
+    totalAmountadv += price;
+    totalAmountElement.textContent = `$${totalAmountadv.toFixed(2)}`;
+  }
 
-        const amPm = amPmElement ? amPmElement.textContent : '';
-        const hour = hourElement ? hourElement.textContent : '';
-        const minute = minuteElement ? minuteElement.textContent : '00';
+  function addProposal() {
+      if (proposalCount < maxProposals) {
+          const newProposal = proposalTemplate.cloneNode(true);
+          proposalContainer.appendChild(newProposal);
+          // Change the background color of the newly added proposal to a random pastel color
+          newProposal.style.backgroundColor = getRandomPastelColor();
+          newProposal.style.marginTop = '20px';
+          newProposal.style.borderRadius = '20px';
+          // Increment the proposal counter
+          proposalCount++;
+          // Update IDs of cloned elements with a counter
+          updateElementIds(newProposal, proposalCount);
+          // Update the display when a new proposal is added
+          updateProposalDisplay(proposalCount);
 
-        return `${hour}:${minute} ${amPm}`;
-    }
-
-    // Function to get the selected services
-    function getSelectedServices() {
-     
-      const selectedServices = [];
-
-      checkboxes.forEach((checkbox) => {
-          if (checkbox.checked) {
-              const serviceId = checkbox.getAttribute('data-service-id');
-              const serviceName = checkbox.value;
-              selectedServices.push({ serviceId, serviceName });
+          if (proposalCount === maxProposals) {
+              addProposalButton.disabled = true;
           }
-      });
-
-      return selectedServices;
-}
-
-
-    // Function to calculate the total amount based on selected services
-    function calculateTotalAmount() {
-       
-        let totalAmount = 0;
-
-        checkboxes.forEach((checkbox) => {
-            if (checkbox.checked) {
-                const serviceInfo = <?php echo json_encode($serviceData); ?>; // Provided by PHP
-                const price = serviceInfo[checkbox.value].price;
-                totalAmount += parseFloat(price);
-            }
-        });
-
-        return totalAmount.toFixed(2);
+      }
+  }
+  addProposalButton.addEventListener('click', function (e) {
+      e.preventDefault();
+      addProposal();
+  });
+  function updateElementIds(container, counter) {
+    container.querySelectorAll('[id]').forEach(element => {
+        element.id = element.id + counter;
+    });
+  }
+  function updateProposalDisplay() {
+    const displayContainer = document.querySelector('.advancebookedtimings ul');
+    displayContainer.innerHTML = '';
+    for (let i = 0; i <= proposalCount; i++) {
+        const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+        const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+        const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+        if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+            const formattedTimeAdv = formatTime(selectedTimeAdv);
+            const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+            const listItem = document.createElement('li');
+            listItem.style.backgroundColor = getRandomPastelColor();
+            listItem.innerHTML = `
+                <em>${selectedDateAdv}, ${formattedTimeAdv} - ${formattedTimeToAdv}</em>
+                <span>${formattedTimeAdv} - ${formattedTimeToAdv}</span>
+            `;
+            displayContainer.appendChild(listItem);
+        }
     }
-    // After preview_images() is called, you can add the base64-encoded images to the data array
-// Get the submit button
-const submitButton = document.getElementById('submit-advance');
+  }
+  function getRandomPastelColor() {
+      const letters = '89ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * letters.length)];
+      }
+      return color;
+  }
+  continueButton.addEventListener('click', function (e) {
+      e.preventDefault();
+      addProposal();
+  });
 
-// Get the popup message element
-const popupMessage = document.getElementById('popupMessage');
-
-// Add a click event listener to the submit button
-submitButton.addEventListener('click', function () {
-    // Show the popup message
-    popupMessage.style.display = 'block';
-
-    // Automatically hide the popup message after 5 seconds
-    setTimeout(function () {
-        popupMessage.style.display = 'none';
-
-        // Redirect to the service page after 5 seconds
-        setTimeout(function () {
-            window.location.href = 'services.php'; // Replace with the actual URL
-        }, 1000000); // 5000 milliseconds (5 seconds)
-    }, 40000000); // 5000 milliseconds (5 seconds)
-});
+  // const totalAmountElement2 = document.getElementById('total-amount2');
+  // const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  // const selectedServicesList1 = document.getElementById('selected-services-list1');
+  // const selectedServicesList2 = document.getElementById('selected-services-list2');
 
 
-const submitDate = document.getElementById('submit-date');
+//   function updateTotalAmount() {
+//     let totalAmount1 = 0;
+//     let totalAmount2 = 0;
 
-// Get the popup message element
-const successMessage = document.getElementById('successMessage');
+//     // Clear the existing lists
+//     // selectedServicesList1.innerHTML = '';
+//     // selectedServicesList2.innerHTML = '';
 
-// Add a click event listener to the submit button
-submitDate.addEventListener('click', function () {
-    // Show the popup message
-    successMessage.style.display = 'block';
+//     checkboxes.forEach((checkbox, index) => {
+//       const serviceName = checkbox.value;
+//       const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+//       let price = 0;
+//       if(priceElement){
+//          price =parseFloat(priceElement.textContent) || 0;
+//       }
+//       console.log('price', price);
+//       // Display the selected services and prices in both lists
+//       if (checkbox.checked) {
+//         totalAmount1 += price;
+//         const listItem1 = document.createElement('li');
+//         // listItem1.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em contenteditable='true'>${price}</em></span>`;
+//         // selectedServicesList1.appendChild(listItem1);
+//       }
 
-    // Automatically hide the popup message after 5 seconds
-    setTimeout(function () {
-      successMessage.style.display = 'none';
+//       // Display the selected services and prices only in the second list
+//       // if (checkbox.checked) {
+//       //   totalAmount2 += price;
+//       //   const listItem2 = document.createElement('li');
+//       //   listItem2.innerHTML = `<em>${serviceName}</em><span style='color: #70BE44;'>$<em>${price.toFixed(2)}</em></span>`;
+//       //   selectedServicesList2.appendChild(listItem2);
+//       // }
+//     });
 
-        // Redirect to the service page after 5 seconds
-        setTimeout(function () {
-            window.location.href = 'services.php'; // Replace with the actual URL
-        }, 1000000); // 5000 milliseconds (5 seconds)
-    }, 40000000); // 5000 milliseconds (5 seconds)
-});
+//     // totalAmountElement1.textContent = `$${totalAmount1.toFixed(2)}`;
+//     // totalAmountElement2.textContent = `$${totalAmount2.toFixed(2)}`;
+//   }
+
+//   checkboxes.forEach((checkbox) => {
+//     checkbox.addEventListener('change', updateTotalAmount);
+//   });
+
+//   const contentEditableElements = document.querySelectorAll('em[contenteditable="true"]');
+
+//   contentEditableElements.forEach((element) => {
+//     element.addEventListener('blur', updateTotalAmount);
+//   });
+
+//   // ... (rest of your existing script)
+
+// </script>
+
+
+ 
+ <script>
+//    // JavaScript
+//    document.getElementById('task-description').addEventListener('input', function () {
+//         // Get the input from the textarea
+//         const userContent = this.value;
+
+//         // Display the input in the <p> element
+//         document.getElementById('display-task-description').textContent = userContent;
+//         document.getElementById('display-task-description1').textContent = userContent;
+//     });
+//     // selectedTime: document.getElementById('from').value,
+//     document.getElementById('from').addEventListener('input', function () {
+//     // Get the input from the textarea
+//     const selectedTime = this.value;
+
+//     // Parse the input as a time and create a Date object
+//     const timeParts = selectedTime.split(':');
+//     const hours = parseInt(timeParts[0], 10);
+//     const minutes = parseInt(timeParts[1], 10);
+//     const isPM = hours >= 12;
+
+//     // Format the time in 12-hour AM/PM format
+//     let formattedTime;
+//     if (hours === 0) {
+//         formattedTime = `12:${minutes} AM`;
+//     } else if (hours === 12) {
+//         formattedTime = `12:${minutes} PM`;
+//     } else if (isPM) {
+//         formattedTime = `${hours - 12}:${minutes} PM`;
+//     } else {
+//         formattedTime = `${hours}:${minutes} AM`;
+//     }
+
+//     // Display the formatted time in the <p> element
+//     document.getElementById('date_display_from').textContent = formattedTime;
+// });
+
+//   function preview_images() {
+//     var preview = document.getElementById("image_preview");
+//     var files = document.getElementById("images").files;
+
+//     if (files.length !== 5) {
+//         alert("Please select exactly 5 images.");
+//         // return;
+//     }
+
+//     preview.innerHTML = ""; // Clear previous preview
+
+//     for (var i = 0; i < files.length; i++) {
+//         var file = files[i];
+//         var reader = new FileReader();
+
+//         reader.onload = function (e) {
+//             var image = document.createElement("img");
+//             image.src = e.target.result;
+//             image.className = "preview-image";
+//             preview.appendChild(image);
+
+//             // Add the base64-encoded image data to the data array
+//             data.images.push(e.target.result);
+//         };
+
+//         reader.readAsDataURL(file);
+//     }
+//   }
+//   function getSelectedServicesWithPrices() {
+   
+//     const selectedServices = [];
+
+//     checkboxes.forEach((checkbox, index) => {
+//         if (checkbox.checked) {
+//             const serviceId = checkbox.getAttribute('data-service-id');
+//             const serviceName = checkbox.value;
+//             const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+//             const price = parseFloat(priceElement.textContent) || 0;
+//             selectedServices.push({ serviceId, serviceName, price });
+//         }
+//     });
+
+//     return selectedServices;
+// }
+// function uploadImages(customerId, providerId, files) {
+//     const formData = new FormData();
+
+//     for (let i = 0; i < files.length; i++) {
+//         formData.append("images[]", files[i]);
+//     }
+
+//     // Include both customerId and providerId in the form data
+//     formData.append("customerId", customerId);
+//     formData.append("providerId", providerId);
+//     // Send the image data to the server using a new AJAX request
+//     const xhr = new XMLHttpRequest();
+//     xhr.open('POST', 'add.php'); // Create a new PHP file to handle image uploads
+//     xhr.send(formData);
+
+//     xhr.onreadystatechange = function () {
+//         if (xhr.readyState === 4 && xhr.status === 200) {
+//             // Handle the server's response here, if needed
+//             console.log(xhr.responseText);
+//         }
+//     };
+// }
+
+// document.getElementById('submit-date').addEventListener('click', function () {
+//         // Get the customer ID from the input field
+//         const customerId = document.getElementById('customer-id').value;
+//         const providerId = document.getElementById('provider-id').value;
+//     // console.log('check', selectedDateElement);
+//     // return;
+//     const customerFullName = document.getElementById('customerFullName').value;
+//         // const serviceId = document.getElementById('service-id').value;
+//         const messageContent = `You recive a new Advanced Booking from ${customerFullName}`;
+//         // Get the task description from the <p> element
+//         const userContent = document.getElementById('display-task-description').textContent;
+
+//         // Get the selected services and total amount
+//         const selectedServices = getSelectedServices();
+//         const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
+
+//         const totalAmount = totalAmountElement.textContent.replace('$', '');
+        
+//         // Create an array to store the selected image files
+//         const imageFiles = document.getElementById('images').files;
+//         // Parse and format the selectedTime and selectedTimeTo
+//         const selectedTime = document.getElementById('from').value;
+//         const selectedTimeTo = document.getElementById('to').value;
+
+//         const formattedTime = formatTime(selectedTime);
+//         const formattedTimeTo = formatTime(selectedTimeTo);
+//         // Create a JavaScript object with all the non-image data
+//         const data = {
+//             selectedDate: document.getElementById('selected_date').value,
+//             selectedTime: formattedTime, // Use the formatted time
+//             selectedTimeTo: formattedTimeTo, // Use the formatted time
+//             customerId: document.getElementById('customer-id').value,
+//             // providerId: document.getElementById('provider-id').value,
+//             customerId: customerId,
+//             providerId: providerId,
+//             proposal_status: 'OneTime',
+//             statusFrom: 'customer_send',
+//             messageContent: messageContent,
+//             userContent: userContent,
+//             selectedServices: getSelectedServicesWithPrices(),
+//             totalAmount: totalAmount,
+//         };
+//         console.log(data);
+//         // return;
+//         // Send the non-image data to the server using AJAX
+//         const xhr = new XMLHttpRequest();
+//         xhr.open('POST', 'php.php');
+//         xhr.setRequestHeader('Content-Type', 'application/json');
+//         xhr.send(JSON.stringify(data));
+
+//         xhr.onreadystatechange = function () {
+//             if (xhr.readyState === 4 && xhr.status === 200) {
+//                 // Handle the server's response here, if needed
+//                 console.log(xhr.responseText);
+//             }
+//         };
+
+//         // After sending non-image data, upload images separately
+//         uploadImages(customerId, providerId, imageFiles);
+    
+// });
+// // Function to format time from 24-hour to 12-hour format
+// function formatTime(time) {
+//     const timeParts = time.split(':');
+//     const hours = parseInt(timeParts[0], 10);
+//     const minutes = timeParts[1];
+//     const isPM = hours >= 12;
+
+//     if (hours === 0) {
+//         return `12:${minutes} AM`;
+//     } else if (hours === 12) {
+//         return `12:${minutes} PM`;
+//     } else if (isPM) {
+//         return `${hours - 12}:${minutes} PM`;
+//     } else {
+//         return `${hours}:${minutes} AM`;
+//     }
+// }
+//     // Implement a function to get the selected time from your time selection elements
+//     function getSelectedTime() {
+//         const amPmElement = document.querySelector('#custom-timeslot2 li.selected p');
+//         const hourElement = document.querySelector('#custom-timeslot li.selected p');
+//         const minuteElement = document.querySelector('#custom-timeslot1 li.selected p');
+
+//         const amPm = amPmElement ? amPmElement.textContent : '';
+//         const hour = hourElement ? hourElement.textContent : '';
+//         const minute = minuteElement ? minuteElement.textContent : '00';
+
+//         return `${hour}:${minute} ${amPm}`;
+//     }
+
+//     // Function to get the selected services
+//     function getSelectedServices() {
+     
+//       const selectedServices = [];
+
+//       checkboxes.forEach((checkbox) => {
+//           if (checkbox.checked) {
+//               const serviceId = checkbox.getAttribute('data-service-id');
+//               const serviceName = checkbox.value;
+//               selectedServices.push({ serviceId, serviceName });
+//           }
+//       });
+
+//       return selectedServices;
+// }
+
+
+//     // Function to calculate the total amount based on selected services
+//     function calculateTotalAmount() {
+       
+//         let totalAmount = 0;
+
+//         checkboxes.forEach((checkbox) => {
+//             if (checkbox.checked) {
+//                 const serviceInfo = <?php
+//echo json_encode( $serviceData);
+?>; // Provided by PHP
+//                 const price = serviceInfo[checkbox.value].price;
+//                 totalAmount += parseFloat(price);
+//             }
+//         });
+
+//         return totalAmount.toFixed(2);
+//     }
+//     // After preview_images() is called, you can add the base64-encoded images to the data array
+// // Get the submit button
+// const submitButton = document.getElementById('submit-advance');
+
+// // Get the popup message element
+// const popupMessage = document.getElementById('popupMessage');
+
+// // Add a click event listener to the submit button
+// submitButton.addEventListener('click', function () {
+//     // Show the popup message
+//     popupMessage.style.display = 'block';
+
+//     // Automatically hide the popup message after 5 seconds
+//     setTimeout(function () {
+//         popupMessage.style.display = 'none';
+
+//         // Redirect to the service page after 5 seconds
+//         setTimeout(function () {
+//             window.location.href = 'services.php'; // Replace with the actual URL
+//         }, 1000000); // 5000 milliseconds (5 seconds)
+//     }, 40000000); // 5000 milliseconds (5 seconds)
+// });
+
+
+// const submitDate = document.getElementById('submit-date');
+
+// // Get the popup message element
+// const successMessage = document.getElementById('successMessage');
+
+// // Add a click event listener to the submit button
+// submitDate.addEventListener('click', function () {
+//     // Show the popup message
+//     successMessage.style.display = 'block';
+
+//     // Automatically hide the popup message after 5 seconds
+//     setTimeout(function () {
+//       successMessage.style.display = 'none';
+
+//         // Redirect to the service page after 5 seconds
+//         setTimeout(function () {
+//             window.location.href = 'services.php'; // Replace with the actual URL
+//         }, 1000000); // 5000 milliseconds (5 seconds)
+//     }, 40000000); // 5000 milliseconds (5 seconds)
+// });
 
 </script>
 <script>
-  const selectedServicesList = document.getElementById('selected-services-list1');
-  const totalAmountElement = document.getElementById('total-amount');
+  // const selectedServicesList = document.getElementById('selected-services-list1');
+  // const totalAmountElement = document.getElementById('total-amount');
  
 
-  function updateSelectedServices() {
-    selectedServicesList.innerHTML = ''; // Clear the selected services list
-    let totalAmount = 0;
+  // function updateSelectedServices() {
+  //   selectedServicesList.innerHTML = ''; // Clear the selected services list
+  //   let totalAmount = 0;
 
-    checkboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        const serviceName = checkbox.value;
-        const price = parseFloat(checkbox.getAttribute('data-price')) || 0;
+  //   checkboxes.forEach((checkbox) => {
+  //     if (checkbox.checked) {
+  //       const serviceName = checkbox.value;
+  //       const price = parseFloat(checkbox.getAttribute('data-price')) || 0;
 
-        // Add selected service to the list
-        selectedServicesList.innerHTML += `
-          <li>
-            <em>${serviceName}</em>
-            <span>$<em contenteditable="true">${price}</em></span>
-          </li>
-        `;
+  //       // Add selected service to the list
+  //       selectedServicesList.innerHTML += `
+  //         <li>
+  //           <em>${serviceName}</em>
+  //           <span>$<em contenteditable="true" onblur="updateTotalAmount(this)">${price}</em></span>
+  //         </li>
+  //       `;
 
-        totalAmount += price;
-      }
-    });
+  //       totalAmount += price;
+  //     }
+  //   });
 
-    totalAmountElement.textContent = `$${totalAmount.toFixed(2)}`;
-  }
+  //   totalAmountElement.textContent = `$${totalAmount.toFixed(2)}`;
+  // }
 
-  checkboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', updateSelectedServices);
-  });
+  // checkboxes.forEach((checkbox) => {
+  //   checkbox.addEventListener('change', updateSelectedServices);
+  // });
 
-  // Initial update when the page loads
-  updateSelectedServices();
+  // // Initial update when the page loads
+  // updateSelectedServices();
 </script>
 
 
   <script>
     
-    let proposalCount = '';
+//     let proposalCount = '';
 
-    document.addEventListener('DOMContentLoaded', function () {
-    const addProposalButton = document.getElementById('addProposal');
-    const continueButton = document.getElementById('continueButton');
-    const proposalContainer = document.querySelector('.proposal-container');
-    const proposalTemplate = document.querySelector('.proposal');
-    const maxProposals = 9;
-    let proposalCount = 0;
+//     document.addEventListener('DOMContentLoaded', function () {
+//     const addProposalButton = document.getElementById('addProposal');
+//     const continueButton = document.getElementById('continueButton');
+//     const proposalContainer = document.querySelector('.proposal-container');
+//     const proposalTemplate = document.querySelector('.proposal');
+//     const maxProposals = 9;
+//     let proposalCount = 0;
 
-    function getRandomPastelColor() {
-        const letters = '89ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * letters.length)];
-        }
-        return color;
-    }
+//     function getRandomPastelColor() {
+//         const letters = '89ABCDEF';
+//         let color = '#';
+//         for (let i = 0; i < 6; i++) {
+//             color += letters[Math.floor(Math.random() * letters.length)];
+//         }
+//         return color;
+//     }
 
-    function updateProposalDisplay() {
-        const displayContainer = document.querySelector('.advancebookedtimings ul');
-        displayContainer.innerHTML = '';
+//     function updateProposalDisplay() {
+//         const displayContainer = document.querySelector('.advancebookedtimings ul');
+//         displayContainer.innerHTML = '';
 
-        for (let i = 0; i <= proposalCount; i++) {
-            const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
-            const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
-            const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+//         for (let i = 0; i <= proposalCount; i++) {
+//             const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+//             const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+//             const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
 
-            if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
-                const formattedTimeAdv = formatTime(selectedTimeAdv);
-                const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+//             if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+//                 const formattedTimeAdv = formatTime(selectedTimeAdv);
+//                 const formattedTimeToAdv = formatTime(selectedTimeToAdv);
 
-                const listItem = document.createElement('li');
-                listItem.style.backgroundColor = getRandomPastelColor();
-                listItem.innerHTML = `
-                    <em>${selectedDateAdv}, ${formattedTimeAdv} - ${formattedTimeToAdv}</em>
-                    <span>${formattedTimeAdv} - ${formattedTimeToAdv}</span>
-                `;
+//                 const listItem = document.createElement('li');
+//                 listItem.style.backgroundColor = getRandomPastelColor();
+//                 listItem.innerHTML = `
+//                     <em>${selectedDateAdv}, ${formattedTimeAdv} - ${formattedTimeToAdv}</em>
+//                     <span>${formattedTimeAdv} - ${formattedTimeToAdv}</span>
+//                 `;
 
-                displayContainer.appendChild(listItem);
-            }
-        }
-    }
-    function addProposal() {
-            if (proposalCount < maxProposals) {
-                const newProposal = proposalTemplate.cloneNode(true);
-                proposalContainer.appendChild(newProposal);
-
-
-                    // Change the background color of the newly added proposal to a random pastel color
-                    newProposal.style.backgroundColor = getRandomPastelColor();
-                    newProposal.style.marginTop = '20px';
-                    newProposal.style.borderRadius = '20px';
-                // Increment the proposal counter
-                proposalCount++;
-
-                // Update IDs of cloned elements with a counter
-                updateElementIds(newProposal, proposalCount);
-
-                // Update the display when a new proposal is added
-                updateProposalDisplay(proposalCount);
-
-                if (proposalCount === maxProposals) {
-                    addProposalButton.disabled = true;
-                }
-            }
-        }
-
-    document.addEventListener('input', function (e) {
-        const targetId = e.target.id;
-
-        if (targetId && (targetId.startsWith('combine-date') || targetId.startsWith('adv-from') || targetId.startsWith('adv-to'))) {
-            updateProposalDisplay();
-        }
-    });
-
-    addProposalButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        addProposal();
-    });
-
-    continueButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        addProposal();
-    });
-
-    // Initialize the advanceProposals array outside the functions
-    const advanceProposals = [];
-
-    document.getElementById('submit-advance').addEventListener('click', function () {
-        advanceProposals.length = 0;
-
-        for (let i = 0; i <= proposalCount; i++) {
-            const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
-            const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
-            const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
-
-            if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
-                const formattedTimeAdv = formatTime(selectedTimeAdv);
-                const formattedTimeToAdv = formatTime(selectedTimeToAdv);
-
-                const proposalData = {
-                    selectedDateAdv: selectedDateAdv,
-                    selectedTimeAdv: formattedTimeAdv,
-                    selectedTimeToAdv: formattedTimeToAdv,
-                };
-
-                advanceProposals.push(proposalData);
-            } else {
-                console.error(`Error: Proposal data for proposal ${i} is missing.`);
-            }
-        }
-
-        updateProposalDisplay();
-
-        const customerId = document.getElementById('customer-id')?.value;
-        const providerId = document.getElementById('provider-id')?.value;
-        const customerFullName = document.getElementById('customerFullName')?.value;
-        const userContent = document.getElementById('display-task-description').textContent;
-        const totalAmount = totalAmountElement.textContent.replace('$', '');
-        const imageFiles = document.getElementById('images').files;
-
-        const data = {
-            advanceProposals: advanceProposals,
-            customerId: customerId,
-            providerId: providerId,
-            proposal_status: 'AdvancedProposal',
-            statusFrom: 'customer_send',
-            messageContent: `You receive a new order from ${customerFullName}`,
-            userContent: userContent,
-            selectedServices: getSelectedServicesWithPrices(),
-            totalAmount: totalAmount,
-        };
-
-        console.log(data);
-        return;
- // Send the non-image data to the server using AJAX
-      const xhr = new XMLHttpRequest();
-          xhr.open('POST', 'advance_proposal.php');
-          xhr.setRequestHeader('Content-Type', 'application/json');
-          xhr.send(JSON.stringify(data));
-
-          xhr.onreadystatechange = function () {
-              if (xhr.readyState === 4 && xhr.status === 200) {
-                  // Handle the server's response here, if needed
-                  console.log(xhr.responseText);
-              }
-          };
-
-        // After sending non-image data, upload images separately
-        uploadImages(customerId, providerId, imageFiles);
-    });
-});
-
-function updateElementIds(container, counter) {
-    container.querySelectorAll('[id]').forEach(element => {
-        element.id = element.id + counter;
-    });
-}
+//                 displayContainer.appendChild(listItem);
+//             }
+//         }
+//     }
+//     function addProposal() {
+//             if (proposalCount < maxProposals) {
+//                 const newProposal = proposalTemplate.cloneNode(true);
+//                 proposalContainer.appendChild(newProposal);
 
 
+//                     // Change the background color of the newly added proposal to a random pastel color
+//                     newProposal.style.backgroundColor = getRandomPastelColor();
+//                     newProposal.style.marginTop = '20px';
+//                     newProposal.style.borderRadius = '20px';
+//                 // Increment the proposal counter
+//                 proposalCount++;
 
+//                 // Update IDs of cloned elements with a counter
+//                 updateElementIds(newProposal, proposalCount);
+
+//                 // Update the display when a new proposal is added
+//                 updateProposalDisplay(proposalCount);
+
+//                 if (proposalCount === maxProposals) {
+//                     addProposalButton.disabled = true;
+//                 }
+//             }
+//         }
+
+//     document.addEventListener('input', function (e) {
+//         const targetId = e.target.id;
+
+//         if (targetId && (targetId.startsWith('combine-date') || targetId.startsWith('adv-from') || targetId.startsWith('adv-to'))) {
+//             updateProposalDisplay();
+//         }
+//     });
+
+//     addProposalButton.addEventListener('click', function (e) {
+//         e.preventDefault();
+//         addProposal();
+//     });
+
+//     continueButton.addEventListener('click', function (e) {
+//         e.preventDefault();
+//         addProposal();
+//     });
+
+//     // Initialize the advanceProposals array outside the functions
+//     const advanceProposals = [];
+
+//     document.getElementById('submit-advance').addEventListener('click', function () {
+//         advanceProposals.length = 0;
+
+//         for (let i = 0; i <= proposalCount; i++) {
+//             const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+//             const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+//             const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+
+//             if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+//                 const formattedTimeAdv = formatTime(selectedTimeAdv);
+//                 const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+
+//                 const proposalData = {
+//                     selectedDateAdv: selectedDateAdv,
+//                     selectedTimeAdv: formattedTimeAdv,
+//                     selectedTimeToAdv: formattedTimeToAdv,
+//                 };
+
+//                 advanceProposals.push(proposalData);
+//             } else {
+//                 console.error(`Error: Proposal data for proposal ${i} is missing.`);
+//             }
+//         }
+
+//         updateProposalDisplay();
+
+//         const customerId = document.getElementById('customer-id')?.value;
+//         const providerId = document.getElementById('provider-id')?.value;
+//         const customerFullName = document.getElementById('customerFullName')?.value;
+//         const userContent = document.getElementById('display-task-description').textContent;
+//         const totalAmount = totalAmountElement.textContent.replace('$', '');
+//         const imageFiles = document.getElementById('images').files;
+
+//         const data = {
+//             advanceProposals: advanceProposals,
+//             customerId: customerId,
+//             providerId: providerId,
+//             proposal_status: 'AdvancedProposal',
+//             statusFrom: 'customer_send',
+//             messageContent: `You receive a new order from ${customerFullName}`,
+//             userContent: userContent,
+//             selectedServices: getSelectedServicesWithPrices(),
+//             totalAmount: totalAmount,
+//         };
+
+//         console.log(data);
+//         return;
+//  // Send the non-image data to the server using AJAX
+//       const xhr = new XMLHttpRequest();
+//           xhr.open('POST', 'advance_proposal.php');
+//           xhr.setRequestHeader('Content-Type', 'application/json');
+//           xhr.send(JSON.stringify(data));
+
+//           xhr.onreadystatechange = function () {
+//               if (xhr.readyState === 4 && xhr.status === 200) {
+//                   // Handle the server's response here, if needed
+//                   console.log(xhr.responseText);
+//               }
+//           };
+
+//         // After sending non-image data, upload images separately
+//         uploadImages(customerId, providerId, imageFiles);
+//     });
+// });
 
   </script>
 
@@ -1387,7 +1528,7 @@ function updateElementIds(container, counter) {
 
 <script>
   $(document).ready(function () {
-
+    localStorage.removeItem("bookNow");
     var current_fs, next_fs, previous_fs; //fieldsets
     var opacity;
     var current = 1;
@@ -1396,13 +1537,21 @@ function updateElementIds(container, counter) {
     setProgressBar(current);
 
     $(".next").click(function () {
-
+      var bookNow = localStorage.getItem('bookNow');
+      if(bookNow == null || bookNow == false){
+        localStorage.setItem("bookNow",true);
+      }
+      if(bookNow){
+        if(selectedServices.length == 0){
+          alert('Please Select Available Services..');
+          return false;
+        }
+      }
       current_fs = $(this).parent();
       next_fs = $(this).parent().next();
 
       //Add Class Active
       $("#progressbar li").eq($("fieldset").index(next_fs)).addClass("active");
-
       //show the next fieldset
       next_fs.show();
       //hide the current fieldset with style
@@ -1410,7 +1559,6 @@ function updateElementIds(container, counter) {
         step: function (now) {
           // for making fielset appear animation
           opacity = 1 - now;
-
           current_fs.css({
             'display': 'none',
             'position': 'relative'
@@ -1423,22 +1571,17 @@ function updateElementIds(container, counter) {
     });
 
     $(".previous").click(function () {
-
       current_fs = $(this).parent();
       previous_fs = $(this).parent().prev();
-
       //Remove class active
       $("#progressbar li").eq($("fieldset").index(current_fs)).removeClass("active");
-
       //show the previous fieldset
       previous_fs.show();
-
       //hide the current fieldset with style
       current_fs.animate({ opacity: 0 }, {
         step: function (now) {
           // for making fielset appear animation
           opacity = 1 - now;
-
           current_fs.css({
             'display': 'none',
             'position': 'relative'

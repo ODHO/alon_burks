@@ -1,6 +1,72 @@
 <?php
 session_start();
-
+include 'connection.php';
+function ratingcount(){
+  global $conn;
+  $sql =
+      "SELECT sum(rating) AS sumrating, count(rating) AS rating FROM ratings WHERE provider_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("s", $_SESSION["user_id"]);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $rating = [];
+      while ($row = $result->fetch_assoc()) {
+          $rating[] = $row;
+      }
+      return $rating;
+  }
+  return "0";
+}
+function ratingNegative(){
+  global $conn;
+  $sql =
+      "SELECT sum(rating) AS sumrating, count(rating) AS rating FROM ratings WHERE provider_id = ? AND rating = '0'";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("s", $_SESSION["user_id"]);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $rating = [];
+      while ($row = $result->fetch_assoc()) {
+          $rating[] = $row;
+      }
+      return $rating;
+  }
+  return "0";
+}
+function getReviews(){
+  global $conn;
+  $sql =
+      "SELECT proposal_id ,provider_id , user_id , rating, Feedback, created_at,fullname,profile_picture
+       FROM ratings inner join `provider_registration` on 
+         `provider_registration`.`id` = `ratings`.`user_id` WHERE provider_id = ? order by ratings.id desc";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("s", $_SESSION["user_id"]);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $rating = [];
+      while ($row = $result->fetch_assoc()) {
+          $rating[] = $row;
+      }
+      return $rating;
+  }
+  return "0";
+}
+function getService($proposalId){
+  global $conn;
+  $sql =
+      "SELECT * FROM `customer_services` WHERE `proposal_id` = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("s", $proposalId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $service = [];
+      while ($row = $result->fetch_assoc()) {
+          $service[] = $row;
+      }
+      return $service;
+  }
+  return "0";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -235,7 +301,7 @@ session_start();
                     <div class="col-md-4">
                         <div class="rating1">
                             <p>Positive Reviews</p>
-                            <h2><img src="./images/ratingstar.png"/> 4.5</h2>
+                            <h2><img src="./images/ratingstar.png"/><?php $ratingcount = ratingcount(); echo $ratingcount[0]['rating'];?></h2>
                             <p>Based On 10 Ratings</p>
                             <div class="progress">
                                 <h5>5 Stars</h5>
@@ -272,7 +338,7 @@ session_start();
                     <div class="col-md-4">
                         <div class="rating1">
                             <p>Positive Reviews</p>
-                            <h2>90%</h2>
+                            <h2><?php $ratingcount = ratingcount(); $ratings = $ratingcount[0]; echo $ratings['sumrating']/100 * $ratings['rating']; ?>%</h2>
                             <p>Based On 10 Ratings</p>
                             <div class="progress">
                                 <h5>5 Stars</h5>
@@ -308,8 +374,20 @@ session_start();
                     </div>
                     <div class="col-md-4">
                         <div class="rating1">
-                            <p>Positive Reviews</p>
-                            <h2>90%</h2>
+                            <p>Negative Reviews</p>
+                            <?php 
+                              $ratingNegative = ratingNegative();
+                              $negative = $ratingNegative[0]['rating'];
+                              if($negative != "0"){
+                                $negativeratings = $ratingNegative[0]; 
+                                $negativerates = $negativeratings['sumrating']/100 * $negative;
+                                echo $negativerates." %";
+                              }else{
+                                ?>
+                                <h2>0%</h2>
+                                <?php
+                              }
+                            ?>
                             <p>Based On 10 Ratings</p>
                             <div class="progress">
                                 <h5>5 Stars</h5>
@@ -355,21 +433,34 @@ session_start();
                         <hr style="margin-top: 20px;">
                     </div>
                 </div>
-
+                <?php
+                $getReviews = getReviews();
+                foreach($getReviews as $getReview){
+                  // print_r($getReview);
+                ?>
                 <div class="reviews-customer-list">
                     <div class="row">
                         <div class="col-md-4">
                         <div class="reviews-profile">
-                            <img src="./images/profileman.png"/>
-                            <h2>Alexendar Leo</h2>
+                            <img src="../customer/<?php echo $getReview['profile_picture'];?>" width="50" heigth="50"/>
+                            <h2><?php echo $getReview['fullname'];?></h2>
                         </div>
                     </div>
                     <div class="col-md-4"></div>
-
                     <div class="col-md-4" style="text-align: right;">
                         <div class="star-section">
                         <div class="rate">
-                            <input type="radio" id="star5" name="rate" value="5" />
+                          <?php 
+                            $ratings = $getReview['rating'];
+                            for( $i = 0; $i<$ratings; $i++ ) {
+                            ?>
+                              <input type="radio" id="star5" name="rate" value="5" />
+                              <label for="star5" title="text">5 stars</label>
+                            <?php 
+                                }
+                  
+                            ?>
+                            <!-- <input type="radio" id="star5" name="rate" value="5" />
                             <label for="star5" title="text">5 stars</label>
                             <input type="radio" id="star4" name="rate" value="4" />
                             <label for="star4" title="text">4 stars</label>
@@ -378,20 +469,42 @@ session_start();
                             <input type="radio" id="star2" name="rate" value="2" />
                             <label for="star2" title="text">2 stars</label>
                             <input type="radio" id="star1" name="rate" value="1" />
-                            <label for="star1" title="text">1 star</label>
+                            <label for="star1" title="text">1 star</label> -->
                           </div>
-                          <p>Sep 4, 2021 </p>
+                          <p><?php echo date('d-M-Y , D', strtotime($getReview['created_at'])); ?></p>
                         </div>
                     </div>
-                    <h6>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
-                        and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</h6>
+                    <h6>
+                    <?php echo $getReview['Feedback'];?>
+                    </h6>
                         <div class="reviews-category">
+                          <?php
+                            $services = getService($getReview['proposal_id']);
+                          ?>
+                        
                             <ul>
-                            <li><em>Service Provided</em><span style="color: #70BE44;">grass cutting , lawn mowing , snow cleanup . </span></li></ul>
+                            <li><em>Service Provided</em>
+                              <?php
+                                foreach($services as $service){
+                                  foreach($service as $key => $serv){
+                                    if($key == 'service_name'){
+                                      ?>
+                                      <span style="color: #70BE44;"><?php echo $serv. ",";//echo ltrim($serv, ",");?></span>
+                                      <?php
+                                      // echo $serv.',';
+                                    }
+                                  }
+                                }
+                              ?>
+                              </li>
+                            </ul>
                         </div>
                     </div>
             </div>
-            <div class="reviews-customer-list" style="margin-top: 20px;">
+            <?php
+                }
+            ?>
+            <!-- <div class="reviews-customer-list" style="margin-top: 20px;">
                 <div class="row">
                     <div class="col-md-4">
                     <div class="reviews-profile">
@@ -425,8 +538,8 @@ session_start();
                         <li><em>Service Provided</em><span style="color: #70BE44;">grass cutting , lawn mowing , snow cleanup . </span></li></ul>
                     </div>
                 </div>
-        </div>
-        <div class="reviews-customer-list" style="margin-top: 20px;">
+        </div> -->
+        <!-- <div class="reviews-customer-list" style="margin-top: 20px;">
             <div class="row">
                 <div class="col-md-4">
                 <div class="reviews-profile">
@@ -460,7 +573,7 @@ session_start();
                     <li><em>Service Provided</em><span style="color: #70BE44;">grass cutting , lawn mowing , snow cleanup . </span></li></ul>
                 </div>
             </div>
-    </div>
+    </div> -->
             <!-- MAIN RATING DIV END -->
 
 </div>

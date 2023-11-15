@@ -4,7 +4,9 @@ session_start();
 function getReviews(){
   global $conn;
   $sql =
-      "SELECT rating, Feedback, created_at FROM ratings WHERE provider_id = ?";
+      "SELECT rating, Feedback, created_at,fullname,profile_picture
+       FROM ratings inner join `provider_registration` on 
+         `provider_registration`.`id` = `ratings`.`user_id` WHERE provider_id = ? order by ratings.id desc limit 4";
   $stmt = $conn->prepare($sql);
   $stmt->bind_param("s", $_SESSION["user_id"]);
   if ($stmt->execute()) {
@@ -527,11 +529,41 @@ function getReviews(){
                       // foreach($getReview as $review){
                         ?>
                         <div class="services-feedbacks">
-                            <img src="./images/profileman.png"/>
+                            <img src="../customer/<?php echo $getReview['profile_picture'];?>" width="50" heigth="50"/>
                             <h4><?php echo $getReview['Feedback'];?></h4>
                             <ul class="feedback-date-category">
-                              <li>1 hours ago</li>
-                              <li style="color: #227A4E;">Window Tint, Mechanic , Tuning .</li>
+                              <li>
+                                <?php
+                                  $sec = time() - strtotime($getReview['created_at']);
+                                      if($sec < 30) {
+                                        /* if less than a minute, return seconds */
+                                        echo "Few seconds ago";
+                                        // return $sec . " seconds ago";
+                                      }
+                                      else if($sec < 60) {
+                                        /* if less than a minute, return seconds */
+                                        echo "Few minutes ago";
+                                        // return $sec . " seconds ago";
+                                      }
+                                      else if($sec < 60*60) {
+                                        /* if less than an hour, return minutes */
+                                        echo intval($sec / 60) . " minutes ago";
+                                        // return intval($sec / 60) . " minutes ago"s;
+                                      }
+                                      else if($sec < 24*60*60) {
+                                        /* if less than a day, return hours */
+                                        // return intval($sec / 60 / 60) . " hours ago";
+                                        echo intval($sec / 60 / 60) . " hours ago";
+                                      }
+                                      else {
+                                        /* else returns days */
+                                        // return intval($sec / 60 / 60 / 24) . " days ago";
+                                        echo intval($sec / 60 / 60 / 24) . " days ago";
+                                      }
+                                ?>
+                                <!-- 1 hours ago -->
+                              </li>
+                              <li style="color: #227A4E;"><?php echo $getReview['fullname'];?></li>
                             </ul>
                           </div>
                         <?php
