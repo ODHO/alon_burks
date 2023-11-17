@@ -1159,7 +1159,6 @@ document.getElementById('submit-date').addEventListener('click', function () {
 
         // Get the selected services and total amount
         const selectedServices = getSelectedServices();
-        // die();
         const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
         // const totalAmount1 = totalAmountElement1.textContent.replace('$', '');
         // const totalAmount = totalAmountElement1.textContent.replace('$', '');
@@ -1250,14 +1249,10 @@ function formatTime(time) {
           if (checkbox.checked) {
               const serviceId = checkbox.getAttribute('data-service-id');
               const serviceName = checkbox.value;
-              const priceElement = document.querySelectorAll('em[contenteditable="true"]');//[index];
-              console.log('priceElement',priceElement.textContent);
-              
-            // const price = parseFloat(priceElement.textContent) || 0;
-            // selectedServices.push({ serviceId, serviceName, price });
+              selectedServices.push({ serviceId, serviceName });
           }
       });
-      
+
       return selectedServices;
 }
 
