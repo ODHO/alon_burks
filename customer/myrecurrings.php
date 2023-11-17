@@ -677,21 +677,21 @@ function getAdvanceProposals($providerId, $proposalId, $userId) {
                                         <div class="innerrow">
                                             <div class="col-lg-6 mb-6 mb-lg-0 align-items-center">
                                                 <div style="display:flex; align-items:center">
-                                                    <input style="flex-direction: row-reverse;" id="selected_date(<?php echo $index ?>)" value="<?php echo $proposal['selected_date'] ?>" type="date">
-                                                    <input style="flex-direction: row-reverse;display:none;" id="selected_date_ref(<?php echo $index ?>)" value="<?php echo $proposal['selected_date'] ?>" type="date">
+                                                    <input style="flex-direction: row-reverse;" id="selected_date(<?php echo $index . '_' . $proposalId ?>)" value="<?php echo $proposal['selected_date'] ?>" type="date">
+                                                    <input style="flex-direction: row-reverse;display:none;" id="selected_date_ref(<?php echo $index . '_' . $proposalId ?>)" value="<?php echo $proposal['selected_date'] ?>" type="date">
                                                 </div>
                                             </div>
                                             <div class="col-lg-6 mb-6 mb-lg-0" style="text-align:right;">
                                                 <ul class="time-advance" style="display: flex;justify-content: space-between;gap:7px">
                                                     <div style="text-align: left;">
                                                         <p style="text-align:left; font-size:20px">From</p>
-                                                        <li><input type="time" style="padding: 6px;" value="<?php echo date("H:i", strtotime($proposal['selected_time'])); ?>" id="from(<?php echo $index ?>)"></li>
-                                                        <li><input type="time" style="padding: 6px;display:none;" value="<?php echo date("H:i", strtotime($proposal['selected_time'])); ?>" id="from_ref(<?php echo $index ?>)"></li>
+                                                        <li><input type="time" style="padding: 6px;" value="<?php echo date("H:i", strtotime($proposal['selected_time'])); ?>" id="from(<?php echo $index . '_' . $proposalId ?>)"></li>
+                                                        <li><input type="time" style="padding: 6px;display:none;" value="<?php echo date("H:i", strtotime($proposal['selected_time'])); ?>" id="from_ref(<?php echo $index . '_' . $proposalId ?>)"></li>
                                                     </div>
                                                     <div style="text-align: left;">
                                                         <p style="text-align:left; font-size:20px">To</p>
-                                                        <li><input type="time" style="padding: 6px;" value="<?php echo date("H:i", strtotime($proposal['selected_time_to'])); ?>" id="to(<?php echo $index ?>)"></li>
-                                                        <li><input type="time" style="padding: 6px;display:none;" value="<?php echo date("H:i", strtotime($proposal['selected_time_to'])); ?>" id="to_ref(<?php echo $index ?>)"></li>
+                                                        <li><input type="time" style="padding: 6px;" value="<?php echo date("H:i", strtotime($proposal['selected_time_to'])); ?>" id="to(<?php echo $index . '_' . $proposalId ?>)"></li>
+                                                        <li><input type="time" style="padding: 6px;display:none;" value="<?php echo date("H:i", strtotime($proposal['selected_time_to'])); ?>" id="to_ref(<?php echo $index . '_' . $proposalId ?>)"></li>
                                                     </div>
                                                 </ul>
                                                 <input type="hidden" value="<?php echo $userId ?>" id="customer-id" placeholder="Enter Customer ID">
@@ -701,18 +701,18 @@ function getAdvanceProposals($providerId, $proposalId, $userId) {
                                     </div>
                                     <script>
                                         function updateAdvanceBooking(index, proposalId) {
-                                            console.log(proposalId);
                                             // Get updated values from the form
-                                            const selectedDate = document.getElementById('selected_date(<?php echo $index ?>)').value;
-                                            const selectedDateRef = document.getElementById('selected_date_ref(<?php echo $index ?>)').value;
-                                            const selectedTimeFrom = document.getElementById('from(<?php echo $index ?>)').value;
-                                            const selectedTimeFromRef = document.getElementById('from_ref(<?php echo $index ?>)').value;
-                                            const selectedTimeTo = document.getElementById('to(<?php echo $index ?>)').value;
-                                            const selectedTimeToRef = document.getElementById('to_ref(<?php echo $index ?>)').value;
+                                            const selectedDate = document.getElementById('selected_date('+index+'_'+proposalId+')').value;
+                                            const selectedDateRef = document.getElementById('selected_date_ref('+index+'_'+proposalId+')').value;
+                                            const selectedTimeFrom = document.getElementById('from('+index+'_'+proposalId+')').value;
+                                            const selectedTimeFromRef = document.getElementById('from_ref('+index+'_'+proposalId+')').value;
+                                            const selectedTimeTo = document.getElementById('to('+index+'_'+proposalId+')').value;
+                                            const selectedTimeToRef = document.getElementById('to_ref('+index+'_'+proposalId+')').value;
                                             const customerId = document.getElementById('customer-id').value;
                                             const providerId = document.getElementById('provider-id').value;
-                                            console.log(selectedDate, selectedDateRef, selectedTimeFrom, selectedTimeFromRef, selectedTimeTo, selectedTimeToRef, customerId, providerId, proposalId);
-                                            return;
+                                            // console.log(selectedDate, selectedDateRef, selectedTimeFrom, selectedTimeFromRef, selectedTimeTo, selectedTimeToRef, customerId, providerId, proposalId);
+                                            // console.log(selectedDate, selectedDateRef, selectedTimeFrom, selectedTimeFromRef, selectedTimeTo, selectedTimeToRef, customerId, providerId, proposalId);
+                                            // return;
                                             $.ajax({
                                                 type: 'POST',
                                                 

@@ -329,7 +329,7 @@ function getServiceImages($service) {
             $userId = $_SESSION['user_id'];
             $providerName = $_SESSION['providerName'];
 
-            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'working' OR status = 'order_in_progress') ORDER BY status = 'completed-pending' DESC, status = 'working' DESC, status = 'order_in_progress' DESC";
+            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND proposal_status = 'OneTime' AND (status = 'completed-pending' OR status = 'working' OR status = 'order_in_progress') ORDER BY status = 'completed-pending' DESC, status = 'working' DESC, status = 'order_in_progress' DESC";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param('s', $userId);
 

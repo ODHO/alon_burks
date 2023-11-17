@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+include_once 'connection.php';
 ?>
 <!DOCTYPE html>
 <html lang="zxx">
@@ -61,12 +61,40 @@ include 'header.php'
     </div>
     <div class="row" style="padding-top: 30px;">
       <div class="wrap">
-        <div class="search">
-           <input  type="text" class="searchTerm" placeholder="Write Service what you need?" ><i class="fa fa-search" aria-hidden="true"></i>
-           <button type="submit" class="searchButton">
-             Find Your Best Gardener
-          </button>
-        </div>
+      <div class="search">
+    <input type="text" class="searchTerm" id="searchTerm" placeholder="Write Service what you need?">
+    <i class="fa fa-search" aria-hidden="true"></i>
+    <button type="submit" onclick="search();" class="searchButton">Find Your Best Gardener</button>
+</div>
+<div id="suggestions"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<script>
+  function search() {
+    $(document).ready(function () {
+        $(".searchTerm").on("input", function () {
+            var searchTerm = $(this).val();
+
+            // Send AJAX request to get suggestions
+            $.ajax({
+                url: 'search_providers.php',
+                type: 'POST',
+                data: { searchTerm: searchTerm },
+                success: function (response) {
+                    $("#suggestions").html(response);
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
+  };
+</script>
+
+
+
      </div>
     </div>
     <div class="row" style="padding-top: 30px;">

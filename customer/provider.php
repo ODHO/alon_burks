@@ -175,7 +175,22 @@ function getServiceIds($conn, $servicesArray)
 }
 
 $serviceIds = getServiceIds($conn, $servicesArray);
-
+function getCompletedProposalCount($providerId)
+{
+    global $conn;
+    $countCompletedSql = "SELECT COUNT(*) as completed_pending_count FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'completed')";
+    $countCompletedStmt = $conn->prepare($countCompletedSql);
+    $countCompletedStmt->bind_param('s', $providerId);
+    
+    if ($countCompletedStmt->execute()) {
+        $countCompletedResult = $countCompletedStmt->get_result();
+        $countCompletedRow = $countCompletedResult->fetch_assoc();
+        return $countCompletedRow['completed_pending_count'];
+    }
+    print_r($countCompletedRow);
+    die();
+    return 0;
+}
 // The code related to inserting data into the database has been commented out.
 ?>
 
@@ -292,7 +307,37 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       <h6 style="color: #70BE44;" class="price">$30/hr</h6>
                     </div>
                     <ul class="detaillist" style="width: 100%;">
-                      <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i> 50+ Completed task</li>
+                      <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i> <?php 
+                      // include "connection.php";
+                
+                      $userId = $_SESSION["user_id"];
+                
+                      $sql =
+                      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
+                      $stmt = $conn->prepare($sql);
+                      $stmt->bind_param("s", $userId);
+                
+                      if ($stmt->execute()) {
+                          $result = $stmt->get_result();
+                          if ($result->num_rows == 0) {
+                              // No orders found for the provider
+                              echo '<h2 class="text-center texter">No new orders available.</h2>';
+                          } else {
+                              while ($row = $result->fetch_assoc()) {
+                
+                                  $proposalId = $row["id"];
+                                  $customerId = $row["customer_id"];
+                                  $providerId = $row["provider_id"];
+$countCompletedRow = getCompletedProposalCount($providerId);
+echo $countCompletedRow; 
+
+}
+}
+} else {
+echo "Error executing the query.";
+}
+
+?> Completed task</li>
                       <li><i style="color: #70BE44" class="fa fa-map-marker" aria-hidden="true"></i>
                         <?php echo $providerAddress; ?>
                       </li>
@@ -883,9 +928,9 @@ selectedDateInput.addEventListener('change', function () {
     for (var i = 0; i < selectedServices.length; i++) { 
       counter++;
       // console.log('selectedServices',selectedServices[i].id);
-      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone${counter}' class="serviceone" onblur="updateTotalAmount(this,${selectedServices[i].id});" contenteditable='true'>0</em></span></div>`;
+      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone${counter}' class="serviceone" onblur="updateTotalAmount(this,${selectedServices[i].id},'${selectedServices[i].serviceName}');" contenteditable='true'>0</em></span></div>`;
       listItem2.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='servicetwo_${selectedServices[i].id}'>0</em></span></div>`; 
-      listItemadv.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceadv_${counter}' onblur='updateTotalAmountadv(this,${selectedServices[i].id})' contenteditable='true'>0</em></span></div>`;
+      listItemadv.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceadv_${counter}' onblur='updateTotalAmountadv(this,${selectedServices[i].id},"${selectedServices[i].serviceName}")' contenteditable='true'>0</em></span></div>`;
       list1.appendChild(listItem1);
       list2.appendChild(listItem2);
       listadv.appendChild(listItemadv);
@@ -894,12 +939,18 @@ selectedDateInput.addEventListener('change', function () {
     selectedServicesList2.appendChild(list2);
     selectedServicesListAdv.appendChild(listadv);
   }
-  function updateTotalAmount(e, id) {
+  var services = new Array();
+  function updateTotalAmount(e, id, name) {
     let price = 0;
     price = parseFloat(e.textContent) || 0;
     // totalAmount1 += price;
     const serviceVal = document.getElementById('servicetwo_'+id); 
     serviceVal.textContent = price; 
+    serviceElements = {};
+    serviceElements.serviceId = id;
+    serviceElements.serviceName = name;
+    serviceElements.price = price;
+    services.push(serviceElements);
     var total = 0;
     for( var i = 1; i <= selectedServices.length; i++ ) {
         var val = parseInt(document.getElementById("serviceone" + i).textContent);
@@ -907,13 +958,19 @@ selectedDateInput.addEventListener('change', function () {
           total  += val;
         }        
     }
-    // console.log(total);
+    
+    // console.log('services', services);
     totalAmountElement1.textContent = `$${total.toFixed(2)}`;
   }
-  function updateTotalAmountadv(e, id) {
+  function updateTotalAmountadv(e, id, name) {
     let price = 0;
     price = parseFloat(e.textContent) || 0;
-    totalAmountadv += price;
+    // totalAmountadv += price;
+    serviceElements = {};
+    serviceElements.serviceId = id;
+    serviceElements.serviceName = name;
+    serviceElements.price = price;
+    services.push(serviceElements);
     var total = 0;
     for( var i = 1; i <= selectedServices.length; i++ ) {
         var val = parseInt(document.getElementById("serviceadv_" + i).textContent);
@@ -921,6 +978,7 @@ selectedDateInput.addEventListener('change', function () {
           total  += val;
         }        
     }
+
     // console.log(total);
     totalAmountElement.textContent = `$${total.toFixed(2)}`;
   }
@@ -1158,7 +1216,12 @@ document.getElementById('submit-date').addEventListener('click', function () {
         const userContent = document.getElementById('display-task-description').textContent;
 
         // Get the selected services and total amount
-        const selectedServices = getSelectedServices();
+        // const selectedServices = getSelectedServices();services
+        // const selectedServices1 = getSelectedServices();
+        const selectedServices = services;
+        // console.log('selectedServices', selectedServices);
+        // console.log('selectedServices1', selectedServices1);
+        // return;
         const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
         // const totalAmount1 = totalAmountElement1.textContent.replace('$', '');
         // const totalAmount = totalAmountElement1.textContent.replace('$', '');
@@ -1188,11 +1251,9 @@ document.getElementById('submit-date').addEventListener('click', function () {
             statusFrom: 'customer_send',
             messageContent: messageContent,
             userContent: userContent,
-            selectedServices: getSelectedServicesWithPrices(),
+            selectedServices: selectedServices,
             totalAmount: totalAmount1,
         };
-        console.log(selectedServices);
-        return;
         // Send the non-image data to the server using AJAX
         const xhr = new XMLHttpRequest();
         xhr.open('POST', 'php.php');
@@ -1242,18 +1303,28 @@ function formatTime(time) {
 
 //     // Function to get the selected services
     function getSelectedServices() {
-     
-      const selectedServices = [];
+        const selectedServices = [];
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    const serviceId = checkbox.getAttribute('data-service-id');
+                    const serviceName = checkbox.getAttribute('data-name');
+                    // const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+                    // const price = parseFloat(priceElement.textContent) || 0;
+                    // selectedServices.push({ serviceId, serviceName, price });
+                    selectedServices.push({ serviceId, serviceName,});
+                }
+            });
+            return selectedServices;     
+    //   const selectedServices = [];
+    //   checkboxes.forEach((checkbox) => {
+    //       if (checkbox.checked) {
+    //           const serviceId = checkbox.getAttribute('data-service-id');
+    //           const serviceName = checkbox.getAttribute('data-name');
+    //           selectedServices.push({ serviceId, serviceName });
+    //       }
+    //   });
 
-      checkboxes.forEach((checkbox) => {
-          if (checkbox.checked) {
-              const serviceId = checkbox.getAttribute('data-service-id');
-              const serviceName = checkbox.value;
-              selectedServices.push({ serviceId, serviceName });
-          }
-      });
-
-      return selectedServices;
+    //   return selectedServices;
 }
 
 
@@ -1326,12 +1397,10 @@ submitButton.addEventListener('click', function () {
       statusFrom: 'customer_send',
       messageContent: `You receive a new order from ${customerFullName}`,
       userContent: userContent,
-      selectedServices: getSelectedServicesWithPrices(),
+      selectedServices: services,//getSelectedServicesWithPrices(),
       totalAmount: totalAmount,
   };
 
-  console.log(data);
-  return;
 // Send the non-image data to the server using AJAX
 const xhr = new XMLHttpRequest();
     xhr.open('POST', 'advance_proposal.php');

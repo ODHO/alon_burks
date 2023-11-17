@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $servicename[] = $val->serviceName;
         }
         print_r($selectedServices);
-        die();
+        // die();
         $serviceNames  = implode(', ',$servicename);
         $stmt->bind_param('ssssssdss', $customerId, $providerId, $selectedDate, $selectedTime, $userContent, $serviceNames, $totalAmount, $selectedTimeTo, $proposal_status);
         // $abc = $sql = "INSERT INTO customer_proposal (customer_id, provider_id, selected_date, selected_time, user_content, selected_services, total_amount, selected_time_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
