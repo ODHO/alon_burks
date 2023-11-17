@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'connection.php';
+include "connection.php";
 
 // Check connection
 if ($conn->connect_error) {
@@ -8,13 +8,13 @@ if ($conn->connect_error) {
 }
 $error_message = "";
 
-if (isset($_POST['login'])) {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+if (isset($_POST["login"])) {
+    $email = $_POST["email"];
+    $password = $_POST["password"];
 
     // Destroy the existing session
     session_destroy();
-    
+
     // Start a new session
     session_start();
 
@@ -24,31 +24,31 @@ if (isset($_POST['login'])) {
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
-        $hashed_password = $row['password'];
+        $hashed_password = $row["password"];
 
         // Verify the provided password against the hashed password in the database
         if (password_verify($password, $hashed_password)) {
             // Password is correct, user is authenticated
 
             // You can set up a session here to maintain user login state
-            $_SESSION['user_id'] = $row['id'];
-            
+            $_SESSION["user_id"] = $row["id"];
+
             // Check the user's role and set a user type in the session
-            if ($row['role_id'] == 3) {
+            if ($row["role_id"] == 3) {
                 // User role is 3, set user type as 'customer'
-                $_SESSION['user_type'] = 'customer';
+                $_SESSION["user_type"] = "customer";
                 header("Location: ./customer/dashboard.php");
-                exit;
-            } elseif ($row['role_id'] == 2) {
+                exit();
+            } elseif ($row["role_id"] == 2) {
                 // User role is 2, set user type as 'provider'
-                $_SESSION['user_type'] = 'provider';
+                $_SESSION["user_type"] = "provider";
                 header("Location: connectback.php");
-                exit;
-            } elseif ($row['role_id'] == 1) {
+                exit();
+            } elseif ($row["role_id"] == 1) {
                 // User role is 1, set user type as 'admin'
-                $_SESSION['user_type'] = 'admin';
+                $_SESSION["user_type"] = "admin";
                 header("Location: ./admin/dashboard.php");
-                exit;
+                exit();
             } else {
                 // Invalid role, display an error message
                 $error_message = "Invalid role for login.";
@@ -137,11 +137,11 @@ if (isset($_POST['login'])) {
                               <input placeholder="Email" name="email" type="email" tabindex="1" required autofocus>
                             </fieldset>
                             <fieldset>
-                                <input placeholder="Password" name="password" type="text" tabindex="6" required>
+                                <input placeholder="Password" name="password" type="password" tabindex="6" required>
                               </fieldset>
                               <fieldset class="check">
                                 <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike">
-  <label for="vehicle1"> Remember me </label> 
+                  <label for="vehicle1"> Remember me </label> 
                               </fieldset>
                               <div id="error-messages" style="color:red;"></div>
 

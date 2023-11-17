@@ -783,6 +783,7 @@ foreach ($workingImages as $imagePath) {
         const addProposalButton = document.getElementById('addProposal');
         const proposalContainer = document.querySelector('.proposal-container');
         const proposalTemplate = document.querySelector('.proposal');
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         let totalAmount1 = 0;
         let totalAmountadv = 0;
         const maxProposals = 9;
@@ -866,7 +867,7 @@ selectedDateInput.addEventListener('change', function () {
           }
       });
         });
-        var element = {};
+  var element = {};
   function addingServices(e){
     const list1 = document.createElement('ul');
     const list2 = document.createElement('ul');
@@ -874,17 +875,15 @@ selectedDateInput.addEventListener('change', function () {
     const listItem1 = document.createElement('li');
     const listItem2 = document.createElement('li');
     const listItemadv = document.createElement('li');
-   
     element.id = e.value;
     element.serviceName = e.dataset.name;
-    element.price = "0";
+    // element.price = "0";
     selectedServices.push(element);
-    // console.log('selectedServices', selectedServices);
     let counter = 0;
     for (var i = 0; i < selectedServices.length; i++) { 
       counter++;
       // console.log('selectedServices',selectedServices[i].id);
-      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone' onblur='updateTotalAmount(this,${selectedServices[i].id})' contenteditable='true'>0</em></span></div>`;
+      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone${counter}' class="serviceone" onblur="updateTotalAmount(this,${selectedServices[i].id});" contenteditable='true'>0</em></span></div>`;
       listItem2.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='servicetwo_${selectedServices[i].id}'>0</em></span></div>`; 
       listItemadv.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceadv_${counter}' onblur='updateTotalAmountadv(this,${selectedServices[i].id})' contenteditable='true'>0</em></span></div>`;
       list1.appendChild(listItem1);
@@ -898,27 +897,32 @@ selectedDateInput.addEventListener('change', function () {
   function updateTotalAmount(e, id) {
     let price = 0;
     price = parseFloat(e.textContent) || 0;
-    totalAmount1 += price;
-    const serviceVal = document.getElementById('servicetwo_'+id);    
-    serviceVal.textContent = price;
-    totalAmountElement1.textContent = `$${totalAmount1.toFixed(2)}`;
-    selectedServices.forEach(myFunction);
-    function myFunction(item) {
-      if(id === item.id){
-        
-      }
-      console.log(item.id); 
-      console.log(serviceVal.innerText);
+    // totalAmount1 += price;
+    const serviceVal = document.getElementById('servicetwo_'+id); 
+    serviceVal.textContent = price; 
+    var total = 0;
+    for( var i = 1; i <= selectedServices.length; i++ ) {
+        var val = parseInt(document.getElementById("serviceone" + i).textContent);
+        if(val>0){
+          total  += val;
+        }        
     }
-    // for(let i=0; i<=selectedServices.length; i++){
-    //   console.log('s',selectedServices[i]);
-    // }
+    // console.log(total);
+    totalAmountElement1.textContent = `$${total.toFixed(2)}`;
   }
   function updateTotalAmountadv(e, id) {
     let price = 0;
     price = parseFloat(e.textContent) || 0;
     totalAmountadv += price;
-    totalAmountElement.textContent = `$${totalAmountadv.toFixed(2)}`;
+    var total = 0;
+    for( var i = 1; i <= selectedServices.length; i++ ) {
+        var val = parseInt(document.getElementById("serviceadv_" + i).textContent);
+        if(val>0){
+          total  += val;
+        }        
+    }
+    // console.log(total);
+    totalAmountElement.textContent = `$${total.toFixed(2)}`;
   }
 
   function addProposal() {
@@ -1038,220 +1042,215 @@ selectedDateInput.addEventListener('change', function () {
 
 //   // ... (rest of your existing script)
 
-// </script>
-
-
- 
- <script>
 //    // JavaScript
-//    document.getElementById('task-description').addEventListener('input', function () {
-//         // Get the input from the textarea
-//         const userContent = this.value;
+   document.getElementById('task-description').addEventListener('input', function () {
+        // Get the input from the textarea
+        const userContent = this.value;
 
-//         // Display the input in the <p> element
-//         document.getElementById('display-task-description').textContent = userContent;
-//         document.getElementById('display-task-description1').textContent = userContent;
-//     });
+        // Display the input in the <p> element
+        document.getElementById('display-task-description').textContent = userContent;
+        document.getElementById('display-task-description1').textContent = userContent;
+    });
 //     // selectedTime: document.getElementById('from').value,
-//     document.getElementById('from').addEventListener('input', function () {
-//     // Get the input from the textarea
-//     const selectedTime = this.value;
+    document.getElementById('from').addEventListener('input', function () {
+      // Get the input from the textarea
+      const selectedTime = this.value;
 
-//     // Parse the input as a time and create a Date object
-//     const timeParts = selectedTime.split(':');
-//     const hours = parseInt(timeParts[0], 10);
-//     const minutes = parseInt(timeParts[1], 10);
-//     const isPM = hours >= 12;
+      // Parse the input as a time and create a Date object
+      const timeParts = selectedTime.split(':');
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
+      const isPM = hours >= 12;
 
-//     // Format the time in 12-hour AM/PM format
-//     let formattedTime;
-//     if (hours === 0) {
-//         formattedTime = `12:${minutes} AM`;
-//     } else if (hours === 12) {
-//         formattedTime = `12:${minutes} PM`;
-//     } else if (isPM) {
-//         formattedTime = `${hours - 12}:${minutes} PM`;
-//     } else {
-//         formattedTime = `${hours}:${minutes} AM`;
-//     }
+      // Format the time in 12-hour AM/PM format
+      let formattedTime;
+      if (hours === 0) {
+          formattedTime = `12:${minutes} AM`;
+      } else if (hours === 12) {
+          formattedTime = `12:${minutes} PM`;
+      } else if (isPM) {
+          formattedTime = `${hours - 12}:${minutes} PM`;
+      } else {
+          formattedTime = `${hours}:${minutes} AM`;
+      }
 
-//     // Display the formatted time in the <p> element
-//     document.getElementById('date_display_from').textContent = formattedTime;
-// });
+      // Display the formatted time in the <p> element
+      document.getElementById('date_display_from').textContent = formattedTime;
+    });
 
-//   function preview_images() {
-//     var preview = document.getElementById("image_preview");
-//     var files = document.getElementById("images").files;
+  function preview_images() {
+    var preview = document.getElementById("image_preview");
+    var files = document.getElementById("images").files;
 
-//     if (files.length !== 5) {
-//         alert("Please select exactly 5 images.");
-//         // return;
-//     }
+    if (files.length !== 5) {
+        alert("Please select exactly 5 images.");
+        // return;
+    }
 
-//     preview.innerHTML = ""; // Clear previous preview
+    preview.innerHTML = ""; // Clear previous preview
 
-//     for (var i = 0; i < files.length; i++) {
-//         var file = files[i];
-//         var reader = new FileReader();
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
 
-//         reader.onload = function (e) {
-//             var image = document.createElement("img");
-//             image.src = e.target.result;
-//             image.className = "preview-image";
-//             preview.appendChild(image);
+        reader.onload = function (e) {
+            var image = document.createElement("img");
+            image.src = e.target.result;
+            image.className = "preview-image";
+            preview.appendChild(image);
 
-//             // Add the base64-encoded image data to the data array
-//             data.images.push(e.target.result);
-//         };
+            // Add the base64-encoded image data to the data array
+            data.images.push(e.target.result);
+        };
 
-//         reader.readAsDataURL(file);
-//     }
-//   }
-//   function getSelectedServicesWithPrices() {
+        reader.readAsDataURL(file);
+    }
+  }
+  function getSelectedServicesWithPrices() {
    
-//     const selectedServices = [];
+    const selectedServices = [];
 
-//     checkboxes.forEach((checkbox, index) => {
-//         if (checkbox.checked) {
-//             const serviceId = checkbox.getAttribute('data-service-id');
-//             const serviceName = checkbox.value;
-//             const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
-//             const price = parseFloat(priceElement.textContent) || 0;
-//             selectedServices.push({ serviceId, serviceName, price });
-//         }
-//     });
+    checkboxes.forEach((checkbox, index) => {
+        if (checkbox.checked) {
+            const serviceId = checkbox.getAttribute('data-service-id');
+            const serviceName = checkbox.value;
+            const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+            const price = parseFloat(priceElement.textContent) || 0;
+            selectedServices.push({ serviceId, serviceName, price });
+        }
+    });
 
-//     return selectedServices;
-// }
-// function uploadImages(customerId, providerId, files) {
-//     const formData = new FormData();
+    return selectedServices;
+}
+function uploadImages(customerId, providerId, files) {
+    const formData = new FormData();
 
-//     for (let i = 0; i < files.length; i++) {
-//         formData.append("images[]", files[i]);
-//     }
+    for (let i = 0; i < files.length; i++) {
+        formData.append("images[]", files[i]);
+    }
 
-//     // Include both customerId and providerId in the form data
-//     formData.append("customerId", customerId);
-//     formData.append("providerId", providerId);
-//     // Send the image data to the server using a new AJAX request
-//     const xhr = new XMLHttpRequest();
-//     xhr.open('POST', 'add.php'); // Create a new PHP file to handle image uploads
-//     xhr.send(formData);
+    // Include both customerId and providerId in the form data
+    formData.append("customerId", customerId);
+    formData.append("providerId", providerId);
+    // Send the image data to the server using a new AJAX request
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'add.php'); // Create a new PHP file to handle image uploads
+    xhr.send(formData);
 
-//     xhr.onreadystatechange = function () {
-//         if (xhr.readyState === 4 && xhr.status === 200) {
-//             // Handle the server's response here, if needed
-//             console.log(xhr.responseText);
-//         }
-//     };
-// }
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            // Handle the server's response here, if needed
+            console.log(xhr.responseText);
+        }
+    };
+}
 
-// document.getElementById('submit-date').addEventListener('click', function () {
-//         // Get the customer ID from the input field
-//         const customerId = document.getElementById('customer-id').value;
-//         const providerId = document.getElementById('provider-id').value;
-//     // console.log('check', selectedDateElement);
-//     // return;
-//     const customerFullName = document.getElementById('customerFullName').value;
-//         // const serviceId = document.getElementById('service-id').value;
-//         const messageContent = `You recive a new Advanced Booking from ${customerFullName}`;
-//         // Get the task description from the <p> element
-//         const userContent = document.getElementById('display-task-description').textContent;
+document.getElementById('submit-date').addEventListener('click', function () {
+        // Get the customer ID from the input field
+        const customerId = document.getElementById('customer-id').value;
+        const providerId = document.getElementById('provider-id').value;
+        // console.log('check', selectedDateElement);
+        // return;
+        const customerFullName = document.getElementById('customerFullName').value;
+        // const serviceId = document.getElementById('service-id').value;
+        const messageContent = `You recive a new Advanced Booking from ${customerFullName}`;
+        // Get the task description from the <p> element
+        const userContent = document.getElementById('display-task-description').textContent;
 
-//         // Get the selected services and total amount
-//         const selectedServices = getSelectedServices();
-//         const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
+        // Get the selected services and total amount
+        const selectedServices = getSelectedServices();
+        const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
 
-//         const totalAmount = totalAmountElement.textContent.replace('$', '');
+        const totalAmount = totalAmountElement.textContent.replace('$', '');
         
-//         // Create an array to store the selected image files
-//         const imageFiles = document.getElementById('images').files;
-//         // Parse and format the selectedTime and selectedTimeTo
-//         const selectedTime = document.getElementById('from').value;
-//         const selectedTimeTo = document.getElementById('to').value;
+        // Create an array to store the selected image files
+        const imageFiles = document.getElementById('images').files;
+        // Parse and format the selectedTime and selectedTimeTo
+        const selectedTime = document.getElementById('from').value;
+        const selectedTimeTo = document.getElementById('to').value;
 
-//         const formattedTime = formatTime(selectedTime);
-//         const formattedTimeTo = formatTime(selectedTimeTo);
-//         // Create a JavaScript object with all the non-image data
-//         const data = {
-//             selectedDate: document.getElementById('selected_date').value,
-//             selectedTime: formattedTime, // Use the formatted time
-//             selectedTimeTo: formattedTimeTo, // Use the formatted time
-//             customerId: document.getElementById('customer-id').value,
-//             // providerId: document.getElementById('provider-id').value,
-//             customerId: customerId,
-//             providerId: providerId,
-//             proposal_status: 'OneTime',
-//             statusFrom: 'customer_send',
-//             messageContent: messageContent,
-//             userContent: userContent,
-//             selectedServices: getSelectedServicesWithPrices(),
-//             totalAmount: totalAmount,
-//         };
-//         console.log(data);
-//         // return;
-//         // Send the non-image data to the server using AJAX
-//         const xhr = new XMLHttpRequest();
-//         xhr.open('POST', 'php.php');
-//         xhr.setRequestHeader('Content-Type', 'application/json');
-//         xhr.send(JSON.stringify(data));
+        const formattedTime = formatTime(selectedTime);
+        const formattedTimeTo = formatTime(selectedTimeTo);
+        // Create a JavaScript object with all the non-image data
+        const data = {
+            selectedDate: document.getElementById('selected_date').value,
+            selectedTime: formattedTime, // Use the formatted time
+            selectedTimeTo: formattedTimeTo, // Use the formatted time
+            customerId: document.getElementById('customer-id').value,
+            // providerId: document.getElementById('provider-id').value,
+            customerId: customerId,
+            providerId: providerId,
+            proposal_status: 'OneTime',
+            statusFrom: 'customer_send',
+            messageContent: messageContent,
+            userContent: userContent,
+            selectedServices: getSelectedServicesWithPrices(),
+            totalAmount: totalAmount,
+        };
+        console.log(data);
+        // return;
+        // Send the non-image data to the server using AJAX
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'php.php');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(data));
 
-//         xhr.onreadystatechange = function () {
-//             if (xhr.readyState === 4 && xhr.status === 200) {
-//                 // Handle the server's response here, if needed
-//                 console.log(xhr.responseText);
-//             }
-//         };
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                // Handle the server's response here, if needed
+                console.log(xhr.responseText);
+            }
+        };
 
-//         // After sending non-image data, upload images separately
-//         uploadImages(customerId, providerId, imageFiles);
+        // After sending non-image data, upload images separately
+        uploadImages(customerId, providerId, imageFiles);
     
-// });
+});
 // // Function to format time from 24-hour to 12-hour format
-// function formatTime(time) {
-//     const timeParts = time.split(':');
-//     const hours = parseInt(timeParts[0], 10);
-//     const minutes = timeParts[1];
-//     const isPM = hours >= 12;
+function formatTime(time) {
+    const timeParts = time.split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = timeParts[1];
+    const isPM = hours >= 12;
 
-//     if (hours === 0) {
-//         return `12:${minutes} AM`;
-//     } else if (hours === 12) {
-//         return `12:${minutes} PM`;
-//     } else if (isPM) {
-//         return `${hours - 12}:${minutes} PM`;
-//     } else {
-//         return `${hours}:${minutes} AM`;
-//     }
-// }
-//     // Implement a function to get the selected time from your time selection elements
-//     function getSelectedTime() {
-//         const amPmElement = document.querySelector('#custom-timeslot2 li.selected p');
-//         const hourElement = document.querySelector('#custom-timeslot li.selected p');
-//         const minuteElement = document.querySelector('#custom-timeslot1 li.selected p');
+    if (hours === 0) {
+        return `12:${minutes} AM`;
+    } else if (hours === 12) {
+        return `12:${minutes} PM`;
+    } else if (isPM) {
+        return `${hours - 12}:${minutes} PM`;
+    } else {
+        return `${hours}:${minutes} AM`;
+    }
+}
+    // Implement a function to get the selected time from your time selection elements
+    function getSelectedTime() {
+        const amPmElement = document.querySelector('#custom-timeslot2 li.selected p');
+        const hourElement = document.querySelector('#custom-timeslot li.selected p');
+        const minuteElement = document.querySelector('#custom-timeslot1 li.selected p');
 
-//         const amPm = amPmElement ? amPmElement.textContent : '';
-//         const hour = hourElement ? hourElement.textContent : '';
-//         const minute = minuteElement ? minuteElement.textContent : '00';
+        const amPm = amPmElement ? amPmElement.textContent : '';
+        const hour = hourElement ? hourElement.textContent : '';
+        const minute = minuteElement ? minuteElement.textContent : '00';
 
-//         return `${hour}:${minute} ${amPm}`;
-//     }
+        return `${hour}:${minute} ${amPm}`;
+    }
 
 //     // Function to get the selected services
-//     function getSelectedServices() {
+    function getSelectedServices() {
      
-//       const selectedServices = [];
+      const selectedServices = [];
 
-//       checkboxes.forEach((checkbox) => {
-//           if (checkbox.checked) {
-//               const serviceId = checkbox.getAttribute('data-service-id');
-//               const serviceName = checkbox.value;
-//               selectedServices.push({ serviceId, serviceName });
-//           }
-//       });
+      checkboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+              const serviceId = checkbox.getAttribute('data-service-id');
+              const serviceName = checkbox.value;
+              selectedServices.push({ serviceId, serviceName });
+          }
+      });
 
-//       return selectedServices;
-// }
+      return selectedServices;
+}
 
 
 //     // Function to calculate the total amount based on selected services
@@ -1273,51 +1272,49 @@ selectedDateInput.addEventListener('change', function () {
 //     }
 //     // After preview_images() is called, you can add the base64-encoded images to the data array
 // // Get the submit button
-// const submitButton = document.getElementById('submit-advance');
+const submitButton = document.getElementById('submit-advance');
 
-// // Get the popup message element
-// const popupMessage = document.getElementById('popupMessage');
+// Get the popup message element
+const popupMessage = document.getElementById('popupMessage');
 
-// // Add a click event listener to the submit button
-// submitButton.addEventListener('click', function () {
-//     // Show the popup message
-//     popupMessage.style.display = 'block';
+// Add a click event listener to the submit button
+submitButton.addEventListener('click', function () {
+    // Show the popup message
+    popupMessage.style.display = 'block';
 
-//     // Automatically hide the popup message after 5 seconds
-//     setTimeout(function () {
-//         popupMessage.style.display = 'none';
+    // Automatically hide the popup message after 5 seconds
+    setTimeout(function () {
+        popupMessage.style.display = 'none';
 
-//         // Redirect to the service page after 5 seconds
-//         setTimeout(function () {
-//             window.location.href = 'services.php'; // Replace with the actual URL
-//         }, 1000000); // 5000 milliseconds (5 seconds)
-//     }, 40000000); // 5000 milliseconds (5 seconds)
-// });
+        // Redirect to the service page after 5 seconds
+        setTimeout(function () {
+            window.location.href = 'services.php'; // Replace with the actual URL
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
+});
 
 
-// const submitDate = document.getElementById('submit-date');
+const submitDate = document.getElementById('submit-date');
 
-// // Get the popup message element
-// const successMessage = document.getElementById('successMessage');
+// Get the popup message element
+const successMessage = document.getElementById('successMessage');
 
-// // Add a click event listener to the submit button
-// submitDate.addEventListener('click', function () {
-//     // Show the popup message
-//     successMessage.style.display = 'block';
+// Add a click event listener to the submit button
+submitDate.addEventListener('click', function () {
+    // Show the popup message
+    successMessage.style.display = 'block';
 
-//     // Automatically hide the popup message after 5 seconds
-//     setTimeout(function () {
-//       successMessage.style.display = 'none';
+    // Automatically hide the popup message after 5 seconds
+    setTimeout(function () {
+      successMessage.style.display = 'none';
 
-//         // Redirect to the service page after 5 seconds
-//         setTimeout(function () {
-//             window.location.href = 'services.php'; // Replace with the actual URL
-//         }, 1000000); // 5000 milliseconds (5 seconds)
-//     }, 40000000); // 5000 milliseconds (5 seconds)
-// });
+        // Redirect to the service page after 5 seconds
+        setTimeout(function () {
+            window.location.href = 'services.php'; // Replace with the actual URL
+        }, 1000000); // 5000 milliseconds (5 seconds)
+    }, 40000000); // 5000 milliseconds (5 seconds)
+});
 
-</script>
-<script>
   // const selectedServicesList = document.getElementById('selected-services-list1');
   // const totalAmountElement = document.getElementById('total-amount');
  
