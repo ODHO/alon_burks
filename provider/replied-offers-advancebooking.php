@@ -457,7 +457,7 @@ function getServiceImages($services) {
                           </tbody></table>
                     </div>
                       <div class="task-description">
-                          <h2>Counter Description</h2>
+                          <h2>Customer Description</h2>
                           <p><?php echo $userContent?></p>
                       </div>
                     </div>

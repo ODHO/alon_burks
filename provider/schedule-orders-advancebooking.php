@@ -1,3 +1,138 @@
+<?php
+session_start();
+// Function to get customer information from the provider_registration table
+function getCustomerInfo($customerId) {
+  global $conn;
+  $sql = "SELECT fullname, profile_picture, address FROM provider_registration WHERE id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('s', $customerId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          return $row;
+      }
+  }
+  return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
+}
+// Function to get the price of a service from the categories table
+function getCustomerServicesAndPrices($customerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT service_name, price, counter_price FROM customer_services WHERE customer_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('ss', $customerId, $proposalId);
+
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $servicesAndPrices = array();
+
+      while ($row = $result->fetch_assoc()) {
+          $serviceCustomers = $row['service_name'];
+          $priceService = $row['price'];
+          $counterPrice = $row['counter_price'];
+          $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService, 'counter_price' => $counterPrice);
+          // print_r($servicesAndPrices);
+      }
+
+      return $servicesAndPrices;
+  }
+
+  return array();
+}
+function getServicePrice($service) {
+    global $conn;
+    $sql = "SELECT price FROM customer_services WHERE service_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $service);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['price'];
+        }
+    }
+    return 'N/A'; // Provide a default value if service price not found
+  }
+function getCustomerImagesForProvider($customerId, $providerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT image_path FROM customer_images WHERE customer_id = ? AND provider_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('sss', $customerId, $providerId, $proposalId);
+  if ($stmt->execute()) {
+    $result = $stmt->get_result();
+    $images = array();
+    while ($row = $result->fetch_assoc()) {
+      $images[] = $row['image_path'];
+    }
+    return $images;
+  }
+  return array();
+}
+
+
+function getServiceImages($services) {
+  global $conn;
+  $servicesImages = array();
+
+  // Create a prepared statement to select service images based on service names
+  $sql = "SELECT image FROM categories WHERE heading IN (";
+
+  // Create placeholders for each service
+  $placeholders = implode(',', array_fill(0, count($services), '?'));
+
+  $sql .= $placeholders . ")";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+      // Bind each service name to its corresponding placeholder
+      foreach ($services as $index => $service) {
+          $stmt->bind_param('s', $services[$index]);
+
+          if ($stmt->execute()) {
+              $result = $stmt->get_result();
+
+              while ($row = $result->fetch_assoc()) {
+                  $servicesImages[] = $row['image'];
+              }
+          }
+      }
+  }
+
+  return $servicesImages;
+}
+// Assuming you have a function to retrieve advance proposals from the database
+// Assuming you have a function to retrieve advance proposals from the database
+function getAdvanceProposals($providerId, $proposalId, $customerId) {
+  global $conn;
+  
+  $proposals = array();
+
+  $sql = "SELECT * FROM advance_proposal WHERE provider_id = ? AND proposal_id = ? AND customer_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('sss', $providerId, $proposalId, $customerId);
+
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+
+      while ($row = $result->fetch_assoc()) {
+          $proposals[] = $row;
+      }
+  }
+
+  return $proposals;
+}
+function getStatusForEarliestDate($advanceProposals, $earliestDateTime) {
+  foreach ($advanceProposals as $proposal) {
+      $proposalDateTime = strtotime($proposal['selected_date'] . ' ' . $proposal['selected_time']);
+      
+      if ($proposalDateTime === $earliestDateTime) {
+          return $proposal['status'];
+      }
+  }
+
+  return ''; // Default status if not found
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -34,65 +169,7 @@
 <body class="advancebooking">
   <div class="container-scroller">
     <!-- partial:partials/_navbar.html -->
-    <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
-      <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
-        <div class="me-3">
-          <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-bs-toggle="minimize">
-            <span class="icon-menu"></span>
-          </button>
-        </div>
-        <div>
-          <a class="navbar-brand brand-logo" href="index.html">
-            <img src="images/sitelogo-singup.png" alt="logo" />
-          </a>
-          <a class="navbar-brand brand-logo-mini" href="index.html">
-            <img src="images/sitelogo-singup.png" alt="logo" />
-          </a>
-        </div>
-      </div>
-      <div style="padding: 20px 20px;" class="navbar-menu-wrapper d-flex align-items-top"> 
-        <ul class="navbar-nav">
-          <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
-            <h4 style="color: #70BE44; padding-top: 30px;">Hey!</h4>
-            <h1 class="welcome-text">Good Morning, <span class="text-black fw-bold">Dwayne!</span></h1>
-          </li>
-        </ul>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
-           <a href="#"><img class="hmesec" src="./images/home.PNG"/></a>
-          </li>
-          <li><a class="location-buton" href="#"><button><i class="menu-icon mdi mdi-map-marker"></i> Texas, USA Street 2416 A-216</button></a></li>
-        </ul>
-        <ul class="navbar-nav ms-auto">
-     <li class="nav-item dropdown d-none d-lg-block user-dropdown">
-      <div class="text-profile">
-        <div class="profiletext-imagesec">
-        <h2>Dwayne Johnson</h2>
-        <p>ID#214</p>
-      </div>
-        <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-          <img class="img-xs rounded-circle" src="images/faces/face8.jpg" alt="Profile image"> </a>
-      </div>
-            
-            <!-- <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
-              <div class="dropdown-header text-center">
-                <img class="img-md rounded-circle" src="images/faces/face8.jpg" alt="Profile image">
-                <p class="mb-1 mt-3 font-weight-semibold">Dwayne!</p>
-                <p class="fw-light text-muted mb-0">Dwayne@gmail.com</p>
-              </div>
-              <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-account-outline text-primary me-2"></i> My Profile <span class="badge badge-pill badge-danger">1</span></a>
-              <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-message-text-outline text-primary me-2"></i> Messages</a>
-              <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-calendar-check-outline text-primary me-2"></i> Activity</a>
-              <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-help-circle-outline text-primary me-2"></i> FAQ</a>
-              <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Sign Out</a>
-            </div> -->
-          </li>
-        </ul>
-        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-bs-toggle="offcanvas">
-          <span class="mdi mdi-menu"></span>
-        </button>
-      </div>
-    </nav>
+    <?php include 'header.php';?>
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">
       <!-- partial:partials/_settings-panel.html -->
@@ -114,318 +191,538 @@
           </div> 
         </div>
       </div> -->
-      <div id="right-sidebar" class="settings-panel">
-        <i class="settings-close ti-close"></i>
-        <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="todo-tab" data-bs-toggle="tab" href="#todo-section" role="tab" aria-controls="todo-section" aria-expanded="true">TO DO LIST</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="chats-tab" data-bs-toggle="tab" href="#chats-section" role="tab" aria-controls="chats-section">CHATS</a>
-          </li>
-        </ul>
-        <div class="tab-content" id="setting-content">
-          <div class="tab-pane fade show active scroll-wrapper" id="todo-section" role="tabpanel" aria-labelledby="todo-section">
-            <div class="add-items d-flex px-3 mb-0">
-              <form class="form w-100">
-                <div class="form-group d-flex">
-                  <input type="text" class="form-control todo-list-input" placeholder="Add To-do">
-                  <button type="submit" class="add btn btn-primary todo-list-add-btn" id="add-task">Add</button>
-                </div>
-              </form>
-            </div>
-            <div class="list-wrapper px-3">
-              <ul class="d-flex flex-column-reverse todo-list">
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Team review meeting at 3.00 PM
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Prepare for presentation
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox">
-                      Resolve all the low priority tickets due today
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Schedule meeting for next week
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-                <li class="completed">
-                  <div class="form-check">
-                    <label class="form-check-label">
-                      <input class="checkbox" type="checkbox" checked>
-                      Project review
-                    </label>
-                  </div>
-                  <i class="remove ti-close"></i>
-                </li>
-              </ul>
-            </div>
-            <h4 class="px-3 text-muted mt-5 fw-light mb-0">Events</h4>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 11 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Creating component page build a js</p>
-              <p class="text-gray mb-0">The total number of sessions</p>
-            </div>
-            <div class="events pt-4 px-3">
-              <div class="wrapper d-flex mb-2">
-                <i class="ti-control-record text-primary me-2"></i>
-                <span>Feb 7 2018</span>
-              </div>
-              <p class="mb-0 font-weight-thin text-gray">Meeting with Alisa</p>
-              <p class="text-gray mb-0 ">Call Sarah Graves</p>
-            </div>
-          </div>
-          <!-- To do section tab ends -->
-          <div class="tab-pane fade" id="chats-section" role="tabpanel" aria-labelledby="chats-section">
-            <div class="d-flex align-items-center justify-content-between border-bottom">
-              <p class="settings-heading border-top-0 mb-3 pl-3 pt-0 border-bottom-0 pb-0">Friends</p>
-              <small class="settings-heading border-top-0 mb-3 pt-0 border-bottom-0 pb-0 pr-3 fw-normal">See All</small>
-            </div>
-            <ul class="chat-list">
-              <li class="list active">
-                <div class="profile"><img src="images/faces/face1.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Thomas Douglas</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">19 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face2.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <div class="wrapper d-flex">
-                    <p>Catherine</p>
-                  </div>
-                  <p>Away</p>
-                </div>
-                <div class="badge badge-success badge-pill my-auto mx-2">4</div>
-                <small class="text-muted my-auto">23 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face3.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Daniel Russell</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">14 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face4.jpg" alt="image"><span class="offline"></span></div>
-                <div class="info">
-                  <p>James Richardson</p>
-                  <p>Away</p>
-                </div>
-                <small class="text-muted my-auto">2 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face5.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Madeline Kennedy</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">5 min</small>
-              </li>
-              <li class="list">
-                <div class="profile"><img src="images/faces/face6.jpg" alt="image"><span class="online"></span></div>
-                <div class="info">
-                  <p>Sarah Graves</p>
-                  <p>Available</p>
-                </div>
-                <small class="text-muted my-auto">47 min</small>
-              </li>
-            </ul>
-          </div>
-          <!-- chat tab ends -->
-        </div>
-      </div>
+     
       <!-- partial -->
       <!-- partial:partials/_sidebar.html -->
-      <nav class="sidebar sidebar-offcanvas" id="sidebar">
-        <ul class="nav">
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="mdi mdi-view-dashboard menu-icon"></i>
-              <span class="menu-title">Dashboard</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="ui-basic">
-              <i class="menu-icon mdi mdi-format-list-bulleted"></i>
-              <span class="menu-title">In Progress Orders</span>
-            </a>
-          </li>
-          <li class="nav-item active">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="form-elements">
-              <i class="menu-icon mdi mdi-calendar"></i>
-              <span class="menu-title">Scheduled Orders</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="charts">
-              <i class="menu-icon mdi mdi-file-document-box"></i>
-              <span class="menu-title">Completed Orders</span>
+      <?php include 'SideMenu.php';?>
 
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="tables">
-              <i class="menu-icon mdi mdi-label-outline"></i>
-              <span class="menu-title">New Offers</span>
-
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="tables">
-              <i class="menu-icon mdi mdi-chat"></i>
-              <span class="menu-title">Chats</span>
-
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="icons">
-              <i class="menu-icon mdi mdi-account-check"></i>
-              <span class="menu-title">Replied Offers</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#" aria-expanded="false" aria-controls="auth">
-              <i class="menu-icon mdi mdi-star-outline"></i>
-              <span class="menu-title">Ratings & Reviews</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="menu-icon mdi mdi-settings"></i>
-              <span class="menu-title">Service Settings</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="menu-icon mdi mdi-account"></i>
-              <span class="menu-title">Profile Settings</span>
-            </a>
-          </li>
-          <li class="nav-item earning">
-            <a class="nav-link" href="#">
-              <i class="menu-icon mdi mdi-account-card-details"></i>
-              <span class="menu-title">Earning & Withdrawals </span>
-            </a>
-          </li>
-
-          <li class="nav-item signup">
-            <a class="nav-link" href="#">
-              
-              <span class="menu-title">Signout</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
       <!-- partial -->
       <div class="main-panel">
         <!-- MAIN PANEL ROW START -->
+        
         <div class="order-in-progress">
             <h1><b style="color: #70BE44;">Scheduled </b>Order</h1>
-            <div class="onetime-advancebokingbutton">
+              <div class="onetime-advancebokingbutton">
                 <ul>
                   <li><a href="#"><button style="color: #959595; background-color: #E6E6E6;">One Time Service</button></a></li>
                   <li><a href="#"><button style="color: #fff; background-color: #70BE44;">Advance Bookings</button></a></li>
                 </ul>
               </div>
-        <div class="inprogressadvancebooking-box">
-            <div class="row align-items-center">
-                <div class="col-lg-3 mb-4 mb-lg-0 align-items-center">
-                    <div class="prf-imgwithtext">
-                        <img src="./images/user.png">
-                       <h2> David Johnson</h2>
-                       <p>Garden Maintenance</p>
+              <?php
+                include 'connection.php';
+
+// Function to calculate the time difference between two dates
+function getTimeDifference($date1, $date2)
+{
+    $datetime1 = new DateTime($date1);
+    $datetime2 = new DateTime($date2);
+    $interval = $datetime1->diff($datetime2);
+    return $interval->format('%R%a days');
+}
+
+// Function to get advance proposals sorted by the proximity of the selected date to the current date
+function getSortedAdvanceProposals($providerId, $proposalId, $customerId)
+{
+    $advanceProposals = getAdvanceProposals($providerId, $proposalId, $customerId);
+
+    // Get the current date
+    $currentDate = date('Y-m-d');
+
+    // Calculate the time difference for each proposal
+    foreach ($advanceProposals as &$proposal) {
+        $selectedDate = $proposal['selected_date'];
+        $timeDifference = getTimeDifference($currentDate, $selectedDate);
+        $proposal['time_difference'] = $timeDifference;
+    }
+
+    // Sort proposals based on time difference
+    usort($advanceProposals, function ($a, $b) {
+        return strcmp($a['time_difference'], $b['time_difference']);
+    });
+
+    return $advanceProposals;
+}
+
+                $userId = $_SESSION['user_id'];
+                $providerName = $_SESSION['providerName'];
+
+                $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND (status = 'scheduled_offer' or status = 'working' or status = 'completed-pending') AND proposal_status = 'AdvancedProposal' order by current_time desc";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param('s', $userId);
+
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+                    if ($result->num_rows == 0) {
+                      // No orders found for the provider
+                      echo '<h2 class="text-center texter">No new orders available.</h2>';
+                  } else {
+              while ($row = $result->fetch_assoc()) {
+                  $proposalId = $row['id'];
+                  $customerId = $row['customer_id'];
+                  $providerId = $row['provider_id'];
+                  $selectedDate = explode(', ', $row['selected_date']);
+                  $selectedTime = explode(', ', $row['selected_time']);
+                  $selectedTimeTo = explode(', ', $row['selected_time_to']);
+                  $userContent = $row['user_content'];
+                  $selectedServices = explode(', ', $row['selected_services']);
+                  $totalAmount = $row['total_amount'];
+                  $current_time = $row['current_time'];
+                  $counterTotall = $row['counter_totall'];
+                  $customerInfo = getCustomerInfo($customerId);
+                  $advanceProposals = getAdvanceProposals($providerId, $proposalId, $customerId);
+                  $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+                  $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+                  $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+                  $earliestDateTime = null;
+                  // Check if there are upcoming dates
+                  $earliestDateTime = null;
+
+                  foreach ($advanceProposals as $proposal) {
+                      $proposalDateTime = strtotime($proposal['selected_date'] . ' ' . $proposal['selected_time']);
+  
+                      // Check if the proposal date is greater than or equal to today's date
+                      if ($proposalDateTime >= strtotime('today')) {
+                          if (!$earliestDateTime || $proposalDateTime < $earliestDateTime) {
+                              $earliestDateTime = $proposalDateTime;
+                          }
+                      }
+                  }
+                  // Now you have an array containing the selected services and their prices for the customer
+                  $status = getStatusForEarliestDate($advanceProposals, $earliestDateTime);
+
+                  // Check if there are upcoming dates
+                  $hasUpcomingDates = $earliestDateTime !== null;
+                  $customerName = $customerInfo['fullname'];
+                  $customerAddress = $customerInfo['address'];
+                  $profile_picture = $customerInfo['profile_picture'];
+                  $sortedAdvanceProposals = getSortedAdvanceProposals($providerId, $proposalId, $customerId);
+
+                ?>
+            <div style="margin-top:50px">
+              <div class="inprogressadvancebooking-box">
+                <div class="row align-items-center">
+                    <div class="col-lg-3 mb-4 mb-lg-0 align-items-center">
+                        <div class="prf-imgwithtext">
+                            <img src="../customer/<?php echo $profile_picture?>">
+                          <h2> <?php echo $customerName?></h2>
+                          <p>Garden Maintenance</p>
+                        </div>
                     </div>
-                </div>
-                <div class="col-lg-3 mb-2 mb-lg-0 align-items-center">
-                  <div class="user-location">
-                    <p><img src="./images/mappin.png"/>San Francisco, 5th Avenue 22nd Street, House No- B-242</p>
-                  </div>
-              </div>
-                <div class="col-lg-4 mb-4 mb-lg-0 align-items-center">
+                    <div class="col-lg-3 mb-2 mb-lg-0 align-items-center">
+                      <div class="user-location">
+                        <p><img src="./images/mappin.png"/><?php echo $customerAddress ?></p>
+                      </div>
+                    </div>
+                    <div class="col-lg-4 mb-4 mb-lg-0 align-items-center">
                     <div class="scheduled-today">
-                        <h3 style="color: #00B2FF;">Scheduled Today</h3>
-                        <ul class="date">
-                            <li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li>
-                        </ul>
+                    <?php
+                            // Find the earliest upcoming date and time from advance proposals
+                           
+                            
+                            
+                            $hasUpcomingDates = $earliestDateTime !== null;
+
+                            if ($hasUpcomingDates) {
+                              // Check if the earliest date is today's date
+                              $isScheduledToday = date('Y-m-d', $earliestDateTime) === date('Y-m-d');
+                          
+                              // Display the appropriate heading based on whether it's scheduled today or not
+                              if ($isScheduledToday) {
+                                  echo '<h3 style="color: #E72121;">Scheduled Today</h3>';
+                              } else {
+                                  echo '<h3 style="color: #70BE44;">Scheduled</h3>';
+                              }
+                          
+                              // Display the nearest upcoming dates
+                              
+                              $formattedEarliestDateTime = date('d-M-Y, D g:i A', $earliestDateTime);
+                              echo "<ul class='date'><li><em id='sheduledDate'>{$formattedEarliestDateTime}</em></li></ul>";
+                          } else {
+                              // Display a message if there are no upcoming dates
+                              echo '<h3 style="color: #70BE44;">Scheduled</h3>';
+                              echo "<ul class='date'><li>No upcoming bookings.</li></ul>";
+                          }
+                            ?>
+                            </div>
+</div>
+
+
+
+                    <div class="col-lg-2 mb-2 mb-lg-0 align-items-center">
+                        <div class="inprocess-button">
+                        <?php if ($hasUpcomingDates) {
+        $isScheduledToday = date('Y-m-d', $earliestDateTime) === date('Y-m-d');
+        if ($isScheduledToday) {
+            if ($status === 'working') { 
+                ?>
+                    <a href="#"><button style="background-color: #E72121;padding: 17px 6px;" class="process">Working</button></a>
+                <?php
+            } else if ($status === 'completed-pending') {
+                ?>
+                <a href="#"><button style="background-color: #E72121;padding: 17px 6px;" class="process">Completed</button></a>
+                <?php
+            } else if ($status === 'completed') {
+                ?>
+                <a href="#"><button style="background-color: #00B2FF;padding: 17px 6px;" class="process">Completed</button></a>
+                <?php
+            } else {
+                ?>
+                    <a href="#"><button style="background-color: #E72121;padding: 17px 6px;" class="process">Scheduled</button></a>
+                <?php
+            }
+        } else { ?>
+            <a href="#"><button style="background-color: #70BE44;" class="process">Scheduled</button></a>
+            <?php
+        }
+    } else { ?>
+        <a href="#"><button style="background-color: #70BE44;" class="process">Scheduled</button></a>
+        <?php
+    } ?>
+                            <p>Hired On <?php echo $current_time?></p>
+                        </div>
                     </div>
-                </div>
-                <div class="col-lg-2 mb-2 mb-lg-0 align-items-center">
-                    <div class="inprocess-button">
-                        <a href="#"><button style="background-color: #00B2FF;" class="process">Scheduled</button></a>
-                        <p>Hired On 23rd August 2023</p>
-                </div>
-            </div>
-        </div>
-        
+                    <?php
+                       if ($hasUpcomingDates) {
+                        $isScheduledToday = date('Y-m-d', $earliestDateTime) === date('Y-m-d');
+                       if ($isScheduledToday) {
+                       ?>
+                        <div class="services-selected">
+                          <div class="row">
+                            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                                <h2>Service Status</h2>
+                            </div>
+                            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                                <form action="">
+                                <select id='gMonth2' onchange="showStatusPopup(this.value)">
+                          <option value=''>--Select Status--</option>
+                          <?php if ($row['status'] === 'Scheduled') { ?>
+                              <option selected value='1'>Not-Working</option>
+                          <?php } elseif ($proposal['status'] === 'working') { ?>
+                              <option selected value='4'>Working</option>
+                              <option value='2'>Completed</option>
+                              <!-- <option value='2'>Completed</option> -->
+                          <?php } elseif ($proposal['status'] === 'completed-pending') { ?>
+                              <option value='5' selected>Working</option>
+                              <option value='3'>Completed</option>
+                          <?php } ?>
+                    </select>
 
-        <div class="row align-items-center advancebookingschedule">
-          <table style="padding: 20px;">
-            <tbody><tr style="margin-bottom:10px;">
-              <th width="25%">Service Cost Offer</th>
-              <th width="65%">Advance Booking Timings</th>
-              <th width="10%">Status</th>
-            </tr>
-            <tr style="margin-bottom:10px;">
-              <td width="25%"><li class="services-advance"><span><img src="./images/doubletick.png"/></span><strong> Snow Removal </strong><span><img src="./images/Snow Plow.png"/></span></li></td> 
-              <td width="65%" class="date-inner"><li><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-              <td width="10%"><a href="#"><button style="background-color: #70BE44;" class="process">Completed </button></a></td>
-            </tr>
-            <tr style="margin-bottom:10px;">
-              <td width="25%"><li class="services-advance"><span><img src="./images/doubletick.png"/></span><strong> Spring Cleanup </strong><span><img src="./images/Cover Up.png"/></span></li></td>
-              <td width="65%" class="date-inner"><li style="background-color: #FCE2E2;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-              <td width="10%"><a href="#"><button style="background-color: #00B2FF;" class="process">Scheduled </button></a></td>
-            </tr>
-            <tr>
-              <td width="25%"><li class="services-advance"><span><img src="./images/doubletick.png"/></span><strong> Grass Cutting </strong><span><img src="./images/Grass.png"/></span></li></td>
-              <td width="65%" class="date-inner"><li style="background-color: #FFEEB5;"><em>29-June-2023 , MON</em><span>10 am -12 am</span></li></td>
-              <td width="10%"><a href="#"><button style="background-color: #00B2FF;" class="process">Scheduled </button></a></td>
-            </tr>
-           
-          </tbody></table>
+              <script>
+              function showStatusPopup(selectedStatus) {
+                  // Hide all popups first
+                  document.getElementById('notWorkingPopup<?php echo $proposalId?>').style.display = 'hide';
+                  document.getElementById('workingPopup<?php echo $proposalId?>').style.display = 'hide';
+                  document.getElementById('completedPopup<?php echo $proposalId?>').style.display = 'hide';
 
-          <div class="reschedule-detailsbuton">
-            <ul>
+                  if (selectedStatus === '1') {
+                      // Display the "Not-Working" popup
+                      document.getElementById('notWorkingPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else if (selectedStatus === '2') {
+                      // Display the "Working" popup
+                      document.getElementById('workingPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else if (selectedStatus === '3') {
+                      // Display the "Completed" popup
+                      document.getElementById('completedPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else {
+                      // Handle any other status or no selection
+                  }
+              }
               
-              <li>
-                <a href="#"><button style="box-shadow: 7px 3px 22px 0px #00000030;
-                   background-color: #70BE44; color: #fff;">View Details</button></a>
-              </li>
-            </ul>
-          </div>
-  </div>
-    </div>
-        
+              </script>
+               <div class="modal your-offer-selected popup-selected" id="notWorkingPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">You cannot change status until customer verifies the previous status ?</h2>
+                                    
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" onclick="closePopup2('<?php echo $proposalId; ?>')">Close</button>
+                                          </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                          </div>
 
+                          <div class="modal" id="workingPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">You cannot change status until customer verifies the previous status </h2>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <button type="button" onclick="closePopup1('<?php echo $proposalId; ?>')" class="bg-danger">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal" id="completedPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                    <h2>Please move your proposal to the completed portion.</h2>
+                                          <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" onclick="closePopup('<?php echo $proposalId; ?>')">Close</button>
+                                            <button type="button" class="btn btn-primary" class="move-button" onclick="moveToCompleted(<?php echo $proposalId; ?>)">Move</button>
+                                            <input type="hidden" name="providerId" value="<?php echo $userId ?>" id="providerId" />
+                                              <input type="hidden" name="customerId" value="<?php echo $customerId ?>" id="customerId" />
+                                              <input type="hidden" name="providerName" value="<?php echo $providerName ?>" id="providerName" />
+                                          </div>
+                                          <script>
+                                        function moveToCompleted(proposalId) {
+                                            const providerId = document.getElementById('providerId').value;
+                                            const sheduledDate = document.getElementById('sheduledDate').textContent;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const providerName = document.getElementById('providerName').value;
+                                            const messageContent = `Did you like the ${providerName} services? Rate your service provider`;
+
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                statusFrom: 'provider_send',
+                                                status: 'completed',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                providerName: providerName,
+                                                messageContent: messageContent,
+                                            }));
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
+
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                        function closePopup(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#completedPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("completedPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                        function closePopup2(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#notWorkingPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("notWorkingPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                        function closePopup1(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#workingPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("workingPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                    </script>
+                                    </div>
+                                    
+                                    
+                                   
+                                </div>
+                            </div>
+                        </div>
+
+                                  </form>
+                            </div>
+                            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                                <h2>Customer Verification</h2>
+                            </div>
+                            <div class="col-lg-3 mb-3 mb-lg-0 align-items-center">
+                                <a href="#"><button style="background-color: #70BE44; color: #fff;" class="verified">Verified</button></a>
+                            </div>
+                          </div>
+                        </div>
+
+                       <?php
+                    } 
+                  } else {
+                        null;
+                    }
+                    ?>
+                    
+          
+
+                <div class="row align-items-center advancebookingschedule">
+                  <table style="padding: 20px;">
+                      <tbody><tr style="margin-bottom:10px;">
+                        <th width="30%">Services Cost Offer</th>
+                        <th></th>
+                        <th width="55%">Advance Booking Timings</th>
+                        <th width="15%">Status</th>
+                      </tr>
+                      <tr style="margin-bottom:10px;">
+                        <td width="25%">
+                        
+                          <?php foreach ($serviceCustomers as $servicenew) {
+                                $services = $servicenew['service_name'];
+                                $serviceImages = getServiceImages([$services]);
+                                ?>
+                              <li class="services-advance">
+                                <span><img src="./images/doubletick.png"/></span>
+                                <strong> <?php echo $services ?> </strong>
+                                <span><img src="../admin/uploads/<?php echo $serviceImages[0]?>"/></span>
+                              </li>
+                          <?php } ?>
+                        </td> 
+                        <td width="5%">
+                       
+                        <?php $displayTotal = isset($counterTotall) ? $counterTotall : $totalAmount; 
+                        foreach ($serviceCustomers as $servicenew) {
+                                $servicePrice = $servicenew['price'];
+
+                                if (isset($servicenew['counter_price'])) {
+                                  $counterPrice = $servicenew['counter_price'];
+                              } else {
+                                  // If counter price is not available, use the original service price
+                                  $counterPrice = $servicePrice;
+                              }
+                                ?>
+                              <li style="margin-top:10px;" class="price-advance" style="background-color:#D9D9D9;">
+                                
+                                <strong>$<?php echo $counterPrice; ?></strong>
+                              </li>
+                          <?php } ?>
+                        </td>
+                        <td width="55%" class="date-inner">
+                        <?php foreach ($advanceProposals as $proposal): ?>
+                            <?php if ($proposal['status'] === 'working') { 
+                              echo '';
+                            } else {
+                              ?>
+                            <li style="margin-top:10px;"><em><?php echo date('d-M-Y , D', strtotime($proposal['selected_date'])); ?></em><span><?php echo $proposal['selected_time']; ?> - <?php echo $proposal['selected_time_to']; ?></span></li>
+                              <?php
+                            }?>
+
+                          <?php endforeach; ?>
+                        </td>
+
+                        <td width="15%">
+                        <?php foreach ($advanceProposals as $proposal): ?>
+                            <?php if ($proposal['status'] === 'working') { 
+                              echo '';
+                              ?>
+                           
+                            <?php } else if ($proposal['status'] === 'completed-pending') { ?>
+                          <a href="#"><button style="background-color: #70BE44;margin-top:10px;" class="process">Completed </button></a>
+                          <?php } else if ($proposal['status'] === 'completed') {  ?>
+                            <a href="#"><button style="background-color: #70BE44;margin-top:10px;" class="process">Completed </button></a>
+                          <?php } else { ?>
+                            <a href="#"><button style="background-color: #E72121;margin-top:10px;" class="process">Scheduled </button></a>
+                          <?php } ?>
+                          <?php endforeach; ?>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="viewgallery">
+
+                    <div class="content1<?php echo $proposalId?> hidden progress-gallery">
+                        <div class="row">
+                          <div class="col-md-5">
+                            <div class="location-images">
+                              <h5>Location Images </h5>
+                              <ul class="gallery-images">
+                              <?php
+                              foreach (array_slice($customerImages, 0, 5) as $imagePath) {
+                              ?>
+                                  <li>
+                                      <img src="../customer/<?php echo $imagePath; ?>" alt="Customer Image" />
+                                  </li>
+                              <?php
+                              }
+                              ?>
+                              </ul>
+                            </div>
+                          </div>
+                          <div class="col-md-7">
+                            <div class="order-details-progress">
+                              <h2>Order details</h2>
+                              <ul class="orderdetails-lists">
+                              <?php $displayTotal = isset($counterTotall) ? $counterTotall : $totalAmount;
+                              foreach ($serviceCustomers as $servicenew) {
+                              $services = $servicenew['service_name'];
+                              $servicePrice = $servicenew['price'];
+                              
+                              // Check if counter service price is available
+                              if (isset($servicenew['counter_price'])) {
+                                  $counterPrice = $servicenew['counter_price'];
+                              } else {
+                                  // If counter price is not available, use the original service price
+                                  $counterPrice = $servicePrice;
+                              }
+                              ?>
+                              <li>
+                                  <em><?php echo $services ?></em>
+                                  <span style="color: #70BE44;">$<?php echo $counterPrice ?></span>
+                              </li>
+                              <?php } ?>
+                                <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ <?php echo $displayTotal?></b></span></li>
+                              </ul>
+                            </div>
+                          </div>
+                          <div class="task-description">
+                          <h2>Customer Description</h2>
+                          <p style="text-align: left;"><?php echo $userContent?></p>
+                      </div>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="reschedule-detailsbuton">
+                    <ul>
+                      <li>
+                        <button style="box-shadow: 7px 3px 22px 0px #00000030;
+                          background-color: #70BE44; color: #fff;" class="read-more-button1<?php echo $proposalId?>">View Details</button>
+                      </li>
+                    </ul>
+                  </div>
+                  <script>
+        const content1<?php echo $proposalId ?> = document.querySelector('.content1<?php echo $proposalId ?>');
+        const readMoreButton1<?php echo $proposalId ?> = document.querySelector('.read-more-button1<?php echo $proposalId ?>');
+
+        readMoreButton1<?php echo $proposalId ?>.addEventListener('click', function () {
+            if (content1<?php echo $proposalId ?>.classList.contains('hidden')) {
+                content1<?php echo $proposalId ?>.classList.remove('hidden');
+                readMoreButton1<?php echo $proposalId ?>.textContent = 'See Less';
+            } else {
+                content1<?php echo $proposalId ?>.classList.add('hidden');
+                readMoreButton1<?php echo $proposalId ?>.textContent = 'View Details';
+            }
+        });
+    </script>
+                </div>
+              </div>
+            </div>
+             <?php
+              }
+            }
+        } else {
+            echo 'Error executing the query.';
+        }
+        ?>
+        
+       
        
     </div>
         </div>

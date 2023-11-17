@@ -194,7 +194,7 @@ include 'Black_logo_header.php'
 
               $userId = $_SESSION['user_id'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' ORDER BY current_time DESC";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -365,7 +365,7 @@ include 'Black_logo_header.php'
 
               $userId = $_SESSION['user_id'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' ORDER BY current_time DESC";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -539,7 +539,7 @@ include 'Black_logo_header.php'
               $userId = $_SESSION['user_id'];
               $customerFullName = $_SESSION['customerFullName'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'working' OR status = 'order_in_progress') ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ?  AND proposal_status = 'OneTime' AND (status = 'working' OR status = 'order_in_progress') ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
