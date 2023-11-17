@@ -340,7 +340,7 @@ function getServiceImages($service) {
     
                             <div style="text-align: right;" class="col-lg-6 mb-3 mb-lg-0 align-self-center">
                                 <h5 class="pending"><span style="background-color: #70BE44;">Replied</span></h5>
-                                <h6 style="color: #72B763;">Offered On <?php echo $current_time?></h6>
+                                <h6 style="color: #72B763;">Offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h6>
                             </div>
                         </div>
                         <div class="row bio-myoffer onetimepayment repliedoffer" style="padding-top: 30px;padding-bottom: 30px;">
@@ -563,7 +563,7 @@ function getServiceImages($service) {
 
                             <div style="text-align: right;" class="col-lg-6 mb-3 mb-lg-0 align-self-center">
                                 <h5 class="pending"><span>Pending</span></h5>
-                                <h6 style="color: #72B763;">Offered On <?php echo $current_time ?></h6>
+                                <h6 style="color: #72B763;">Offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h6>
                             </div>
                         </div>
 
@@ -735,7 +735,7 @@ function getServiceImages($service) {
                         </div>
                         <div style="text-align: right;" class="col-lg-6 mb-3 mb-lg-0 align-self-center">
                             <h5 class="pending"><span>Pending</span></h5>
-                            <h6 style="color: #72B763;">Offered On <?php echo $current_time ?></h6>
+                            <h6 style="color: #72B763;">Offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h6>
                         </div>
                     </div>
                     <div class="row bio-myoffer onetimepayment" style="padding-top: 30px;">
@@ -987,7 +987,7 @@ function getServiceImages($service) {
     
                             <div style="text-align: right;" class="col-lg-6 mb-3 mb-lg-0 align-self-center">
                                 <h5 class="pending"><span style="background-color: #70BE44;">Replied</span></h5>
-                                <h6 style="color: #72B763;">Offered On <?php echo $current_time?></h6>
+                                <h6 style="color: #72B763;">Offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h6>
                             </div>
                         </div>
                         <div class="row bio-myoffer onetimepayment repliedoffer" style="padding-top: 30px;padding-bottom: 30px;">

@@ -15,29 +15,34 @@ function getCustomerInfo($providerId) {
   }
   return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
 }
-// Function to get the price of a service from the categories table
-function getCustomerServicesAndPrices($providerId, $proposalId, $userId) {
+function getCustomerServicesAndPrices($providerId, $proposalId, $userId)
+{
     global $conn;
-    $sql = "SELECT service_name, price, counter_price FROM customer_services WHERE provider_id = ? AND proposal_id = ? AND customer_id = ?";
+    $sql =
+        "SELECT service_name, price, counter_price FROM customer_services WHERE provider_id = ? AND proposal_id = ? AND customer_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sss', $providerId, $proposalId, $userId);
+    $stmt->bind_param("sss", $providerId, $proposalId, $userId);
 
     if ($stmt->execute()) {
         $result = $stmt->get_result();
-        $servicesAndPrices = array();
+        $servicesAndPrices = [];
 
         while ($row = $result->fetch_assoc()) {
-            $serviceCustomers = $row['service_name'];
-            $priceService = $row['price'];
-            $counterPrice = $row['counter_price'];
-            $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService, 'counter_price' => $counterPrice);
+            $serviceCustomers = $row["service_name"];
+            $priceService = $row["price"];
+            $counterPrice = $row["counter_price"];
+            $servicesAndPrices[] = [
+                "service_name" => $serviceCustomers,
+                "price" => $priceService,
+                "counter_price" => $counterPrice,
+            ];
             // print_r($servicesAndPrices);
         }
 
         return $servicesAndPrices;
     }
 
-    return array();
+    return [];
 }
 function getServicePrice($service) {
     global $conn;
@@ -159,6 +164,8 @@ $statusCounts = array(
     'order_in_progress' => 0,
     'scheduled_offer' => 0,
     'replied_offer' => 0,
+    'completed' => 0,
+    'completed-pending' => 0,
     // Add more statuses as needed
 );
 
@@ -180,13 +187,17 @@ if ($stmt->execute()) {
     }
 }
 
-// Output the count of proposals for each status
+// Calculate the total count for both statuses
+$totalCompletedCount = $statusCounts['completed'] + $statusCounts['completed-pending'];
+
+// Output the count of proposals for each status and the total count
 echo '<div class="col-lg-4 mb-3 mb-lg-0">';
 echo '<div class="miles-runners">';
-echo '<number>' . $statusCounts['order_in_progress'] . '</number>';
-echo '<p>Completed Tasks</p>';
+echo '<number>' . $totalCompletedCount . '</number>';
+echo '<p>Total Completed Tasks</p>';
 echo '</div>';
 echo '</div>';
+
 
 echo '<div class="col-lg-4 mb-3 mb-lg-0">';
 echo '<div class="miles-runners">';
@@ -243,7 +254,7 @@ echo '</div>';
 
               $userId = $_SESSION['user_id'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'order_in_progress' OR status = 'scheduled_offer') ORDER BY status = 'order_in_progress' DESC, status = 'scheduled_offer' DESC";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'order_in_progress' OR status = 'scheduled_offer') AND proposal_status = 'OneTime' ORDER BY status = 'order_in_progress' DESC, status = 'scheduled_offer' DESC";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -283,7 +294,7 @@ echo '</div>';
                                     <div class="dash-text-all">
                                   <h5><?php echo $customerName?></h5>
                                   <h6>Garden Maintenance</h6>
-                                  <h4>Hired On <?php echo $current_time?></h4>
+                                  <h4>Hired On <?php echo date('d-M-Y , D', strtotime($current_time))?></h4>
                                   </div>
                                   </div>
                                   <div class="dash-order-list">
@@ -368,7 +379,7 @@ echo '</div>';
               $userId = $_SESSION['user_id'];
               $customerFullName = $_SESSION['customerFullName'];
 
-              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'replied_offer'";
+              $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'replied_offer' AND proposal_status = 'OneTime'";
               $stmt = $conn->prepare($sql);
               $stmt->bind_param('s', $userId);
 
@@ -386,9 +397,9 @@ echo '</div>';
                 $selectedTime = $row['selected_time'];
                 $userContent = $row['user_content'];
                 $selectedServices = explode(', ', $row['selected_services']);
-                $totalAmount = $row['total_amount'];
-                $current_time = $row['current_time'];
-                $currentTotall = $row['counter_totall'];
+                $totalAmount = $row["total_amount"];
+                $current_time = $row["current_time"];
+                $counterTotall = $row["counter_totall"];
 
                 // Retrieve customer name and address based on customerId
                 $customerInfo = getCustomerInfo($providerId);
@@ -514,7 +525,7 @@ echo '</div>';
                                         <div class="dash-text-all">
                                           <h5><?php echo $customerName?></h5>
                                           <h6>Garden Maintenance</h6>
-                                          <h4>offered On <?php echo $current_time?></h4>
+                                          <h4>offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h4>
                                         </div>
                                         <div class="dash-order-list">
                                           <ul>
@@ -550,7 +561,24 @@ echo '</div>';
                                         $counter++; } ?>
                                         <li style="
     display: flow-root;
-"><span>Counter Offer : $<?php echo $currentTotall?></span></li>
+"><span>Counter Offer : $<?php  $displayTotal = isset($counterTotall)
+                        ? $counterTotall
+                        : $totalAmount;
+                          foreach ($serviceCustomers as $servicenew) {
+
+                            $services = $servicenew["service_name"];
+                            $servicePrice = $servicenew["price"];
+    
+                            // Check if counter service price is available
+                            if (isset($servicenew["counter_price"])) {
+                                $counterPrice = $servicenew["counter_price"];
+                            } else {
+                                // If counter price is not available, use the original service price
+                                $counterPrice = $servicePrice;
+                            }
+                            
+                        } ?>
+                                <?php echo $displayTotal?>
                                           </ul>
                                         </div>
                                         <div class="recent-button">

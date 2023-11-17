@@ -233,7 +233,7 @@ function getServiceImages($service) {
                   <div class="services-needed">
                     <ul>
                       <li><h4>Services Needed</h4></li>
-                      < <?php foreach ($selectedServices as $service) { ?>
+                       <?php foreach ($selectedServices as $service) { ?>
                             <li><?php echo $service; ?> <img src="./images/check.png"/></li>
                         <?php } ?>
                         <li class="number"><?php echo count($selectedServices); ?></li>

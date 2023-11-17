@@ -378,7 +378,7 @@ function getSortedAdvanceProposals($providerId, $proposalId, $customerId)
         <a href="#"><button style="background-color: #70BE44;" class="process">Scheduled</button></a>
         <?php
     } ?>
-                            <p>Hired On <?php echo $current_time?></p>
+                            <p>Hired On Hired On <?php echo date('d-M-Y , D', strtotime($current_time))?></p>
                         </div>
                     </div>
                     <?php
