@@ -227,7 +227,7 @@ function getServiceImages($service) {
                                             const providerId = document.getElementById('providerId').value;
                                             const customerId = document.getElementById('customerId').value;
                                             const providerName = document.getElementById('providerName').value;
-                                            const messageContent = `${providerName} has accepted your offer.`;
+                                            const messageContent = `${providerName} has accepted your offer you have to pay firstly then your order will be schedule. <a href='http://localhost:81/alon_burks/customer/checkout.php?proposalid=${proposalId}' target='_blank'>Pay..</a>`;
 
                                             // Send an AJAX request to update the status to "scheduled_offer" and send a message
                                             const xhr = new XMLHttpRequest();

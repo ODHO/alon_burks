@@ -1,6 +1,111 @@
 <?php
-session_start();
+  session_start();
+  include "../helper/encryption.php";
+  include "../helper/decryption.php";
+  include "connection.php";
+  $encrp = new encryption();
+  $decrp = new decryption();
+  function getProposalDetails()
+  {
+      global $conn;
+      // $sql_proposal =
+      //       "SELECT * FROM `customer_proposal` inner join `customer_services` on 
+      //       `customer_proposal`.`provider_id` = `customer_services`.`provider_id` 
+      //       inner join `provider_registration` on `customer_proposal`.`provider_id` = `provider_registration`.`id`
+      //       where `customer_proposal`.`id` = ?";
 
+  $sql_proposal =
+      "SELECT * FROM `customer_proposal`
+      inner join `provider_registration` on `customer_proposal`.`provider_id` = `provider_registration`.`id`
+      where `customer_proposal`.`id` = ?";
+      $stmt_proposal = $conn->prepare($sql_proposal);
+      $stmt_proposal->bind_param("s", $_GET["proposalid"]);
+      if ($stmt_proposal->execute()) {
+          $result_proposal = $stmt_proposal->get_result();
+          return $result_proposal->fetch_assoc();
+      }
+      return "0";
+  }
+  function getCustomerDetails()
+  {
+    global $conn;
+    $sql = "SELECT id, fullname, profile_picture, phone, address FROM provider_registration WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $_SESSION["user_id"]);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row;
+        }
+    }
+    return "";//array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found}
+  }
+  function getCompletedProposalCount($providerId)
+  {
+      global $conn;
+      $countCompletedSql = "SELECT COUNT(*) as completed_pending_count FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'completed')";
+      $countCompletedStmt = $conn->prepare($countCompletedSql);
+      $countCompletedStmt->bind_param('s', $providerId);
+      
+      if ($countCompletedStmt->execute()) {
+          $countCompletedResult = $countCompletedStmt->get_result();
+          $countCompletedRow = $countCompletedResult->fetch_assoc();
+          return $countCompletedRow['completed_pending_count'];
+      }
+      return 0;
+  }
+  function getAvailableHours($providerId)
+  {
+    global $conn;
+    $sql = "SELECT * FROM `provider_services` WHERE `provider_id` = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $providerId);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row;
+        }
+    }
+    return "";//array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found}
+  }
+  function getCustomerServicesAndPrices($providerId, $proposalId, $userId)
+{
+    global $conn;
+    $sql =
+        "SELECT service_name, price, counter_price FROM customer_services WHERE provider_id = ? AND proposal_id = ? AND customer_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sss", $providerId, $proposalId, $userId);
+
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $servicesAndPrices = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $serviceCustomers = $row["service_name"];
+            $priceService = $row["price"];
+            $counterPrice = $row["counter_price"];
+            $servicesAndPrices[] = [
+                "service_name" => $serviceCustomers,
+                "price" => $priceService,
+                "counter_price" => $counterPrice,
+            ];
+            // print_r($servicesAndPrices);
+        }
+
+        return $servicesAndPrices;
+    }
+
+    return [];
+}
+  //Fetching Data
+  $customer = getCustomerDetails(); 
+  $proposal = getProposalDetails();
+  $countCompletedRow = getCompletedProposalCount($proposal['provider_id']);
+  $availablehours = getAvailableHours($proposal['provider_id']);
+  $serviceCustomers = getCustomerServicesAndPrices($proposal['provider_id'], $_GET["proposalid"], $_SESSION["user_id"]);
+  // getCustomerServicesAndPrices($providerId, $proposalId, $userId)
 ?>
 <!DOCTYPE html>
 <html lang="zxx">
@@ -32,15 +137,17 @@ session_start();
   <link href="css/style.css" rel="stylesheet">
   <!-- Font Family -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900;1000&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900;1000&display=swap" rel="stylesheet">
   <!--Favicon-->
   <!-- FONT AWESOME -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
   <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
   <link rel="icon" href="images/favicon.ico" type="image/x-icon">
-
+  <!-- Stripe JS library -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="../assets/js/checkout.js" itemPrice="<?php echo $proposal['total_amount']; ?>" itemName="<?php echo $proposal['selected_services']; ?>" STRIPE_PUBLISHABLE_KEY="pk_test_51ODWQpHjRTxHUNUSZYRHffKB4qGfbk404Q3vO1CAmXmsOB8cIsiE7pjiiqxPeghsxc1jXrMBcD6tYQVa0gp9gblm00cQb7S181" defer></script>
 </head>
 
 <body class="checkout">
@@ -84,34 +191,35 @@ session_start();
         <div class="row">
             <div class="col-lg-12 col-md-12">
                 <div class="card px-0 pt-4 pb-0 mt-3 mb-3">
-                    
-                    <form id="msform">
+                
+            
+                    <form id="msform" method="POST">
                 <fieldset>
                             <div class="form-card" style="padding: 60px 0px;">
                               <div class="row">
                                  <div class="col-lg-7 mb-7 mb-lg-0">
                                   <div class="payment-heading">
                                     <h2>Payment Details</h2>
-                                    <h3>Cardholder Name:</h3>
-                                    <h4>John Johnson</h4>
-                                    <label for="ccn">Credit Card Number:</label>
-                                    <input id="ccn" type="tel" inputmode="numeric" pattern="[0-9\s]{13,19}" 
+                                    <h3</h3>
+                                    <h4><?php  echo $customer['fullname']; ?></h4>
+                                      <div id="paymentElement">
+                                        <!-- Stripe.js injects the Payment Element -->
+                                      </div>
+                                    <!-- <label for="ccn">Credit Card Number:</label> -->
+                                    <!-- <input id="ccn" type="tel" inputmode="numeric" pattern="[0-9\s]{13,19}" 
                                      autocomplete="cc-number" maxlength="19" placeholder="xxxx xxxx xxxx xxxx">
-
-                                     <!-- EXP AND CVC ROW -->
-                                  <div class="row">
+                                     <div class="row">
                                     <div class="col-lg-6 mb-6 mb-lg-0">
                                       <label for="ccn">Exp Date</label>
-<input class="cc-expires" maxlength="4" name="credit-expires" pattern="\d*" placeholder="MM / YY" type="tel" />
-                                    </div>
-
-                                    <div class="col-lg-6 mb-6 mb-lg-0 ffa">
+                                      <input class="cc-expires" maxlength="4" name="credit-expires" pattern="\d*" placeholder="MM / YY" type="tel" />
+                                    </div> -->
+                                    <!-- <div class="col-lg-6 mb-6 mb-lg-0 ffa">
                                       <label for="ccn">CVC</label>
                                       <input class="cc-cvc" maxlength="3" name="credit-cvc" pattern="\d*" placeholder="CVC" type="tel" />
-                                    </div>
-                                  </div>
-                                     <!-- EXP AND CVC ROW END -->
-                                     <input name="phone" placeholder="Phone No." type="text22" />
+                                    </div> -->
+                                  <!-- </div> -->
+                                     <input name="phone" placeholder="Phone No." type="text22" value="<?php echo $customer['phone']; ?>" />
+                                     <input name="customerID" type="hidden" id="customerID" value="<?php echo $customer['id']; ?>" />
 
                                      <div class="payment-method">
                                       <h4>Payment Method</h4>
@@ -126,37 +234,67 @@ session_start();
                                  <div class="col-lg-5 mb-5 mb-lg-0">
                                   <div class="order-details-checkout">
                                     <div class="text-order-image">
-                                      <img src="./images/hiring/hiring1.png"/>
-                                      <h2>David Johnson <br> <span>Lawn Mower</span></h2>
-                                      
+                                      <img src="../provider/<?php echo $proposal['profile_picture']; ?>" width="60" height="60" alt="<?php echo $proposal['fullname']; ?>"/>
+                                      <h2><?php echo $proposal['fullname']; ?> <br> <span><?php echo $proposal['selected_services']; ?></span></h2>
                                     </div>
+                                    
                                     <ul class="order-details-minor" style="width: 100%;">
-                                      <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i> 50+ Completed task</li>
-                                      <li><i style="color: #70BE44" class="fa fa-map-marker" aria-hidden="true"></i> Texas, USA Street 2416 A-216</li>
-                                      <li><i style="color: #70BE44;" class="fa fa-clock" aria-hidden="true"></i> Available hour 12:00 - 24:00 </li>
+                                      <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i>
+                                      <?php 
+                                        if($countCompletedRow > 50 ){
+                                          echo '+50 Completed tasks';
+                                        }else{
+                                          echo $countCompletedRow; echo ' Completed tasks';
+                                        }
+                                      ?>
+                                      </li>
+                                      <li><i style="color: #70BE44" class="fa fa-map-marker" aria-hidden="true"></i><?php echo $proposal['address'];?> Texas, USA Street 2416 A-216</li>
+                                      <li><i style="color: #70BE44;" class="fa fa-clock" aria-hidden="true"></i> Available hour <?php echo date('g:ia', strtotime($availablehours['working_timings_from']));?> - <?php echo date('g:ia', strtotime($availablehours['working_timings_to']));?></li>
                                   </ul>
                                     <div class="pricedetails1">
                                       <h4>Price Details</h4>
                                       <ul>
-                                        <li><em>Hourly Rate</em> <span style="color: #70BE44;">$30/hr</span></li>
-                                        <li><em>Support Platform Fee's</em> <span style="color: #70BE44;">$6.55/hr</span></li>
+                                        <li><em>Rates</em> <span style="color: #70BE44;"><?php echo '$ '.$proposal['total_amount'];?></span></li>
+                                        <!-- <li><em>Support Platform <br/>Fee's (10%)</em> <span style="color: #70BE44;"> -->
+                                        <?php
+                                          // $displayTotal = isset($counterTotall)
+                                          //     ? $counterTotall
+                                          //     : $proposal['total_amount'];
+                                          //       foreach ($serviceCustomers as $servicenew) {
+
+                                          //         $services = $servicenew["service_name"];
+                                          //         $servicePrice = $servicenew["price"];
+                          
+                                          //         // Check if counter service price is available
+                                          //         if (isset($servicenew["counter_price"])) {
+                                          //             $counterPrice = $servicenew["counter_price"];
+                                          //         } else {
+                                          //             // If counter price is not available, use the original service price
+                                          //             $counterPrice = $servicePrice;
+                                          //         }
+                                                  
+                                          //     } 
+                                              //echo '$ '. $displayTotal;
+                                        ?>
+                                        <!-- </span></li> -->
                                         <li><em>Min-Max Rate</em> <span style="color: #70BE44;">$150-250 Approx</span></li>
                                       </ul>
                                     </div>
                                     <div class="taskdes-checkout">
                                       <h4>Task Description</h4>
-                                      <p>I'm Stuck at Norway highway near Crown valley street, I have to 
-                                        wash & tint my car as soon as possible because of this extreme 
-                                        sunny weather. kindly come fast ASAP I'm waiting for you service. 
-                                      </p>
+                                      <p><?php echo $proposal['user_content']; ?></p>
                                     </div>
+                                    <button id="submitBtn" class="btn btn-success">
+                                      <div class="spinner hidden" id="spinner"></div>
+                                      <span id="buttonText">Pay Now</span>
+                                  </button>
                                   </div>
                                  </div>
                                 </div>
                             </div> 
                             </fieldset>
                         
-                    </form>
+                                            </form>
                 </div>
             </div>
         </div>

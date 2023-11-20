@@ -14,7 +14,6 @@ include 'connection.php';
         <div class="collapse navbar-collapse text-center" id="navigation">
             <ul class="navbar-nav ml-auto">
                 
-
                 <?php
                 if (isset($_SESSION['user_id'])) {
                 ?>

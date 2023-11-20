@@ -670,3 +670,113 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- phpMyAdmin SQL Dump
+-- version 5.2.0
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: Nov 17, 2023 at 03:22 PM
+-- Server version: 10.4.25-MariaDB
+-- PHP Version: 7.4.30
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `api`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ratings`
+--
+
+CREATE TABLE `ratings` (
+  `id` int(11) NOT NULL,
+  `proposal_id` int(11) DEFAULT NULL,
+  `provider_id` int(11) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `rating` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp(),
+  `Feedback` varchar(500) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `ratings`
+--
+
+INSERT INTO `ratings` (`id`, `proposal_id`, `provider_id`, `user_id`, `rating`, `created_at`, `updated_at`, `Feedback`) VALUES
+(1, 423, 65, 64, '4', '2023-11-14 18:17:02', '2023-11-14 18:17:02', 'xzcc'),
+(12, 423, 65, 64, '3', '2023-11-14 18:34:10', '2023-11-14 18:34:10', 'helo this is retingg'),
+(13, 423, 65, 64, '4', '2023-11-14 18:35:03', '2023-11-14 18:35:03', 'hello world'),
+(14, 423, 65, 64, '2', '2023-11-14 19:01:20', '2023-11-14 19:01:20', 'sasa'),
+(15, 423, 65, 64, '2', '2023-11-14 19:08:02', '2023-11-14 19:08:02', 'sasa'),
+(17, 422, 65, 64, '3', '2023-11-14 19:12:09', '2023-11-14 19:12:09', 'dsdsds'),
+(18, 422, 65, 64, '2', '2023-11-15 13:29:02', '2023-11-15 13:29:02', 'assaasas');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `ratings`
+--
+ALTER TABLE `ratings`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `provider_id` (`provider_id`),
+  ADD KEY `proposal_id` (`proposal_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `ratings`
+--
+ALTER TABLE `ratings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `ratings`
+--
+ALTER TABLE `ratings`
+  ADD CONSTRAINT `ratings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `provider_registration` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `ratings_ibfk_2` FOREIGN KEY (`provider_id`) REFERENCES `provider_registration` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `ratings_ibfk_3` FOREIGN KEY (`provider_id`) REFERENCES `provider_registration` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `ratings_ibfk_4` FOREIGN KEY (`proposal_id`) REFERENCES `customer_proposal` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+/* update 20-11-2023 */
+alter table `provider_registration` add isAccountVerified boolean DEFAULT false;
+alter table `provider_registration` add stripe_customerId varchar(100)	 DEFAULT 'Stripe Customer ID For User is Null at this Time	';
+alter table `provider_registration` add stripe_accountId varchar(100)	 DEFAULT 'Stripe Account For User is Null at this Time	';
+
+create table provider_bank(
+    id int primary key AUTO_INCREMENT,
+    provider_id int  not null,
+    country_registered varchar(100) not null,
+    bank_name varchar(250) not null,
+    account_no varchar(250) not null,
+    routing_no varchar(250) not null,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN key (provider_id) REFERENCES `provider_registration`(`id`)
+)

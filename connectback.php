@@ -1,6 +1,62 @@
+<?php
+    error_reporting(0);
+    session_start();
+    include 'connection.php';
+    // Include configuration file  
+    require_once 'config.php'; 
+    
+    // Include the Stripe PHP library 
+    require_once 'stripe-php/init.php'; 
+
+    // \Stripe\Stripe::setApiKey(STRIPE_API_KEY); 
+    $stripe = new \Stripe\StripeClient(STRIPE_API_KEY);
+
+    if(isset($_POST['submit'])){
+        global $conn;
+        // Check if the user is logged in and has a valid session
+        if (isset($_SESSION['user_id']) && $_SESSION['user_type'] == 'provider') {
+            if(isset($_POST['country']) && isset($_POST['bank']) && isset($_POST['account_no'])){
+                $country = $_POST['country'];
+                $bank = explode('|', $_POST['bank']);
+                $bank = $bank[1];
+                $accountno = $_POST['account_no'];
+                $routingno = $_POST['routing_no'];
+                $userId = $_SESSION['user_id'];
+                $bankAccount = "";
+                $checkRecordQuery = "SELECT * FROM provider_registration WHERE id =".$userId;
+                $result = $conn->query($checkRecordQuery);
+                if ($result->num_rows > 0) {
+                    $bankAccount = $result->fetch_assoc();
+                }
+                //connecting stripe account
+                // $accounts = $stripe->accountLinks->create([
+                //     'account' => $bankAccount['stripe_accountId'],
+                //     'refresh_url' => 'http://localhost:81/alon_burks/connectback.php',
+                //     'return_url' => 'http://localhost:81/alon_burks/connectback.php',
+                //     'type' => 'account_onboarding'
+                // ]);
+
+                //     
+                $sql =
+                $sql = "INSERT INTO provider_bank (provider_id, country_registered, bank_name, account_no, routing_no)
+                        VALUES ('$userId', '$country', '$bank', '$accountno', '$routingno')";
+                $stmt = $conn->prepare($sql);
+                if ($stmt->execute()) {
+                    $updateQuery = "UPDATE provider_registration SET isAccountVerified = true WHERE id=".$userId;
+                    $stmtupdate = $conn->prepare($updateQuery);
+                    if ($stmtupdate->execute()) {
+                        header("Location: provider/dashboard.php");
+                    }
+                }
+                // print_r($accounts);
+            }
+        }
+    } 
+
+    
+?>
 <!DOCTYPE html>
 <html class="signup-page-build" lang="zxx">
-
 <head>
   <meta charset="utf-8">
   <title>Aaron Burks</title>
@@ -45,7 +101,8 @@
         <div class="row">
             <div class="col-lg-12 col-md-12">
                 <div class="card">
-                    <form id="msform" action="./provider/service-settings.php">
+                    <!-- <form id="msform" action="./provider/service-settings.php"> -->
+                    <form id="msform" action="" method="POST">
                             <div class="form-card" id="conn-bank">
                               <div class="row">
                                  <div class="col-lg-6 mb-6 mb-lg-0 back-sec01">
@@ -60,27 +117,27 @@
                                         <img src="assets/images/connectbank/line.png">
                                     </div>
                                     <h3>Cardholder Name:</h3>
-                                    <select id="country">
-    <option value="USA">USA</option>
-    <option value="Canada">Canada</option>
-    <!-- Add more countries as needed -->
-</select>
+                                    <select id="country" name="country">
+                                        <option value="USA">USA</option>
+                                        <option value="Canada">Canada</option>
+                                        <!-- Add more countries as needed -->
+                                    </select>
 
-<select id="bank">
-    <option value="0">Select Bank</option>
-</select>
+                                    <select id="bank" name="bank">
+                                        <option value="0">Select Bank</option>
+                                    </select>
 
                                     <!-- <h4>Select Bank</h4> -->
                                     <!-- A/C Number-Start -->
 
-                                    <input id="ccn" type="tel" inputmode="numeric" pattern="[0-9\s]{13,19}" 
-                                     autocomplete="ac-number" maxlength="19" placeholder="Account Number / IBAN No:">
+                                    <input id="ccn" type="tel" name="account_no" inputmode="numeric" pattern="[0-9\s]{13,19}" 
+                                            autocomplete="ac-number" maxlength="19" placeholder="Account Number / IBAN No:">
 
                                     <!-- A/C Number-End -->
                                      
                                     <!-- SWIFT / Routing number-Start -->
 
-                                     <input id="ccn" type="tel" inputmode="numeric" pattern="[0-9\s]{13,19}" 
+                                     <input id="ccn" type="tel" inputmode="numeric" name="routing_no" pattern="[0-9\s]{13,19}" 
                                      autocomplete="swift-routing-number" maxlength="19" placeholder="SWIFT / Routing number">
 
                                      <!-- SWIFT / Routing number-End -->
@@ -134,7 +191,7 @@
             const banks = bankData[selectedCountry];
             banks.forEach((bank, index) => {
                 const option = document.createElement('option');
-                option.value = index + 1; // Assign a unique value to each bank option
+                option.value = index + 1 +'|'+ bank; // Assign a unique value to each bank option
                 option.text = bank;
                 bankSelect.appendChild(option);
             });

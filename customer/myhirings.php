@@ -156,6 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           return false;
       }
   }
+
 }
 function getCompletedProposalCount($providerId)
 {
@@ -272,7 +273,7 @@ function getCompletedProposalCount($providerId)
 
       $userId = $_SESSION["user_id"];
 
-      $sql =
+ 
       $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
@@ -485,8 +486,7 @@ echo $countCompletedRow; ?> Completed tasks
 
       $userId = $_SESSION["user_id"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
+      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -677,8 +677,7 @@ echo $countCompletedRow; ?> Completed tasks
       $userId = $_SESSION["user_id"];
       $customerFullName = $_SESSION["customerFullName"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'working' OR status = 'order_in_progress') AND proposal_status = 'OneTime' ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
+      $sql =  "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'working' OR status = 'order_in_progress') AND proposal_status = 'OneTime' ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -989,8 +988,7 @@ echo $countCompletedRow; ?> Completed tasks
 
       $userId = $_SESSION["user_id"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'completed' OR status = 'completed-pending') ORDER BY current_time DESC";
+      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'completed' OR status = 'completed-pending') ORDER BY current_time DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -1075,6 +1073,7 @@ echo $countCompletedRow; ?> Completed tasks
                   <div class="textwith-icon2 last-textinner">
                   <ul class="button-sec">
                       <li><a style="color: #FF4D00;" href="#">Service Completed</a></li>
+                      
                       <?php
                         // Assuming you have a session with the provider's user_id
                         $userId = $_SESSION['user_id'];

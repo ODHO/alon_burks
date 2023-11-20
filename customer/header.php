@@ -18,6 +18,7 @@ include 'connection.php';
                 </li>
 
                 <?php
+                //echo $_SESSION["user_id"].'_2';
                 if (isset($_SESSION['user_id'])) {
                 ?>
                 <li class="nav-item">
