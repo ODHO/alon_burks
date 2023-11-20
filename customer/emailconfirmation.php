@@ -19,9 +19,10 @@ if (isset($_POST['verify'])) {
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         $storedCode = $row['verification_code'];
-
-        echo "Entered Code: " . $code; // Debug statement
-        echo "Stored Code: " . $storedCode; // Debug statement
+        $_SESSION["user_id"] = $row["id"];
+        $_SESSION['customerFullName']= $row['fullname'];
+        // echo "Entered Code: " . $code; // Debug statement
+        // echo "Stored Code: " . $storedCode; // Debug statement
 
         if ($code == $storedCode) {
             // Update the user's is_verified status to 1 (verified)

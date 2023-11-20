@@ -883,9 +883,9 @@ selectedDateInput.addEventListener('change', function () {
     for (var i = 0; i < selectedServices.length; i++) { 
       counter++;
       // console.log('selectedServices',selectedServices[i].id);
-      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone${counter}' class="serviceone" onblur="updateTotalAmount(this,${selectedServices[i].id});" contenteditable='true'>0</em></span></div>`;
+      listItem1.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceone${counter}' class="serviceone" onblur="updateTotalAmount(this,${selectedServices[i].id},'${selectedServices[i].serviceName}');" contenteditable='true'>0</em></span></div>`;
       listItem2.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='servicetwo_${selectedServices[i].id}'>0</em></span></div>`; 
-      listItemadv.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceadv_${counter}' onblur='updateTotalAmountadv(this,${selectedServices[i].id})' contenteditable='true'>0</em></span></div>`;
+      listItemadv.innerHTML = `<div id=${selectedServices[i].id}>${selectedServices[i].serviceName}<span style='color: #70BE44;'>$<em id='serviceadv_${counter}' onblur='updateTotalAmountadv(this,${selectedServices[i].id},"${selectedServices[i].serviceName}")' contenteditable='true'>0</em></span></div>`;
       list1.appendChild(listItem1);
       list2.appendChild(listItem2);
       listadv.appendChild(listItemadv);
@@ -894,12 +894,18 @@ selectedDateInput.addEventListener('change', function () {
     selectedServicesList2.appendChild(list2);
     selectedServicesListAdv.appendChild(listadv);
   }
-  function updateTotalAmount(e, id) {
+  var services = new Array();
+  function updateTotalAmount(e, id, name) {
     let price = 0;
     price = parseFloat(e.textContent) || 0;
     // totalAmount1 += price;
     const serviceVal = document.getElementById('servicetwo_'+id); 
     serviceVal.textContent = price; 
+    serviceElements = {};
+    serviceElements.serviceId = id;
+    serviceElements.serviceName = name;
+    serviceElements.price = price;
+    services.push(serviceElements);
     var total = 0;
     for( var i = 1; i <= selectedServices.length; i++ ) {
         var val = parseInt(document.getElementById("serviceone" + i).textContent);
@@ -907,13 +913,19 @@ selectedDateInput.addEventListener('change', function () {
           total  += val;
         }        
     }
-    // console.log(total);
+    
+    // console.log('services', services);
     totalAmountElement1.textContent = `$${total.toFixed(2)}`;
   }
-  function updateTotalAmountadv(e, id) {
+  function updateTotalAmountadv(e, id, name) {
     let price = 0;
     price = parseFloat(e.textContent) || 0;
-    totalAmountadv += price;
+    // totalAmountadv += price;
+    serviceElements = {};
+    serviceElements.serviceId = id;
+    serviceElements.serviceName = name;
+    serviceElements.price = price;
+    services.push(serviceElements);
     var total = 0;
     for( var i = 1; i <= selectedServices.length; i++ ) {
         var val = parseInt(document.getElementById("serviceadv_" + i).textContent);
@@ -921,6 +933,7 @@ selectedDateInput.addEventListener('change', function () {
           total  += val;
         }        
     }
+
     // console.log(total);
     totalAmountElement.textContent = `$${total.toFixed(2)}`;
   }
@@ -1158,11 +1171,20 @@ document.getElementById('submit-date').addEventListener('click', function () {
         const userContent = document.getElementById('display-task-description').textContent;
 
         // Get the selected services and total amount
-        const selectedServices = getSelectedServices();
+        // const selectedServices = getSelectedServices();services
+        // const selectedServices1 = getSelectedServices();
+        const selectedServices = services;
+        // console.log('selectedServices', selectedServices);
+        // console.log('selectedServices1', selectedServices1);
+        // return;
         const serviceIds = selectedServices.map(service => service.serviceId); // Extract service IDs
-
-        const totalAmount = totalAmountElement.textContent.replace('$', '');
-        
+        // const totalAmount1 = totalAmountElement1.textContent.replace('$', '');
+        // const totalAmount = totalAmountElement1.textContent.replace('$', '');
+        // if(totalAmount1 == '0'){
+        //   const totalAmount = totalAmountElement1.textContent.replace('$', '');
+        // }
+        const totalAmount1 = totalAmountElement1.textContent.replace('$', '');
+        // console.log('totalAmount1',totalAmountElement1.textContent.replace('$', ''));
         // Create an array to store the selected image files
         const imageFiles = document.getElementById('images').files;
         // Parse and format the selectedTime and selectedTimeTo
@@ -1184,11 +1206,9 @@ document.getElementById('submit-date').addEventListener('click', function () {
             statusFrom: 'customer_send',
             messageContent: messageContent,
             userContent: userContent,
-            selectedServices: getSelectedServicesWithPrices(),
-            totalAmount: totalAmount,
+            selectedServices: selectedServices,
+            totalAmount: totalAmount1,
         };
-        console.log(data);
-        // return;
         // Send the non-image data to the server using AJAX
         const xhr = new XMLHttpRequest();
         xhr.open('POST', 'php.php');
@@ -1238,18 +1258,28 @@ function formatTime(time) {
 
 //     // Function to get the selected services
     function getSelectedServices() {
-     
-      const selectedServices = [];
+        const selectedServices = [];
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    const serviceId = checkbox.getAttribute('data-service-id');
+                    const serviceName = checkbox.getAttribute('data-name');
+                    // const priceElement = document.querySelectorAll('em[contenteditable="true"]')[index];
+                    // const price = parseFloat(priceElement.textContent) || 0;
+                    // selectedServices.push({ serviceId, serviceName, price });
+                    selectedServices.push({ serviceId, serviceName,});
+                }
+            });
+            return selectedServices;     
+    //   const selectedServices = [];
+    //   checkboxes.forEach((checkbox) => {
+    //       if (checkbox.checked) {
+    //           const serviceId = checkbox.getAttribute('data-service-id');
+    //           const serviceName = checkbox.getAttribute('data-name');
+    //           selectedServices.push({ serviceId, serviceName });
+    //       }
+    //   });
 
-      checkboxes.forEach((checkbox) => {
-          if (checkbox.checked) {
-              const serviceId = checkbox.getAttribute('data-service-id');
-              const serviceName = checkbox.value;
-              selectedServices.push({ serviceId, serviceName });
-          }
-      });
-
-      return selectedServices;
+    //   return selectedServices;
 }
 
 
@@ -1278,12 +1308,74 @@ const submitButton = document.getElementById('submit-advance');
 const popupMessage = document.getElementById('popupMessage');
 
 // Add a click event listener to the submit button
-submitButton.addEventListener('click', function () {
-    // Show the popup message
-    popupMessage.style.display = 'block';
+const advanceProposals = [];
 
-    // Automatically hide the popup message after 5 seconds
-    setTimeout(function () {
+submitButton.addEventListener('click', function () {
+ 
+  advanceProposals.length = 0;
+
+  for (let i = 0; i <= proposalCount; i++) {
+      const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+      const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+      const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+
+      if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+          const formattedTimeAdv = formatTime(selectedTimeAdv);
+          const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+
+          const proposalData = {
+              selectedDateAdv: selectedDateAdv,
+              selectedTimeAdv: formattedTimeAdv,
+              selectedTimeToAdv: formattedTimeToAdv,
+          };
+
+          advanceProposals.push(proposalData);
+      } else {
+          console.error(`Error: Proposal data for proposal ${i} is missing.`);
+      }
+  }
+
+  updateProposalDisplay();
+
+  const customerId = document.getElementById('customer-id')?.value;
+  const providerId = document.getElementById('provider-id')?.value;
+  const customerFullName = document.getElementById('customerFullName')?.value;
+  const userContent = document.getElementById('display-task-description').textContent;
+  const totalAmount = totalAmountElement.textContent.replace('$', '');
+  const imageFiles = document.getElementById('images').files;
+
+  const data = {
+      advanceProposals: advanceProposals,
+      customerId: customerId,
+      providerId: providerId,
+      proposal_status: 'AdvancedProposal',
+      statusFrom: 'customer_send',
+      messageContent: `You receive a new order from ${customerFullName}`,
+      userContent: userContent,
+      selectedServices: services,//getSelectedServicesWithPrices(),
+      totalAmount: totalAmount,
+  };
+
+// Send the non-image data to the server using AJAX
+const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'advance_proposal.php');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(data));
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            // Handle the server's response here, if needed
+            console.log(xhr.responseText);
+        }
+    };
+
+  // After sending non-image data, upload images separately
+  uploadImages(customerId, providerId, imageFiles);
+  // Show the popup message
+  popupMessage.style.display = 'block';
+
+  // Automatically hide the popup message after 5 seconds
+  setTimeout(function () {
         popupMessage.style.display = 'none';
 
         // Redirect to the service page after 5 seconds
@@ -1354,159 +1446,100 @@ submitDate.addEventListener('click', function () {
 
   <script>
     
-//     let proposalCount = '';
+    let proposalCount = '';
 
-//     document.addEventListener('DOMContentLoaded', function () {
-//     const addProposalButton = document.getElementById('addProposal');
-//     const continueButton = document.getElementById('continueButton');
-//     const proposalContainer = document.querySelector('.proposal-container');
-//     const proposalTemplate = document.querySelector('.proposal');
-//     const maxProposals = 9;
-//     let proposalCount = 0;
+    document.addEventListener('DOMContentLoaded', function () {
+    const addProposalButton = document.getElementById('addProposal');
+    const continueButton = document.getElementById('continueButton');
+    const proposalContainer = document.querySelector('.proposal-container');
+    const proposalTemplate = document.querySelector('.proposal');
+    const maxProposals = 9;
+    let proposalCount = 0;
 
-//     function getRandomPastelColor() {
-//         const letters = '89ABCDEF';
-//         let color = '#';
-//         for (let i = 0; i < 6; i++) {
-//             color += letters[Math.floor(Math.random() * letters.length)];
-//         }
-//         return color;
-//     }
+    function getRandomPastelColor() {
+        const letters = '89ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * letters.length)];
+        }
+        return color;
+    }
 
-//     function updateProposalDisplay() {
-//         const displayContainer = document.querySelector('.advancebookedtimings ul');
-//         displayContainer.innerHTML = '';
+    function updateProposalDisplay() {
+        const displayContainer = document.querySelector('.advancebookedtimings ul');
+        displayContainer.innerHTML = '';
 
-//         for (let i = 0; i <= proposalCount; i++) {
-//             const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
-//             const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
-//             const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
+        for (let i = 0; i <= proposalCount; i++) {
+            const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
+            const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
+            const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
 
-//             if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
-//                 const formattedTimeAdv = formatTime(selectedTimeAdv);
-//                 const formattedTimeToAdv = formatTime(selectedTimeToAdv);
+            if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
+                const formattedTimeAdv = formatTime(selectedTimeAdv);
+                const formattedTimeToAdv = formatTime(selectedTimeToAdv);
 
-//                 const listItem = document.createElement('li');
-//                 listItem.style.backgroundColor = getRandomPastelColor();
-//                 listItem.innerHTML = `
-//                     <em>${selectedDateAdv}, ${formattedTimeAdv} - ${formattedTimeToAdv}</em>
-//                     <span>${formattedTimeAdv} - ${formattedTimeToAdv}</span>
-//                 `;
+                const listItem = document.createElement('li');
+                listItem.style.backgroundColor = getRandomPastelColor();
+                listItem.innerHTML = `
+                    <em>${selectedDateAdv}, ${formattedTimeAdv} - ${formattedTimeToAdv}</em>
+                    <span>${formattedTimeAdv} - ${formattedTimeToAdv}</span>
+                `;
 
-//                 displayContainer.appendChild(listItem);
-//             }
-//         }
-//     }
-//     function addProposal() {
-//             if (proposalCount < maxProposals) {
-//                 const newProposal = proposalTemplate.cloneNode(true);
-//                 proposalContainer.appendChild(newProposal);
+                displayContainer.appendChild(listItem);
+            }
+        }
+    }
+    function addProposal() {
+            if (proposalCount < maxProposals) {
+                const newProposal = proposalTemplate.cloneNode(true);
+                proposalContainer.appendChild(newProposal);
 
 
-//                     // Change the background color of the newly added proposal to a random pastel color
-//                     newProposal.style.backgroundColor = getRandomPastelColor();
-//                     newProposal.style.marginTop = '20px';
-//                     newProposal.style.borderRadius = '20px';
-//                 // Increment the proposal counter
-//                 proposalCount++;
+                    // Change the background color of the newly added proposal to a random pastel color
+                    newProposal.style.backgroundColor = getRandomPastelColor();
+                    newProposal.style.marginTop = '20px';
+                    newProposal.style.borderRadius = '20px';
+                // Increment the proposal counter
+                proposalCount++;
 
-//                 // Update IDs of cloned elements with a counter
-//                 updateElementIds(newProposal, proposalCount);
+                // Update IDs of cloned elements with a counter
+                updateElementIds(newProposal, proposalCount);
 
-//                 // Update the display when a new proposal is added
-//                 updateProposalDisplay(proposalCount);
+                // Update the display when a new proposal is added
+                updateProposalDisplay(proposalCount);
 
-//                 if (proposalCount === maxProposals) {
-//                     addProposalButton.disabled = true;
-//                 }
-//             }
-//         }
+                if (proposalCount === maxProposals) {
+                    addProposalButton.disabled = true;
+                }
+            }
+        }
 
-//     document.addEventListener('input', function (e) {
-//         const targetId = e.target.id;
+    document.addEventListener('input', function (e) {
+        const targetId = e.target.id;
 
-//         if (targetId && (targetId.startsWith('combine-date') || targetId.startsWith('adv-from') || targetId.startsWith('adv-to'))) {
-//             updateProposalDisplay();
-//         }
-//     });
+        if (targetId && (targetId.startsWith('combine-date') || targetId.startsWith('adv-from') || targetId.startsWith('adv-to'))) {
+            updateProposalDisplay();
+        }
+    });
 
-//     addProposalButton.addEventListener('click', function (e) {
-//         e.preventDefault();
-//         addProposal();
-//     });
+    addProposalButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        addProposal();
+    });
 
-//     continueButton.addEventListener('click', function (e) {
-//         e.preventDefault();
-//         addProposal();
-//     });
+    continueButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        addProposal();
+    });
 
-//     // Initialize the advanceProposals array outside the functions
-//     const advanceProposals = [];
+    // Initialize the advanceProposals array outside the functions
+    // const advanceProposals = [];
 
-//     document.getElementById('submit-advance').addEventListener('click', function () {
-//         advanceProposals.length = 0;
+    // document.getElementById('submit-advance').addEventListener('click', function () {
+     
 
-//         for (let i = 0; i <= proposalCount; i++) {
-//             const selectedDateAdv = document.getElementById(`combine-date${i}`)?.value;
-//             const selectedTimeAdv = document.getElementById(`adv-from${i}`)?.value;
-//             const selectedTimeToAdv = document.getElementById(`adv-to${i}`)?.value;
-
-//             if (selectedDateAdv && selectedTimeAdv && selectedTimeToAdv) {
-//                 const formattedTimeAdv = formatTime(selectedTimeAdv);
-//                 const formattedTimeToAdv = formatTime(selectedTimeToAdv);
-
-//                 const proposalData = {
-//                     selectedDateAdv: selectedDateAdv,
-//                     selectedTimeAdv: formattedTimeAdv,
-//                     selectedTimeToAdv: formattedTimeToAdv,
-//                 };
-
-//                 advanceProposals.push(proposalData);
-//             } else {
-//                 console.error(`Error: Proposal data for proposal ${i} is missing.`);
-//             }
-//         }
-
-//         updateProposalDisplay();
-
-//         const customerId = document.getElementById('customer-id')?.value;
-//         const providerId = document.getElementById('provider-id')?.value;
-//         const customerFullName = document.getElementById('customerFullName')?.value;
-//         const userContent = document.getElementById('display-task-description').textContent;
-//         const totalAmount = totalAmountElement.textContent.replace('$', '');
-//         const imageFiles = document.getElementById('images').files;
-
-//         const data = {
-//             advanceProposals: advanceProposals,
-//             customerId: customerId,
-//             providerId: providerId,
-//             proposal_status: 'AdvancedProposal',
-//             statusFrom: 'customer_send',
-//             messageContent: `You receive a new order from ${customerFullName}`,
-//             userContent: userContent,
-//             selectedServices: getSelectedServicesWithPrices(),
-//             totalAmount: totalAmount,
-//         };
-
-//         console.log(data);
-//         return;
-//  // Send the non-image data to the server using AJAX
-//       const xhr = new XMLHttpRequest();
-//           xhr.open('POST', 'advance_proposal.php');
-//           xhr.setRequestHeader('Content-Type', 'application/json');
-//           xhr.send(JSON.stringify(data));
-
-//           xhr.onreadystatechange = function () {
-//               if (xhr.readyState === 4 && xhr.status === 200) {
-//                   // Handle the server's response here, if needed
-//                   console.log(xhr.responseText);
-//               }
-//           };
-
-//         // After sending non-image data, upload images separately
-//         uploadImages(customerId, providerId, imageFiles);
-//     });
-// });
+    // });
+});
 
   </script>
 

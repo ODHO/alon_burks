@@ -764,3 +764,19 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+/* update 20-11-2023 */
+alter table `provider_registration` add isAccountVerified boolean DEFAULT false;
+alter table `provider_registration` add stripe_customerId varchar(100)	 DEFAULT 'Stripe Customer ID For User is Null at this Time	';
+alter table `provider_registration` add stripe_accountId varchar(100)	 DEFAULT 'Stripe Account For User is Null at this Time	';
+
+create table provider_bank(
+    id int primary key AUTO_INCREMENT,
+    provider_id int  not null,
+    country_registered varchar(100) not null,
+    bank_name varchar(250) not null,
+    account_no varchar(250) not null,
+    routing_no varchar(250) not null,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN key (provider_id) REFERENCES `provider_registration`(`id`)
+)

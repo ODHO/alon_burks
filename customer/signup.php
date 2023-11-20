@@ -1,5 +1,14 @@
 <?php
-include 'connection.php';
+include "connection.php";
+// Include configuration file  
+require_once '../config.php'; 
+ 
+// Include the Stripe PHP library 
+require_once '../stripe-php/init.php'; 
+
+// \Stripe\Stripe::setApiKey(STRIPE_API_KEY); 
+$stripe = new \Stripe\StripeClient(STRIPE_API_KEY);
+
 session_start();
 
 // Check connection
@@ -9,18 +18,18 @@ if ($conn->connect_error) {
 
 $defaultRoleId = 3; // Change this to the actual ID for "customer"
 
-if (isset($_POST['register'])) {
+if (isset($_POST["register"])) { 
     // Retrieve user input from the form
-    $fullname = $_POST['fullname'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $address = $_POST['address'];
-    $country = $_POST['country'];
-    $region = $_POST['region'];
-    $city = $_POST['city'];
-    $zipcode = $_POST['zipcode'];
-    $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
+    $fullname = $_POST["fullname"];
+    $email = $_POST["email"];
+    $phone = $_POST["phone"];
+    $address = $_POST["address"];
+    $country = $_POST["country"];
+    $region = $_POST["region"];
+    $city = $_POST["city"];
+    $zipcode = $_POST["zipcode"];
+    $password = $_POST["password"];
+    $confirm_password = $_POST["confirm_password"];
 
     // Check if the email already exists in the registration table
     $checkEmailQuery = "SELECT * FROM provider_registration WHERE email='$email'";
@@ -33,64 +42,82 @@ if (isset($_POST['register'])) {
         if ($password !== $confirm_password) {
             $error_message = "Passwords do not match. Please try again.";
         } else {
-           // Handle profile picture upload
-           if ($_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-            $profilePictureName = $_FILES['profile_picture']['name'];
-            $profilePictureTmpName = $_FILES['profile_picture']['tmp_name'];
-            $profilePictureDestination = 'profile_pictures/' . $profilePictureName; // Choose a destination directory
-
-            // Move the uploaded profile picture to the destination
-            if (move_uploaded_file($profilePictureTmpName, $profilePictureDestination)) {
-                // File was uploaded successfully, you can store $profilePictureDestination in the database.
-            } else {
-              $error_message = "Error uploading profile picture: " . $_FILES['profile_picture']['error'];
+            // Handle profile picture upload
+            if ($_FILES["profile_picture"]["error"] === UPLOAD_ERR_OK) {
+                $profilePictureName = $_FILES["profile_picture"]["name"];
+                $profilePictureTmpName = $_FILES["profile_picture"]["tmp_name"];
+                $profilePictureDestination =
+                    "profile_pictures/" . $profilePictureName; // Choose a destination directory
+                // Move the uploaded profile picture to the destination
+                if (
+                    move_uploaded_file(
+                        $profilePictureTmpName,
+                        $profilePictureDestination
+                    )
+                ) {
+                    // File was uploaded successfully, you can store $profilePictureDestination in the database.
+                } else {
+                    $error_message =
+                        "Error uploading profile picture: " .
+                        $_FILES["profile_picture"]["error"];
+                }
             }
-        }
             // Hash the password before storing it in the database
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
+           //Creating Stripe instance for Creating CustomerId
+           $customer = $stripe->customers->create([
+              'name' => $_POST["fullname"],
+              'email' => $_POST["email"]
+              // 'description' => 'My First Test Customer (created for API docs at https://www.stripe.com/docs/api)',
+            ]);
+            //Creating Stripe instance for Creating Account
+            $account = $stripe->accounts->create([
+                'type' => 'custom',
+                'country' => 'US',
+                'email' => $_POST["email"],
+                'capabilities' => [
+                  'card_payments' => ['requested' => true],
+                  'transfers' => ['requested' => true],
+                ],
+              ]);
             // Insert user data into the database
-            $sql = "INSERT INTO provider_registration (fullname, email, phone, address, country, region, city, zipcode, password, role_id, profile_picture)
-            VALUES ('$fullname', '$email', '$phone', '$address', '$country', '$region', '$city', '$zipcode', '$hashed_password', $defaultRoleId, '$profilePictureDestination')";
+            $sql = "INSERT INTO provider_registration (fullname, email, phone, address, country, region, city, zipcode, password, role_id, profile_picture, stripe_customerId,stripe_accountId)
+            VALUES ('$fullname', '$email', '$phone', '$address', '$country', '$region', '$city', '$zipcode', '$hashed_password', $defaultRoleId, '$profilePictureDestination', '$customer->id','$account->id')";
+            if ($conn->query($sql) === true) {
+                // Generate a random verification code (e.g., a 6-digit number)
+                $verificationCode = sprintf("%04d", mt_rand(1000, 9999));
+                // Store the verification code and set is_verified to 0 in the database
+                $updateVerificationQuery = "UPDATE provider_registration SET verification_code='$verificationCode', is_verified=0 WHERE email='$email'";
+                if ($conn->query($updateVerificationQuery) === true) {
+                    // Send the verification email
+                    $to = $email;
+                    $subject = "Account Verification Code";
+                    $message = "Your verification code is: $verificationCode";
+                    $headers = "From: mubashirodho@gmail.com"; // Replace with your email address
 
-if ($conn->query($sql) === TRUE) {
-  // Generate a random verification code (e.g., a 6-digit number)
-  $verificationCode = sprintf('%04d', mt_rand(1000, 9999));
-
-  // Store the verification code and set is_verified to 0 in the database
-  $updateVerificationQuery = "UPDATE provider_registration SET verification_code='$verificationCode', is_verified=0 WHERE email='$email'";
-  if ($conn->query($updateVerificationQuery) === TRUE) {
-      // Send the verification email
-      $to = $email;
-      $subject = "Account Verification Code";
-      $message = "Your verification code is: $verificationCode";
-      $headers = "From: mubashirodho@gmail.com"; // Replace with your email address
-
-      if (mail($to, $subject, $message, $headers)) {
-          $error_message = "Registration successful! Check your email for the verification code.";
-      } else {
-          $error_message = "Error sending the verification email.";
-      }
-  } else {
-      $error_message = "Error updating the verification code.";
-  }
-
-  // Redirect to login.php after successful registration
-  header("Location: emailconfirmation.php");
-  exit;
-} else {
-  $error_message = "Error: " . $sql . "<br>" . $conn->error;
-}
+                    if (mail($to, $subject, $message, $headers)) {
+                        $error_message =
+                            "Registration successful! Check your email for the verification code.";
+                    } else {
+                        $error_message =
+                            "Error sending the verification email.";
+                    }
+                } else {
+                    $error_message = "Error updating the verification code.";
+                }
+                $_SESSION['user_email'] = $email; 
+                // Redirect to login.php after successful registration
+                header("Location: emailconfirmation.php");
+                exit();
+            } else {
+                $error_message = "Error: " . $sql . "<br>" . $conn->error;
+            }
         }
     }
-    
-    
 }
 // Close the database connection
 $conn->close();
 ?>
-
-
 <!DOCTYPE html>
 <html class="signup-page-build" lang="zxx">
 
@@ -130,39 +157,36 @@ $conn->close();
   <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
   <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
   <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+  <!-- Stripe JS library -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="../assets/js/checkout.js" STRIPE_PUBLISHABLE_KEY="pk_test_51ODWQpHjRTxHUNUSZYRHffKB4qGfbk404Q3vO1CAmXmsOB8cIsiE7pjiiqxPeghsxc1jXrMBcD6tYQVa0gp9gblm00cQb7S181" defer></script>
 
 </head>
-
 <body style="height:100%;">
   <section id="my-hiringpanel">
-
-   
-
         <section id="sign-up-form">
           <div class="row justify-content-center h-100">
-
             <div class="col-lg-7 mb-3" style="padding: 50px;">
-
               <div style="text-align: center;" class="sign-up-inner">
-              <a href="index.php">
-                        <div class="site-logo-form">
-                            <img src="./images/signup/sitelogo-singup.png"/>
-                        </div>
-                        </a>
+                <a href="index.php">
+                    <div class="site-logo-form">
+                        <img src="./images/signup/sitelogo-singup.png"/>
+                    </div>
+                </a>
                 <h2>Create an Account</h2>
                 <img style="margin-bottom: 5px;" width="auto" src="./images/Line 43.png" />
                 <form id="contact" action="Signup.php" method="post" enctype="multipart/form-data">
                 <div class="img-wrapper">
-                                    <p style="text-align: left;margin-left: 10px;">Your Profile Picture</p>
+                  <p style="text-align: left;margin-left: 10px;">Your Profile Picture</p>
 
-                                      <label for="profile_picture" class="img-upload-btn">
-                                        <div class="preview">
-                                          <p class="no-pic"><img src="../assets/images/becomesprovider/regupload.png" alt=""></p>
-                                          <img src="" class="profile-img" style="opacity: 0;">
-                                        </div> 
-                                      </label>
-                                      <input type="file" id="profile_picture" name="profile_picture" accept=".jpg, .jpeg, .png" style="opacity: 0;">
-                                    </div>
+                    <label for="profile_picture" class="img-upload-btn">
+                      <div class="preview">
+                        <p class="no-pic"><img src="../assets/images/becomesprovider/regupload.png" alt=""></p>
+                        <img src="" class="profile-img" style="opacity: 0;">
+                      </div> 
+                    </label>
+                    <input type="file" id="profile_picture" name="profile_picture" accept=".jpg, .jpeg, .png" style="opacity: 0;">
+                  </div>
                   <fieldset>
                     <input placeholder="Full Name" name="fullname" type="text" tabindex="1" required autofocus>
                   </fieldset>
@@ -202,10 +226,10 @@ $conn->close();
                     <input placeholder="Zip Code" name="zipcode" type="text" tabindex="5" required>
                   </fieldset>
                   <fieldset>
-                    <input placeholder="Password" name="password" type="text" tabindex="6" required>
+                    <input placeholder="Password" name="password" type="password" tabindex="6" required>
                   </fieldset>
                   <fieldset>
-                    <input placeholder="Confirm password" name="confirm_password" type="text" tabindex="7" required>
+                    <input placeholder="Confirm password" name="confirm_password" type="password" tabindex="7" required>
                   </fieldset>
                   <fieldset>
                     <button type="submit" name="register" id="contact-submit" data-submit="...Sending">Sign up</button>

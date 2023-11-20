@@ -42,7 +42,7 @@ if (isset($_POST["login"])) {
             } elseif ($row["role_id"] == 2) {
                 // User role is 2, set user type as 'provider'
                 $_SESSION["user_type"] = "provider";
-                header("Location: connectback.php");
+                header("Location: provider/dashboard.php");
                 exit();
             } elseif ($row["role_id"] == 1) {
                 // User role is 1, set user type as 'admin'

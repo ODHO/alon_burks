@@ -1,6 +1,30 @@
 <?php
 include '../connection.php';
 session_start();
+
+$checkBank = checkUserBank();
+
+if($checkBank['isAccountVerified'] == '0'){
+  header("Location: ../connectback.php");
+}
+
+function checkUserBank()
+{
+    $user = "";
+    global $conn;
+    // Sanitize the input to prevent SQL injection
+    $user_id = $_SESSION['user_id'];
+
+    // Retrieve provider services from the database using the provider ID
+    $sql = "SELECT isAccountVerified FROM provider_registration WHERE id = '$user_id'";
+    $result = $conn->query($sql);
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $user = $row;
+        }
+    }
+    return $user;
+}
 function getReviews(){
   global $conn;
   $sql =
