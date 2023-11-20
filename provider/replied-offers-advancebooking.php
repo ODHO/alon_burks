@@ -345,7 +345,7 @@ function getServiceImages($services) {
                       <div class="replied-button">
                           <a href="#"><button style="background-color: #00B2FF;">Pending</button></a><br>
                       </div>
-                      <br><h4 style="color: #000; text-align: center;">Offered On <?php echo $current_time?></h4>
+                      <br><h4 style="color: #000; text-align: center;">Offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h4>
                   </div>
               </div>
             </div>
@@ -457,7 +457,7 @@ function getServiceImages($services) {
                           </tbody></table>
                     </div>
                       <div class="task-description">
-                          <h2>Counter Description</h2>
+                          <h2>Customer Description</h2>
                           <p><?php echo $userContent?></p>
                       </div>
                     </div>

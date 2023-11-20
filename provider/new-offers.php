@@ -436,7 +436,7 @@ function getServiceImages($service) {
                                     </div>
                                     <div class="col-md-3 d-flex align-items-center">
                                         <h4 style="color: #70BE44;font-size: 14px;">Offered On
-                                            <?php echo $current_time ?>
+                                        <?php echo date('d-M-Y , D', strtotime($current_time))?>
                                         </h4>
                                     </div>
                                 </div>

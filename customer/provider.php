@@ -175,7 +175,22 @@ function getServiceIds($conn, $servicesArray)
 }
 
 $serviceIds = getServiceIds($conn, $servicesArray);
-
+function getCompletedProposalCount($providerId)
+{
+    global $conn;
+    $countCompletedSql = "SELECT COUNT(*) as completed_pending_count FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'completed')";
+    $countCompletedStmt = $conn->prepare($countCompletedSql);
+    $countCompletedStmt->bind_param('s', $providerId);
+    
+    if ($countCompletedStmt->execute()) {
+        $countCompletedResult = $countCompletedStmt->get_result();
+        $countCompletedRow = $countCompletedResult->fetch_assoc();
+        return $countCompletedRow['completed_pending_count'];
+    }
+    print_r($countCompletedRow);
+    die();
+    return 0;
+}
 // The code related to inserting data into the database has been commented out.
 ?>
 
@@ -292,7 +307,37 @@ $serviceIds = getServiceIds($conn, $servicesArray);
                       <h6 style="color: #70BE44;" class="price">$30/hr</h6>
                     </div>
                     <ul class="detaillist" style="width: 100%;">
-                      <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i> 50+ Completed task</li>
+                      <li><i style="color: #70BE44" class="fa fa-check" aria-hidden="true"></i> <?php 
+                      // include "connection.php";
+                
+                      $userId = $_SESSION["user_id"];
+                
+                      $sql =
+                      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
+                      $stmt = $conn->prepare($sql);
+                      $stmt->bind_param("s", $userId);
+                
+                      if ($stmt->execute()) {
+                          $result = $stmt->get_result();
+                          if ($result->num_rows == 0) {
+                              // No orders found for the provider
+                              echo '<h2 class="text-center texter">No new orders available.</h2>';
+                          } else {
+                              while ($row = $result->fetch_assoc()) {
+                
+                                  $proposalId = $row["id"];
+                                  $customerId = $row["customer_id"];
+                                  $providerId = $row["provider_id"];
+$countCompletedRow = getCompletedProposalCount($providerId);
+echo $countCompletedRow; 
+
+}
+}
+} else {
+echo "Error executing the query.";
+}
+
+?> Completed task</li>
                       <li><i style="color: #70BE44" class="fa fa-map-marker" aria-hidden="true"></i>
                         <?php echo $providerAddress; ?>
                       </li>

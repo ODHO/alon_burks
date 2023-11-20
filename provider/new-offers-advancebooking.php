@@ -465,7 +465,7 @@ function getAdvanceProposals($providerId, $proposalId, $customerId) {
                             <!-- <h6 style="color: #4492BE;"><img src="./images/scheduled.png"/> 21, August,4:00 AM, SUN</h6> -->
                         </div>
                         <div class="col-md-3 d-flex align-items-center">
-                            <h4 style="color: #000;font-size:14px;font-weight:700">Offered On <?php echo $current_time?></h4>
+                            <h4 style="color: #000;font-size:14px;font-weight:700">Offered On <?php echo date('d-M-Y , D', strtotime($current_time))?></h4>
                         </div>
                       </div>
                     </div>

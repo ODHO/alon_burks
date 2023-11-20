@@ -1,5 +1,4 @@
 <?php
-include '../connection.php';
 session_start();
 
 $checkBank = checkUserBank();
@@ -42,6 +41,128 @@ function getReviews(){
       return $rating;
   }
   return "0";
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../login.php');
+    exit();
+}
+include 'connection.php';
+// Function to get customer information from the provider_registration table
+function getCustomerInfo($customerId) {
+  global $conn;
+  $sql = "SELECT fullname, profile_picture, address FROM provider_registration WHERE id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('s', $customerId);
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          return $row;
+      }
+  }
+  return array('fullname' => 'N/A', 'address' => 'N/A', 'profile_picture' => 'N/A'); // Provide default values if customer info not found
+}
+// Function to get the price of a service from the categories table
+function getCustomerServicesAndPrices($customerId, $proposalId) {
+  global $conn;
+  $sql = "SELECT service_name, price, counter_price FROM customer_services WHERE customer_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('ss', $customerId, $proposalId);
+
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $servicesAndPrices = array();
+
+      while ($row = $result->fetch_assoc()) {
+          $serviceCustomers = $row['service_name'];
+          $priceService = $row['price'];
+          $counterPrice = $row['counter_price'];
+          $servicesAndPrices[] = array('service_name' => $serviceCustomers, 'price' => $priceService, 'counter_price' => $counterPrice);
+          // print_r($servicesAndPrices);
+      }
+
+      return $servicesAndPrices;
+  }
+
+  return array();
+}
+function getServicePrice($service) {
+    global $conn;
+    $sql = "SELECT price FROM customer_services WHERE service_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $service);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['price'];
+        }
+    }
+    return 'N/A'; // Provide a default value if service price not found
+  }
+  function getCustomerImagesForProvider($customerId, $providerId, $proposalId) {
+    global $conn;
+    $sql = "SELECT image_path FROM customer_images WHERE customer_id = ? AND provider_id = ? AND proposal_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('sss', $customerId, $providerId, $proposalId);
+    if ($stmt->execute()) {
+      $result = $stmt->get_result();
+      $images = array();
+      while ($row = $result->fetch_assoc()) {
+        $images[] = $row['image_path'];
+      }
+      return $images;
+    }
+    return array();
+  }
+
+
+function getServiceImages($service) {
+  global $conn;
+  $servicesImages = array();
+
+  // Create a prepared statement to select servicesImages based on service names
+  $sql = "SELECT image FROM categories WHERE heading IN (?)";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+      $categories = implode("', '", $service); // Assuming service names are in an array
+      $stmt->bind_param('s', $categories);
+
+      if ($stmt->execute()) {
+          $result = $stmt->get_result();
+
+          while ($row = $result->fetch_assoc()) {
+              $servicesImages[] = $row['image'];
+          }
+      }
+  }
+
+  return $servicesImages;
+}
+function getReviews($userId, $proposalId) {
+  global $conn;
+  $sql = "SELECT * FROM ratings WHERE provider_id = ? AND proposal_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param('ss', $userId, $proposalId);
+
+  $reviews = array();
+
+  if ($stmt->execute()) {
+      $result = $stmt->get_result();
+
+      while ($row = $result->fetch_assoc()) {
+          $review = array(
+              'user_id' => $row['user_id'],
+              'rating' => $row['rating'],
+              'Feedback' => $row['Feedback'],
+              'created_at' => $row['created_at']
+          );
+
+          $reviews[] = $review;
+      }
+  }
+
+  return $reviews;
 }
 ?>
 <!DOCTYPE html>
@@ -285,6 +406,43 @@ function getReviews(){
               </div>
             </div>
           </div>
+          <?php
+include 'connection.php';
+
+$userId = $_SESSION['user_id'];
+
+// Create an array to store the count for each status
+$statusCounts = array(
+    'order_in_progress' => 0,
+    'scheduled_offer' => 0,
+    'replied_offer' => 0,
+    'completed' => 0,
+    'completed-pending' => 0,
+    // Add more statuses as needed
+);
+
+$sql = "SELECT * FROM customer_proposal WHERE provider_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $userId);
+
+if ($stmt->execute()) {
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $status = $row['status'];
+
+            // Update the count for the respective status
+            if (array_key_exists($status, $statusCounts)) {
+                $statusCounts[$status]++;
+            }
+        }
+    }
+}
+
+// Calculate the total count for both statuses
+$totalCompletedCount = $statusCounts['completed'] + $statusCounts['completed-pending'];
+$totalCompletedCount1 = $statusCounts['scheduled_offer'] + $statusCounts['order_in_progress'];
+?>
 
           <div class="milestone-calculation">
             <div class="row">
@@ -293,7 +451,7 @@ function getReviews(){
                   Completed Orders
                 </h2>
                 <div class="mile">
-                  <h2>20</h2>
+                  <h2><?php echo $totalCompletedCount?></h2>
                   <select id='gMonth2' onchange="show_month()">
                     <option value=''>--Select Month--</option>
                     <option selected value='1'>Janaury</option>
@@ -316,7 +474,7 @@ function getReviews(){
                   Offers
                 </h2>
                 <div class="mile">
-                  <h2>20</h2>
+                  <h2><?php echo $totalCompletedCount1?></h2>
                   <select id='gMonth2' onchange="show_month()">
                     <option value=''>--Select Month--</option>
                     <option selected value='1'>Janaury</option>
@@ -354,46 +512,78 @@ function getReviews(){
                 <li><a href="#"><button style="color: #959595; background-color: #E6E6E6;">Advance Bookings</button></a></li>
               </ul>
             </div>
+            <?php
+            include 'connection.php';
+
+            $userId = $_SESSION['user_id'];
+            $providerName = $_SESSION['providerName'];
+
+            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND proposal_status = 'OneTime' AND (status = 'completed-pending' OR status = 'working' OR status = 'order_in_progress') ORDER BY status = 'completed-pending' DESC, status = 'working' DESC, status = 'order_in_progress' DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $userId);
+
+            if ($stmt->execute()) {
+                $result = $stmt->get_result();
+                if ($result->num_rows == 0) {
+                  // No orders found for the provider
+                  echo '<h2 class="text-center texter">No new orders available.</h2>';
+              } else {
+          while ($row = $result->fetch_assoc()) {
+              $proposalId = $row['id'];
+              $customerId = $row['customer_id'];
+              $providerId = $row['provider_id'];
+              $selectedDate = $row['selected_date'];
+              $selectedTime = $row['selected_time'];
+              $userContent = $row['user_content'];
+              $selectedServices = explode(', ', $row['selected_services']);
+              $totalAmount = $row['total_amount'];
+              $current_time = $row['current_time'];
+              $counterTotall = $row['counter_totall'];
+
+              // Retrieve customer name and address based on customerId
+              $customerInfo = getCustomerInfo($customerId);
+
+              $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+              $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+              $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+              
+              
+              // Now you have an array containing the selected services and their prices for the customer
+              
+              // Output the retrieved customer name and address
+              $customerName = $customerInfo['fullname'];
+              $customerAddress = $customerInfo['address'];
+              $profile_picture = $customerInfo['profile_picture'];
+            ?>
+            <!-- FIRST PROGRESS PROFILE -->
+           
+
             <div class="progress-profile">
+           
               <div class="row">
+             
                 <div class="col-md-9">
                   <div class="progress-profile-detail">
                     <ul>
-                      <li class="profile-name"><h5><img src="./images/homee.png"/><b>Danny </b><br>userID#321</h5></li>
-                      <li><h5><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd <br>Street,
-                        House No- B-242</h5></li>
-                        <li><h5><img src="./images/time.png"/> 21, August,4:00 <br>AM, SUN</h5></li>
+                      <li class="profile-name"><h5><img src="./images/homee.png"/><b><?php echo $customerName?> </b><br>userID# <?php echo $customerId?></h5></li>
+                      <li><h5><img src="./images/mappin.png"/><?php echo $customerAddress?></h5></li>
+                        <li><h5><img src="./images/time.png"/> <?php echo $selectedDate , str_repeat('&nbsp;', 5), $selectedTime?></h5></li>
                     </ul>
                   </div>
 
                   <div class="services-needed">
                     <ul>
                       <li><h4>Services Needed</h4></li>
-                      <li>Snow removal <img src="./images/check.png"/></li>
-                      <li>Grass Cutting <img src="./images/check.png"/></li>
-                      <li class="number">2</li>
+                      <?php foreach ($selectedServices as $service) { ?>
+                            <li><?php echo $service; ?> <img src="./images/check.png"/></li>
+                        <?php } ?>
+                        <li class="number"><?php echo count($selectedServices); ?></li>
                     </ul>
                   </div>
 
                   <div class="progress-notify">
-                    <h2>Hey! I want to remove all the snow from my garden and want a full service garden mainteniance.</h2>
+                    <h2><?php echo $userContent?></h2>
                   </div>
-
-                  <div class="viewgallery">
-                    <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
-                    <div class="progress-gallery">
-                      <ul>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  
-
-
                 </div>
                 <div class="col-md-3">
                   <div class="verification" style="width: 100%;">
@@ -403,135 +593,223 @@ function getReviews(){
                   
                   <div class="service-status" style="width: 100%;">
                     <h3>Service Status</h3>
-                    <select id='gMonth2' onchange="show_month()">
-                      <option value=''>--Select Status--</option>
-                      <option selected value='1'>Working</option>
-                      <option value='2'>Not-Working</option>
-                      </select> 
+                    
+                    <select id='gMonth2' onchange="showStatusPopup(this.value)">
+                          <option value=''>--Select Status--</option>
+                          <?php if ($row['status'] === 'order_in_progress') { ?>
+                              <option selected value='1'>Not-Working</option>
+                          <?php } elseif ($row['status'] === 'working') { ?>
+                              <option selected value='2'>Working</option>
+                              <!-- <option value='2'>Completed</option> -->
+                          <?php } elseif ($row['status'] === 'completed-pending') { ?>
+                              <option selected value='5'>Working</option>
+                              <option value='3'>Completed</option>
+                          <?php } ?>
+                    </select>
+
+              <script>
+              function showStatusPopup(selectedStatus) {
+                  // Hide all popups first
+                  document.getElementById('notWorkingPopup<?php echo $proposalId?>').style.display = 'hide';
+                  document.getElementById('workingPopup<?php echo $proposalId?>').style.display = 'hide';
+                  document.getElementById('completedPopup<?php echo $proposalId?>').style.display = 'hide';
+
+                  if (selectedStatus === '1') {
+                      // Display the "Not-Working" popup
+                      document.getElementById('notWorkingPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else if (selectedStatus === '2') {
+                      // Display the "Working" popup
+                      document.getElementById('workingPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else if (selectedStatus === '3') {
+                      // Display the "Completed" popup
+                      document.getElementById('completedPopup<?php echo $proposalId?>').style.display = 'block';
+                  } else {
+                      // Handle any other status or no selection
+                  }
+              }
+              
+              </script>
+
+
+
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- SECOND PROGRESS PROFILE -->
-            <div class="progress-profile">
-              <div class="row">
-                <div class="col-md-9">
-                  <div class="progress-profile-detail">
-                    <ul>
-                      <li class="profile-name"><h5><img src="./images/homee.png"/><b>Danny </b><br>userID#321</h5></li>
-                      <li><h5><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd <br>Street,
-                        House No- B-242</h5></li>
-                        <li><h5><img src="./images/time.png"/> 21, August,4:00 <br>AM, SUN</h5></li>
-                    </ul>
-                  </div>
+                          <div class="modal your-offer-selected popup-selected" id="notWorkingPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">You cannot change status until customer verifies the previous status ?</h2>
+                                    
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" onclick="closePopup2('<?php echo $proposalId; ?>')">Close</button>
+                                          </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                          </div>
 
-                  <div class="services-needed">
-                    <ul>
-                      <li><h4>Services Needed</h4></li>
-                      <li>Snow removal <img src="./images/check.png"/></li>
-                      <li>Grass Cutting <img src="./images/check.png"/></li>
-                      <li class="number">2</li>
-                    </ul>
-                  </div>
+                          <div class="modal" id="workingPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                        <h2 class="pb-4">You cannot change status until customer verifies the previous status </h2>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <button type="button" onclick="closePopup1('<?php echo $proposalId; ?>')" class="bg-danger">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal" id="completedPopup<?php echo $proposalId?>" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Acceptance</h5>
+                                       
+                                    </div>
+                                    <div class="modal-body h-auto">
+                                    <h2>Please move your proposal to the completed portion.</h2>
+                                          <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" onclick="closePopup('<?php echo $proposalId; ?>')">Close</button>
+                                            <button type="button" class="btn btn-primary" class="move-button" onclick="moveToCompleted(<?php echo $proposalId; ?>)">Move</button>
+                                            <input type="hidden" name="providerId" value="<?php echo $userId ?>" id="providerId" />
+                                              <input type="hidden" name="customerId" value="<?php echo $customerId ?>" id="customerId" />
+                                              <input type="hidden" name="providerName" value="<?php echo $providerName ?>" id="providerName" />
+                                          </div>
+                                          <script>
+                                        function moveToCompleted(proposalId) {
+                                            const providerId = document.getElementById('providerId').value;
+                                            const customerId = document.getElementById('customerId').value;
+                                            const providerName = document.getElementById('providerName').value;
+                                            const messageContent = `Did you like the ${providerName} services? Rate your service provider`;
 
-                  <div class="progress-notify">
-                    <h2>Hey! I want to remove all the snow from my garden and want a full service garden mainteniance.</h2>
-                  </div>
+                                            // Send an AJAX request to update the status to "scheduled_offer" and send a message
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open('POST', 'update_status.php'); // Create a PHP file to handle status updates and messages
+                                            xhr.setRequestHeader('Content-Type', 'application/json');
+                                            xhr.send(JSON.stringify({
+                                                proposalId: proposalId,
+                                                statusFrom: 'provider_send',
+                                                status: 'completed',
+                                                customerId: customerId,
+                                                providerId: providerId,
+                                                providerName: providerName,
+                                                messageContent: messageContent,
+                                            }));
+                                            xhr.onreadystatechange = function () {
+                                                if (xhr.readyState === 4 && xhr.status === 200) {
+                                                    // Handle the server's response here, if needed
+                                                    console.log(xhr.responseText);
 
-                  <div class="viewgallery">
+                                                    // Reload the page after the status is updated
+                                                    location.reload(); // This will refresh the current page
+                                                }
+                                            };
+                                        }
+                                        function closePopup(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#completedPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("completedPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                        function closePopup2(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#notWorkingPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("notWorkingPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                        function closePopup1(proposalId) {
+                                            // You can use jQuery or vanilla JavaScript to hide the modal
+                                            // Example using jQuery:
+                                            $("#workingPopup" + proposalId).modal("hide");
+
+                                            const modal = document.getElementById("workingPopup" + proposalId);
+                                            modal.style.display = "none";
+                                        }
+                                    </script>
+                                    </div>
+                                    
+                                    
+                                   
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                <div class="viewgallery">
                     <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
                     <div class="progress-gallery">
-                      <ul>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                      </ul>
+                        <div class="row">
+                          <div class="col-md-5">
+                            <div class="location-images">
+                            <h5>Location Images </h5>
+                            <ul class="gallery-images">
+                            <?php
+                            foreach (array_slice($customerImages, 0, 5) as $imagePath) {
+                            ?>
+                                <li>
+                                    <img src="../customer/<?php echo $imagePath; ?>" alt="Customer Image" />
+                                </li>
+                            <?php
+                            }
+                            ?>
+                            </ul>
+                          </div>
+                          </div>
+                          <div class="col-md-7">
+                            <div class="order-details-progress">
+                              <h2>Order details</h2>
+                              <ul class="orderdetails-lists">
+                              <?php $displayTotal = isset($counterTotall) ? $counterTotall : $totalAmount;
+                          foreach ($serviceCustomers as $servicenew) {
+                              $services = $servicenew['service_name'];
+                              $servicePrice = $servicenew['price'];
+                              
+                              // Check if counter service price is available
+                              if (isset($servicenew['counter_price'])) {
+                                  $counterPrice = $servicenew['counter_price'];
+                              } else {
+                                  // If counter price is not available, use the original service price
+                                  $counterPrice = $servicePrice;
+                              }
+                        ?>
+                            <li>
+                                <em><?php echo $services ?></em>
+                                <span style="color: #70BE44;">$<?php echo $counterPrice ?></span>
+                            </li>
+                        <?php } ?>
+                                <li class="total-amount"><em><b>Total  amount paid</b></em><span style="color: #70BE44;"><b>$ <?php echo $displayTotal?></b></span></li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
                     </div>
-                  </div>
-
-                  
-
-
-                </div>
-                <div class="col-md-3">
-                  <div class="verification" style="width: 100%;">
-                    <h3>Customer Verification</h3>
-                    <a href="#"><button>Verified</button></a>
-                  </div>
-                  
-                  <div class="service-status" style="width: 100%;">
-                    <h3>Service Status</h3>
-                    <select id='gMonth2' onchange="show_month()">
-                      <option value=''>--Select Status--</option>
-                      <option selected value='1'>Working</option>
-                      <option value='2'>Not-Working</option>
-                      </select> 
-                  </div>
                 </div>
               </div>
+              
             </div>
-
-            <!-- THIRD PROGRESS PROFILE -->
-            <div class="progress-profile">
-              <div class="row">
-                <div class="col-md-9">
-                  <div class="progress-profile-detail">
-                    <ul>
-                      <li class="profile-name"><h5><img src="./images/homee.png"/><b>Danny </b><br>userID#321</h5></li>
-                      <li><h5><img src="./images/mappin.png"/> San Francisco, 5th Avenue 22nd <br>Street,
-                        House No- B-242</h5></li>
-                        <li><h5><img src="./images/time.png"/> 21, August,4:00 <br>AM, SUN</h5></li>
-                    </ul>
-                  </div>
-
-                  <div class="services-needed">
-                    <ul>
-                      <li><h4>Services Needed</h4></li>
-                      <li>Snow removal <img src="./images/check.png"/></li>
-                      <li>Grass Cutting <img src="./images/check.png"/></li>
-                      <li class="number">2</li>
-                    </ul>
-                  </div>
-
-                  <div class="progress-notify">
-                    <h2>Hey! I want to remove all the snow from my garden and want a full service garden mainteniance.</h2>
-                  </div>
-
-                  <div class="viewgallery">
-                    <a href="#/" class="viewbuttn">View More <img src="./images/dropdown.png"/></a>
-                    <div class="progress-gallery">
-                      <ul>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                        <li><img src="./images/feature.png"></li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  
-
-
-                </div>
-                <div class="col-md-3">
-                  <div class="verification" style="width: 100%;">
-                    <h3>Customer Verification</h3>
-                    <a href="#"><button>Verified</button></a>
-                  </div>
-                  
-                  <div class="service-status" style="width: 100%;">
-                    <h3>Service Status</h3>
-                    <select id='gMonth2' onchange="show_month()">
-                      <option value=''>--Select Status--</option>
-                      <option selected value='1'>Working</option>
-                      <option value='2'>Not-Working</option>
-                      </select> 
-                  </div>
-                </div>
-              </div>
-            </div>
+          <?php
+            }
+  }
+} else {
+  echo 'Error executing the query.';
+}
+?>
           </div>
           <!-- MAIN COLUMN 8 END -->
             </div>
@@ -542,7 +820,44 @@ function getReviews(){
                 <div class="service-statistics">
                   <h2><b style="color: #70BE44;">Service</b> Statistics</h2>
                   <ul class="statistics-list">
-                    <li><img src="./images/doubletick.png"/><em>Completed task</em><span>2</span></li>
+                    <li><img src="./images/doubletick.png"/><em>Completed task</em><span><?php
+include 'connection.php';
+
+$userId = $_SESSION['user_id'];
+
+// Create an array to store the count for each status
+$statusCounts = array(
+    'order_in_progress' => 0,
+    'scheduled_offer' => 0,
+    'replied_offer' => 0,
+    'completed' => 0,
+    'completed-pending' => 0,
+    // Add more statuses as needed
+);
+
+$sql = "SELECT * FROM customer_proposal WHERE provider_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $userId);
+
+if ($stmt->execute()) {
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $status = $row['status'];
+
+            // Update the count for the respective status
+            if (array_key_exists($status, $statusCounts)) {
+                $statusCounts[$status]++;
+            }
+        }
+    }
+}
+
+// Calculate the total count for both statuses
+$totalCompletedCount = $statusCounts['completed'] + $statusCounts['completed-pending'];
+$totalCompletedCount1 = $statusCounts['scheduled_offer'] + $statusCounts['order_in_progress'];
+echo $totalCompletedCount;
+?></span></li>
                     <li><img src="./images/time.png"/><em>Today’s Job Hours</em><span style="color: #70BE44;">5:45</span></li>
                     <li><img src="./images/star.png"/><em>Job Success</em><span style="color: red;">10%</span></li>
                   </ul>
@@ -601,57 +916,139 @@ function getReviews(){
                   <!-- <div class="services-feedbacks">
                     <img src="./images/profileman.png"/>
                     <h4>Mick taison is available for the job with his expertise skills</h4>
+                  <?php
+            include 'connection.php';
+
+            $userId = $_SESSION['user_id'];
+            $providerName = $_SESSION['providerName'];
+
+            $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? ORDER BY id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $userId);
+
+            if ($stmt->execute()) {
+                $result = $stmt->get_result();
+                if ($result->num_rows == 0) {
+                  // No orders found for the provider
+                  echo '<h2 class="text-center texter">No new orders available.</h2>';
+              } else {
+          while ($row = $result->fetch_assoc()) {
+              $proposalId = $row['id'];
+              $customerId = $row['customer_id'];
+              $providerId = $row['provider_id'];
+              $selectedDate = $row['selected_date'];
+              $selectedTime = $row['selected_time'];
+              $userContent = $row['user_content'];
+              $selectedServices = explode(', ', $row['selected_services']);
+              $totalAmount = $row['total_amount'];
+              $current_time = $row['current_time'];
+              $counterTotall = $row['counter_totall'];
+
+              // Retrieve customer name and address based on customerId
+              $customerInfo = getCustomerInfo($customerId);
+
+              $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+              $servicesAndPrices = getCustomerServicesAndPrices($customerId, $proposalId);
+              $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+              
+              $reviews = getReviews($userId, $proposalId);
+
+              
+              // Now you have an array containing the selected services and their prices for the customer
+              
+              // Output the retrieved customer name and address
+              $customerName = $customerInfo['fullname'];
+              $customerAddress = $customerInfo['address'];
+              $profile_picture = $customerInfo['profile_picture'];
+            
+foreach ($reviews as $review) {
+    ?>
+    <div class="services-feedbacks">
+                    <img class="profile" src="../customer/<?php echo $profile_picture?>"/>
+                    <h4><?php echo $review['Feedback']; ?></h4>
                     <ul class="feedback-date-category">
-                      <li>1 hours ago</li>
-                      <li style="color: #227A4E;">Window Tint, Mechanic , Tuning .</li>
+                      <li><?php echo date('F j, Y, g:i a', strtotime($review['created_at'])); ?></li>
+                      <li style="color: #227A4E;"><?php echo implode(', ', array_column($servicesAndPrices, 'service_name')); ?></li>
                     </ul>
                   </div> -->
+                  </div>
+    <?php
+}
+            }
+  }
+} else {
+  echo 'Error executing the query.';
+}
+?>
+                 
                 </div>
                 <!-- Schedule tasks -->
                 <div class="schedule-tasks-progress">
                   <h2><b style="color: #70BE44;">Scheduled</b> Tasks</h2>
-                  <div class="task-list">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="profilename">
-                          <img src="./images/profileman.png"/>
-                          <h5>Danny <br><span>userID#321</span></h5>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <h6>23rd September<br><span>02:00 PM</span></h6>
-                      </div>
-                    </div>
-                  </div>
-                  <!-- 2ND TASK LIST -->
-                  <div class="task-list">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="profilename">
-                          <img src="./images/profileman.png"/>
-                          <h5>Danny <br><span>userID#321</span></h5>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <h6>23rd September<br><span>02:00 PM</span></h6>
-                      </div>
-                    </div>
-                  </div>
+                  <?php
+              include 'connection.php';
 
-                  <!-- 3RD TASK LIST -->
+              $userId = $_SESSION['user_id'];
+              $providerName = $_SESSION['providerName'];
+
+              $sql = "SELECT * FROM customer_proposal WHERE provider_id = ? AND status = 'scheduled_offer' AND proposal_status = 'OneTime'";
+              $stmt = $conn->prepare($sql);
+              $stmt->bind_param('s', $userId);
+
+              if ($stmt->execute()) {
+                  $result = $stmt->get_result();
+                  if ($result->num_rows == 0) {
+                    // No orders found for the provider
+                    echo '<h2 class="text-center texter">No new orders available.</h2>';
+                } else {
+            while ($row = $result->fetch_assoc()) {
+                $proposalId = $row['id'];
+                $customerId = $row['customer_id'];
+                $providerId = $row['provider_id'];
+                $selectedDate = $row['selected_date'];
+                $selectedTime = $row['selected_time'];
+                $userContent = $row['user_content'];
+                $selectedServices = explode(', ', $row['selected_services']);
+                $totalAmount = $row['total_amount'];
+                $current_time = $row['current_time'];
+                $counterTotall = $row['counter_totall'];
+
+                // Retrieve customer name and address based on customerId
+                $customerInfo = getCustomerInfo($customerId);
+
+                $customerImages = getCustomerImagesForProvider($customerId, $userId, $proposalId);
+                $serviceCustomers = getCustomerServicesAndPrices($customerId, $proposalId);
+                $serviceCustomers1 = getCustomerServicesAndPrices($customerId, $proposalId);
+                
+                
+                // Now you have an array containing the selected services and their prices for the customer
+                
+                // Output the retrieved customer name and address
+                $customerName = $customerInfo['fullname'];
+                $customerAddress = $customerInfo['address'];
+                $profile_picture = $customerInfo['profile_picture'];
+            ?>
                   <div class="task-list">
                     <div class="row">
                       <div class="col-md-6">
                         <div class="profilename">
-                          <img src="./images/profileman.png"/>
-                          <h5>Danny <br><span>userID#321</span></h5>
+                          <img class="profile" style="width:45px;height:45px" src="../customer/<?php echo $profile_picture?>"/>
+                          <h5><?php echo $customerName?><br><span>userID#<?php echo $customerId?></span></h5>
                         </div>
                       </div>
                       <div class="col-md-6">
-                        <h6>23rd September<br><span>02:00 PM</span></h6>
+                        <h6><?php echo date('d-M-Y', strtotime($selectedDate))?><br><span><?php echo $selectedTime?></span></h6>
                       </div>
                     </div>
                   </div>
+                  <?php
+     }
+    }
+} else {
+    echo 'Error executing the query.';
+}
+?>
+                 
                 </div>
             </div>
 

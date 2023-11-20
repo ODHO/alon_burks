@@ -156,6 +156,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           return false;
       }
   }
+
+}
+function getCompletedProposalCount($providerId)
+{
+    global $conn;
+    $countCompletedSql = "SELECT COUNT(*) as completed_pending_count FROM customer_proposal WHERE provider_id = ? AND (status = 'completed-pending' OR status = 'completed')";
+    $countCompletedStmt = $conn->prepare($countCompletedSql);
+    $countCompletedStmt->bind_param('s', $providerId);
+    
+    if ($countCompletedStmt->execute()) {
+        $countCompletedResult = $countCompletedStmt->get_result();
+        $countCompletedRow = $countCompletedResult->fetch_assoc();
+        return $countCompletedRow['completed_pending_count'];
+    }
+    print_r($countCompletedRow);
+    die();
+    return 0;
 }
 ?>
 <!DOCTYPE html>
@@ -256,8 +273,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $userId = $_SESSION["user_id"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' ORDER BY current_time DESC";
+ 
+      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'scheduled_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -330,7 +347,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-lg-3 mb-3 mb-lg-0 align-self-center">
                   <div class="textwith-icon2">
-                    <i class="fa fa-check" aria-hidden="true"></i> 50+ Completed task
+                  <?php
+// // Assuming you have a session with the provider's user_id
+// $userId = $_SESSION['user_id'];
+
+// // Query to count completed proposals for the current provider
+// $countCompletedSql = "SELECT COUNT(*) as completed_count FROM customer_proposal WHERE provider_id = ? AND status = 'completed-pending'";
+// $countCompletedStmt = $conn->prepare($countCompletedSql);
+// $countCompletedStmt->bind_param('s', $userId);
+// $countCompletedStmt->execute();
+// $countCompletedResult = $countCompletedStmt->get_result();
+// $countCompletedRow = $countCompletedResult->fetch_assoc();
+// $completedCount = $countCompletedRow['completed_count'];
+// echo '<i class="fa fa-check" aria-hidden="true"></i>'. $completedCount . '+ Completed tasks';
+?>
+<i class="fa fa-check" aria-hidden="true"></i><?php 
+$countCompletedRow = getCompletedProposalCount($providerId);
+echo $countCompletedRow; ?> Completed tasks
                   </div>
                 </div>
                 <div class="col-lg-3 mb-3 mb-lg-0 align-self-center">
@@ -453,8 +486,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $userId = $_SESSION["user_id"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' ORDER BY current_time DESC";
+      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'new_offer' AND proposal_status = 'OneTime' ORDER BY current_time DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -645,8 +677,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $userId = $_SESSION["user_id"];
       $customerFullName = $_SESSION["customerFullName"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'working' OR status = 'order_in_progress') ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
+      $sql =  "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'working' OR status = 'order_in_progress') AND proposal_status = 'OneTime' ORDER BY status = 'Working' DESC, status = 'order_in_progress' DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -819,7 +850,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-lg-3 mb-3 mb-lg-0 align-self-center">
                   <div class="textwith-icon2">
-                    <p><img src="./images/strr.png" />4.9</p>
+                  <?php 
+                     $ratings = ratingcount($providerId,$proposalId);
+                    ?>
+                    <p><img src="./images/strr.png" /><?php echo $ratings[0]; ?></p>
                   </div>
                 </div>
                 <div class="col-lg-3 mb-3 mb-lg-0 align-self-center">
@@ -954,8 +988,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $userId = $_SESSION["user_id"];
 
-      $sql =
-          "SELECT * FROM customer_proposal WHERE customer_id = ? AND status = 'completed' ORDER BY current_time DESC";
+      $sql = "SELECT * FROM customer_proposal WHERE customer_id = ? AND (status = 'completed' OR status = 'completed-pending') ORDER BY current_time DESC";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $userId);
 
@@ -1040,7 +1073,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <div class="textwith-icon2 last-textinner">
                   <ul class="button-sec">
                       <li><a style="color: #FF4D00;" href="#">Service Completed</a></li>
-                      <li class="completed"><button onclick="showPopup(<?php echo $proposalId; ?>, <?php echo $providerId; ?>, <?php echo $_SESSION['user_id']; ?>)">Rate Service</button></li>
+                      
+                      <?php
+                        // Assuming you have a session with the provider's user_id
+                        $userId = $_SESSION['user_id'];
+
+                        // Query to check if the user has already rated the service for a specific proposal
+                        $ratingCheckSql = "SELECT COUNT(*) as rating FROM ratings WHERE proposal_id = ? AND user_id = ?";
+                        $ratingCheckStmt = $conn->prepare($ratingCheckSql);
+                        $ratingCheckStmt->bind_param('ss', $proposalId, $userId);
+                        $ratingCheckStmt->execute();
+                        $ratingCheckResult = $ratingCheckStmt->get_result();
+                        $ratingCheckRow = $ratingCheckResult->fetch_assoc();
+                        $alreadyRated = $ratingCheckRow['rating'] > 0;
+
+                        if (!$alreadyRated) {
+                            echo '<li class="completed"><button onclick="showPopup(' . $proposalId . ', ' . $providerId . ', ' . $userId . ')">Rate Service</button></li>';
+                        }
+                      ?>
                     </ul>
                   </div>
                 </div>
